@@ -32,6 +32,10 @@ export interface MineLevel extends BuildingLevel {
   /** Production de ressources par heure */ productionPerHour: number;
 }
 
+export interface WallLevel extends BuildingLevel {
+  /** Défense en % */ defense: number;
+}
+
 export interface StorageLevel extends BuildingLevel {
   /** Capacité de stockage */ capacity: number;
 }
@@ -373,8 +377,38 @@ const RAPTOR_RAW: readonly RawLevel[] = [
 
 export const RAPTOR_LEVELS: readonly BuildingLevel[] = RAPTOR_RAW.map(toLevel);
 
-// ⚠ Source partielle : niveaux 1, 5 et 13 à 20 non communiqués.
+const WALL_RAW: readonly RawLevel[] = [
+  [1, '2 min', 2, 120, 85, 45, 55],
+  [2, '7 min', 2, 540, 510, 251, 231],
+  [3, '10 min', 2, 959, 910, 510, 411],
+  [4, '17 min', 2, 1404, 1310, 910, 602],
+  [5, '29 min', 2, 1977, 1830, 1310, 910],
+  [6, '47 min', 3, 2674, 2470, 1830, 1310],
+  [7, '1 h 16 min', 3, 3495, 3210, 2470, 1830],
+  [8, '2 h 5 min', 3, 4432, 4100, 3210, 2410],
+  [9, '3 h 27 min', 3, 5533, 5020, 4100, 3210],
+  [10, '5 h 42 min', 3, 6987, 6290, 5020, 4100],
+  [11, '10 h 22 min', 3, 8808, 7830, 6290, 5020],
+  [12, '18 h 53 min', 3, 11118, 9790, 7830, 6290],
+  [13, '1 j 10 h 23 min', 4, 14034, 12240, 9790, 7830],
+  [14, '2 j 14 h 37 min', 4, 17712, 15300, 12240, 9790],
+  [15, '4 j 18 h', 4, 23675, 19120, 15300, 12240],
+  [16, '6 j 6 h 25 min', 4, 30193, 25850, 19120, 15300],
+  [17, '8 j 6 h 29 min', 4, 46775, 33411, 25850, 20046],
+  [18, '10 j 21 h 54 min', 4, 69444, 49603, 32242, 29762],
+  [19, '14 j 9 h 35 min', 4, 99944, 71389, 46403, 42833],
+  [20, '19 j', 4, 140000, 100000, 65000, 60000],
+];
+
+// Défense : +2,5 %/niv. (50 % au niveau 20).
+export const WALL_LEVELS: readonly WallLevel[] = WALL_RAW.map((raw) => {
+  const base = toLevel(raw);
+  return { ...base, defense: base.level * 2.5 };
+});
+
+// ⚠ Source partielle : niveaux 5 et 13 à 20 non communiqués.
 const COMMERCE_RAW: readonly RawLevel[] = [
+  [1, '4 min', 2, 120, 85, 45, 55], // habitants non affichés en jeu : 2 repris de l'Hôpital (grille identique)
   [2, '7 min', 2, 540, 510, 251, 231],
   [3, '10 min', 2, 959, 910, 510, 411],
   [4, '17 min', 2, 1404, 1310, 910, 602],

@@ -22,6 +22,8 @@ import {
   StorageLevel,
   RAPTOR_LEVELS,
   COMMERCE_LEVELS,
+  WALL_LEVELS,
+  WallLevel,
   HIGH_COUNCIL_LEVELS,
   CouncilLevel,
 } from './buildings.data';
@@ -33,6 +35,7 @@ export type BuildingId =
   | 'chunnin'
   | 'jounin'
   | 'watchtower'
+  | 'wall'
   | 'hospital'
   | 'mine'
   | 'resourceDepot'
@@ -154,6 +157,17 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
     ],
     rows: WATCHTOWER_LEVELS,
   } satisfies BuildingGuide<WatchtowerLevel>,
+  {
+    id: 'wall',
+    label: "Mur d'enceinte",
+    icon: 'fa-shield',
+    columns: [
+      levelColumn,
+      { header: 'Défense', headerClass: 'text-sky-300', cellClass: 'text-sky-300 font-semibold', value: (r) => `${r.defense.toFixed(2)}%` },
+      ...costColumns,
+    ],
+    rows: WALL_LEVELS,
+  } satisfies BuildingGuide<WallLevel>,
   {
     id: 'hospital',
     label: 'Hôpital',

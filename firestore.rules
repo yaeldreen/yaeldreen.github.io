@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Règles de sécurité Firestore pour « Infos ennemis ».
+// À coller dans la console Firebase : Firestore Database → Règles → Publier.
+//
+// Lecture et écriture ouvertes à tous (choix assumé : données non sensibles).
+// Seule la forme des données est contrôlée, pour éviter le contenu mal formé.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isTroopCount(value) {
+      return value is int && value >= 0;
+    }
+
+    function isValidRecord(data) {
+      return data.keys().hasOnly(['player', 'troops', 'side', 'updatedAt'])
+        && data.player is string && data.player.size() > 0 && data.player.size() <= 64
+        && isTroopCount(data.troops.genin)
+        && isTroopCount(data.troops.chuunin)
+        && isTroopCount(data.troops.jounin)
+        && (data.side == null || data.side in ['Assaillant', 'Défenseur'])
+        && data.updatedAt is string;
+    }
+
+    function isName(value) {
+      return value is string && value.size() > 0 && value.size() <= 64;
+    }
+
+    function isValidPlayer(data) {
+      return data.keys().hasOnly(['name', 'village', 'clan'])
+        && isName(data.name)
+        && data.village is string && data.village.size() <= 64
+        && (data.clan == null || isName(data.clan));
+    }
+
+    match /enemies/{player} {
+      allow read, delete: if true;
+      allow create, update: if isValidRecord(request.resource.data);
+    }
+
+    match /players/{player} {
+      allow read, delete: if true;
+      allow create, update: if isValidPlayer(request.resource.data);
+    }
+
+    match /clans/{clan} {
+      allow read, delete: if true;
+      allow create, update: if request.resource.data.keys().hasOnly(['name']) && isName(request.resource.data.name);
+    }
+
+    // Témoin de la copie initiale des joueurs : créé une seule fois, jamais modifié.
+    match /meta/seed {
+      allow read, create: if true;
+    }
+  }
+}

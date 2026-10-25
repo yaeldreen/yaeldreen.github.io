@@ -22,5 +22,10 @@ export const routes: Routes = [
     title: 'Simulation Construction',
     loadComponent: () => import('./features/simulation/simulation-page').then((m) => m.SimulationPage),
   },
+  {
+    path: 'ennemis',
+    title: 'Infos Ennemis',
+    loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),
+  },
   { path: '**', redirectTo: 'retour' },
 ];

@@ -19,5 +19,6 @@ export class App {
     { path: '/pillage', label: 'Pillage Ressources', icon: 'fa-coins' },
     { path: '/batiments', label: 'Guide Bâtiments', icon: 'fa-hammer' },
     { path: '/simulation', label: 'Simulation Construction', icon: 'fa-helmet-safety' },
+    { path: '/ennemis', label: 'Infos Ennemis', icon: 'fa-user-secret' },
   ];
 }

@@ -1,0 +1,259 @@
+@let status = store.status();
+@if (status !== 'ready' || store.error()) {
+  <app-card class="p-4">
+    @switch (status) {
+      @case ('unconfigured') {
+        <p class="text-xs text-amber-300">Base partagée non configurée : renseignez la configuration web Firebase dans core/firebase.ts.</p>
+      }
+      @case ('loading') {
+        <p class="text-xs text-stone-400">Connexion à la base partagée…</p>
+      }
+    }
+    @if (store.error(); as error) {
+      <p class="text-xs text-rose-300">{{ error }}</p>
+    }
+  </app-card>
+}
+
+<app-card class="p-6">
+  <div class="flex flex-wrap items-center justify-between gap-3 border-b border-stone-800 pb-3 mb-4">
+    <h2 class="font-semibold text-stone-200 flex items-center">
+      <i class="fa-solid fa-camera text-red-400 mr-2"></i> Ajouter un rapport de combat
+    </h2>
+    <button type="button" (click)="manualEntry()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3.5 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">
+      Saisie manuelle
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <label
+      class="flex flex-col items-center justify-center text-center rounded-xl border-2 border-dashed p-6 min-h-40 cursor-pointer transition"
+      [class]="dragging() ? 'border-red-500 bg-red-950/30' : 'border-stone-700 hover:border-red-700 bg-stone-950/40'"
+      (dragover)="$event.preventDefault(); dragging.set(true)"
+      (dragleave)="dragging.set(false)"
+      (drop)="onDrop($event)"
+    >
+      @if (imageUrl(); as url) {
+        <img [src]="url" alt="Capture du rapport" class="max-h-56 rounded-lg border border-stone-800" />
+      } @else {
+        <i class="fa-solid fa-image text-3xl text-stone-600 mb-3"></i>
+        <span class="text-sm text-stone-300">Collez la capture (Ctrl+V / Cmd+V), glissez-la ici ou cliquez pour la choisir</span>
+        <span class="text-xs text-stone-500 mt-1">Section Assaillant ou Défenseur, avec les lignes Ninjas et Tués</span>
+      }
+      <input type="file" accept="image/*" class="hidden" #imageInput (change)="onFilePicked(imageInput)" />
+    </label>
+
+    <div>
+      @if (reading()) {
+        <div class="h-full flex items-center justify-center text-sm text-stone-300">
+          <i class="fa-solid fa-spinner fa-spin text-red-400 mr-2"></i> Lecture de la capture…
+        </div>
+      } @else if (draft(); as d) {
+        <div class="space-y-4">
+          @if (sections().length > 1) {
+            <div class="flex flex-wrap gap-2">
+              @for (section of sections(); track $index) {
+                <button
+                  type="button"
+                  (click)="selectSection($index)"
+                  class="px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer border"
+                  [class]="sectionIndex() === $index ? 'bg-red-800 text-white border-red-700' : 'bg-stone-900 text-stone-300 border-stone-700 hover:border-red-700'"
+                >
+                  {{ sectionLabel(section) }}
+                </button>
+              }
+            </div>
+          }
+          @if (readWarning(); as warning) {
+            <p class="text-xs text-amber-300 bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5">{{ warning }}</p>
+          }
+          <div>
+            <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
+              Joueur @if (d.side) { <span class="normal-case text-stone-500">({{ d.side }})</span> }
+            </label>
+            <input
+              [ngModel]="d.player"
+              (ngModelChange)="setPlayer($event)"
+              list="known-players"
+              class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+            />
+            <datalist id="known-players">
+              @for (p of knownPlayers(); track p.name) {
+                <option [value]="p.name">{{ p.village }}</option>
+              }
+            </datalist>
+            <p class="text-[11px] mt-1" [class]="draftMatch() && !isOwnClan() ? 'text-stone-500' : 'text-amber-400'">
+              @if (d.village) { Lu : « {{ d.village }} » · }
+              @if (isOwnClan()) {
+                {{ draftMatch()!.player.name }} est de notre clan ({{ draftMatch()!.clan }}) : rapport non enregistré.
+              } @else if (draftMatch(); as m) {
+                {{ m.player.name }} — village {{ m.player.village }}, clan {{ m.clan }}
+              } @else {
+                Joueur absent des listes → tableau « Non classés »
+              }
+            </p>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-xs font-mono">
+              <thead>
+                <tr class="text-stone-400 uppercase">
+                  <th class="text-left py-1.5"></th>
+                  @for (t of troops; track t.key) {
+                    <th class="py-1.5 px-1">{{ t.label }}</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="pr-2 text-stone-300">Ninjas</td>
+                  @for (t of troops; track t.key) {
+                    <td class="px-1 py-1"><app-number-input [value]="d.ninjas[t.key]" (valueChange)="setCount('ninjas', t.key, $event)" [min]="0" /></td>
+                  }
+                </tr>
+                <tr>
+                  <td class="pr-2 text-stone-300">Tués</td>
+                  @for (t of troops; track t.key) {
+                    <td class="px-1 py-1"><app-number-input [value]="d.killed[t.key]" (valueChange)="setCount('killed', t.key, $event)" [min]="0" /></td>
+                  }
+                </tr>
+                @if (draftSurvivors(); as s) {
+                  <tr class="border-t border-stone-800">
+                    <td class="pr-2 pt-2 font-bold text-red-300">Restants</td>
+                    @for (t of troops; track t.key) {
+                      <td class="px-1 pt-2 text-center font-bold text-red-300">{{ formatNumber(s[t.key]) }}</td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="flex gap-2">
+            <button type="button" (click)="save()" [disabled]="!d.player.trim() || isOwnClan()" class="bg-red-800 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer flex-1 disabled:opacity-40 disabled:cursor-not-allowed">
+              Enregistrer
+            </button>
+            <button type="button" (click)="cancel()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3.5 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">Annuler</button>
+          </div>
+        </div>
+      } @else {
+        <div class="h-full flex items-center justify-center text-xs text-stone-500 text-center px-6">
+          Les valeurs lues apparaîtront ici pour vérification avant enregistrement. Restants = Ninjas − Tués.
+        </div>
+      }
+    </div>
+  </div>
+</app-card>
+
+<app-card class="p-4">
+  <details>
+    <summary class="text-xs font-medium text-stone-300 uppercase tracking-wider cursor-pointer select-none">
+      <i class="fa-solid fa-users-gear text-red-400 mr-1.5"></i> Gérer les clans et les joueurs
+    </summary>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+      <div class="space-y-2">
+        <span class="block text-xs text-stone-400">Ajouter un clan</span>
+        <div class="flex gap-2">
+          <input [ngModel]="newClan()" (ngModelChange)="newClan.set($event)" (keydown.enter)="addClan()" placeholder="Nom du clan" class="flex-1 bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700" />
+          <button type="button" (click)="addClan()" [disabled]="!newClan().trim()" class="bg-red-800 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Ajouter</button>
+        </div>
+        <span class="block text-[11px] text-stone-500">Pour supprimer un clan : bouton « Supprimer le clan » dans son tableau.</span>
+      </div>
+      <div class="space-y-2">
+        <span class="block text-xs text-stone-400">Ajouter un joueur</span>
+        <div class="flex flex-wrap gap-2">
+          <input [ngModel]="newPlayer().name" (ngModelChange)="setNewPlayer('name', $event)" placeholder="Joueur" class="flex-1 min-w-28 bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700" />
+          <input [ngModel]="newPlayer().village" (ngModelChange)="setNewPlayer('village', $event)" placeholder="Village" class="flex-1 min-w-28 bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700" />
+          <select [ngModel]="newPlayer().clan" (ngModelChange)="setNewPlayer('clan', $event)" class="bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700 cursor-pointer">
+            <option value="">{{ noClan }}</option>
+            @for (clan of clanChoices(); track clan) {
+              <option [value]="clan">{{ clan }}</option>
+            }
+          </select>
+          <button type="button" (click)="addPlayer()" [disabled]="!newPlayer().name.trim()" class="bg-red-800 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    @if (manageError(); as error) {
+      <p class="mt-3 text-xs text-amber-300">{{ error }}</p>
+    }
+  </details>
+</app-card>
+
+<app-card class="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+  <span class="text-xs font-medium text-stone-400 uppercase tracking-wider shrink-0">
+    <i class="fa-solid fa-filter text-red-400 mr-1.5"></i> Clan
+  </span>
+  <app-segmented-control [options]="clanOptions()" [(value)]="clanFilter" />
+</app-card>
+
+@for (table of visibleTables(); track table.name) {
+  <app-card class="overflow-hidden">
+    <div class="p-6 border-b border-stone-800 flex flex-wrap gap-3 justify-between items-center">
+      <h2 class="font-semibold text-stone-200 flex items-center">
+        <i class="fa-solid fa-people-group text-red-400 mr-2"></i> {{ table.name }}
+      </h2>
+      <div class="flex items-center gap-4">
+        <span class="text-xs text-stone-400">{{ table.rows.length }} joueurs</span>
+        @if (table.name !== noClan && table.name !== unlisted) {
+          <button type="button" (click)="removeClan(table.name)" class="text-xs text-stone-500 hover:text-rose-400 cursor-pointer">Supprimer le clan</button>
+        }
+      </div>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse font-mono text-xs">
+        <thead>
+          <tr class="border-b border-stone-800 text-stone-400 uppercase bg-stone-950/60">
+            <th class="py-3 px-4">Joueur</th>
+            <th class="py-3 px-4">Village</th>
+            @for (t of troops; track t.key) {
+              <th class="py-3 px-4 text-right">{{ t.label }}</th>
+            }
+            <th class="py-3 px-4">Mis à jour</th>
+            <th class="py-3 px-4">Clan</th>
+            <th class="py-3 px-4"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-800/60">
+          @for (row of table.rows; track row.player) {
+            <tr class="hover:bg-red-950/20 transition">
+              <td class="py-2.5 px-4 font-bold text-red-300">{{ row.player }}</td>
+              <td class="py-2.5 px-4 text-stone-400 font-sans">{{ row.village }}</td>
+              @for (t of troops; track t.key) {
+                <td class="py-2.5 px-4 text-right" [class]="row.record ? 'text-stone-200' : 'text-stone-600'">
+                  {{ row.record ? formatNumber(row.record.troops[t.key]) : '—' }}
+                </td>
+              }
+              <td class="py-2.5 px-4" [class]="row.record ? 'text-stone-400' : 'text-stone-600'">
+                {{ row.record ? formatDate(row.record.updatedAt) : 'Aucun rapport' }}
+              </td>
+              <td class="py-2 px-4">
+                @if (row.clan !== undefined) {
+                  <select
+                    [ngModel]="row.clan ?? ''"
+                    (ngModelChange)="movePlayer(row.player, $event)"
+                    class="bg-stone-950 border border-stone-800 rounded-lg px-2 py-1 text-stone-300 font-sans text-xs focus:outline-none focus:border-red-700 cursor-pointer"
+                  >
+                    <option value="">{{ noClan }}</option>
+                    @for (clan of clanChoices(); track clan) {
+                      <option [value]="clan">{{ clan }}</option>
+                    }
+                  </select>
+                }
+              </td>
+              <td class="py-2.5 px-4 text-right whitespace-nowrap font-sans space-x-3">
+                <button type="button" (click)="editArmy(row)" class="text-stone-400 hover:text-red-300 cursor-pointer">Modifier</button>
+                @if (row.record) {
+                  <button type="button" (click)="removeArmy(row.player)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Effacer l'armée</button>
+                }
+                @if (row.clan !== undefined) {
+                  <button type="button" (click)="removePlayer(row.player)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Supprimer</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-card>
+}
