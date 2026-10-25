@@ -13,7 +13,8 @@ let worker: Promise<Worker> | null = null;
 
 const getWorker = (): Promise<Worker> => {
   worker ??= import('tesseract.js')
-    .then(({ createWorker }) => createWorker('fra'))
+    // Paquet CommonJS : en build de production, les fonctions ne sont exposées que sur `default`.
+    .then((mod) => (mod.createWorker ?? (mod as unknown as { default: typeof mod }).default.createWorker)('fra'))
     .catch((e: unknown) => {
       // Un échec (réseau, mémoire…) ne doit pas bloquer les tentatives suivantes.
       worker = null;
