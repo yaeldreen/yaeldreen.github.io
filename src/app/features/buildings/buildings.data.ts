@@ -373,8 +373,9 @@ const RAPTOR_RAW: readonly RawLevel[] = [
 
 export const RAPTOR_LEVELS: readonly BuildingLevel[] = RAPTOR_RAW.map(toLevel);
 
-// ⚠ Source partielle : niveaux 1, 2, 5 et 13 à 20 non communiqués.
+// ⚠ Source partielle : niveaux 1, 5 et 13 à 20 non communiqués.
 const COMMERCE_RAW: readonly RawLevel[] = [
+  [2, '7 min', 2, 540, 510, 251, 231],
   [3, '10 min', 2, 959, 910, 510, 411],
   [4, '17 min', 2, 1404, 1310, 910, 602],
   [6, '47 min', 3, 2674, 2470, 1830, 1310],
