@@ -5,7 +5,7 @@ import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDateTime, formatDuration, toLocalIsoSeconds } from '../../shared/utils/format';
 import { readClipboardImage } from '../../shared/utils/clipboard';
-import { readReportImage } from '../enemies/report-ocr';
+import { ocrErrorDetail, readReportImage } from '../enemies/report-ocr';
 import {
   computeDistance,
   computeReturnRows,
@@ -207,8 +207,10 @@ export class TravelPage implements OnDestroy {
         attackedAt === null && "heure d'attaque",
       ].filter(Boolean);
       if (missing.length) this.readWarning.set(`Non lu dans la capture : ${missing.join(', ')}. Complétez à la main.`);
-    } catch {
-      this.readWarning.set('La lecture a échoué (connexion nécessaire au premier usage) : saisissez les valeurs à la main.');
+    } catch (e) {
+      this.readWarning.set(
+        `La lecture a échoué (connexion nécessaire au premier usage) : saisissez les valeurs à la main. Détail : ${ocrErrorDetail(e)}`,
+      );
     } finally {
       this.reading.set(false);
     }

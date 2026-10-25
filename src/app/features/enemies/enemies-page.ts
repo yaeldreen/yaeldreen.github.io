@@ -8,7 +8,7 @@ import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PlayerMatch } from 
 import { EnemiesStore } from './enemies-store';
 import { EnemyRecord, playerKey, ReportSide, survivors, TroopCounts, TROOPS, TroopKey } from './enemies.model';
 import { readClipboardImage } from '../../shared/utils/clipboard';
-import { readReportImage } from './report-ocr';
+import { ocrErrorDetail, readReportImage } from './report-ocr';
 import { ParsedReport, PartialCounts } from './report-parser';
 
 interface Draft {
@@ -272,8 +272,10 @@ export class EnemiesPage implements OnDestroy {
       // Par défaut, la première section qui n'est pas de notre clan.
       const enemy = sections.findIndex((s) => this.match(s.village)?.clan !== OWN_CLAN);
       this.selectSection(enemy < 0 ? 0 : enemy);
-    } catch {
-      this.readWarning.set('La lecture a échoué (connexion nécessaire au premier usage) : saisissez les valeurs à la main.');
+    } catch (e) {
+      this.readWarning.set(
+        `La lecture a échoué (connexion nécessaire au premier usage) : saisissez les valeurs à la main. Détail : ${ocrErrorDetail(e)}`,
+      );
       this.draft.set(this.emptyDraft());
     } finally {
       this.reading.set(false);
