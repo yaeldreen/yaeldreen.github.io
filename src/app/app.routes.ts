@@ -23,6 +23,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/simulation/simulation-page').then((m) => m.SimulationPage),
   },
   {
+    path: 'combat',
+    title: 'Simulation de Combat',
+    loadComponent: () => import('./features/combat/combat-page').then((m) => m.CombatPage),
+  },
+  {
     path: 'ennemis',
     title: 'Infos Ennemis',
     loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),

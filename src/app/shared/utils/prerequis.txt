@@ -1,0 +1,86 @@
+BuildTree
+Arbre des Constructions
+
+Quartier général
+Quartier général
+Le Quartier général est le bâtiment principal de votre village. Vous y retrouvez vos messages, les rapports de combat et les informations sur vos ninjas et leurs déplacements. Son amélioration permet de débloquer de nouveaux bâtiments.
+
+Prérequis : Aucun
+
+Académie
+Académie
+L’Académie est le lieu où l’on entraîne les Genins. Augmenter son niveau permet d’accroître les capacités d’entraînement et la puissance de vos Genins.
+
+Prérequis : Quartier général Lvl3, Camp d’entraînement Lvl1
+
+Élevage de rapaces
+Élevage de rapaces
+Élevage limité à 5 niveaux : pigeon messager (11 s/km), pigeon voyageur (8 s/km), aigle (4 s/km), aigle royal (1 s/km), puis un second aigle royal au niveau 5. Les oiseaux dressés sont réutilisables après leur aller-retour. Un pigeon gratuit assure toujours les messages sans élevage.
+
+Prérequis : Quartier général Lvl2
+
+Centre Chuunin
+Centre Chuunin
+Le Centre Chuunin est le lieu où l’on entraîne les Chuunins. Augmenter son niveau permet d’accroître les capacités d’entraînement et leur puissance.
+
+Prérequis : Quartier général Lvl6, Académie Lvl5
+
+Centre Jounin
+Centre Jounin
+Le Centre Jounin est le lieu où l’on entraîne les Jounins. Augmenter son niveau permet d’accroître les capacités d’entraînement et leur puissance.
+
+Prérequis : Quartier général Lvl12, Centre Chuunin Lvl5
+
+Haut Conseil
+Haut Conseil
+Le Haut Conseil accueille les sages du village. Il permet de rejoindre un clan ou d’en créer un et de développer les relations entre clans.
+
+Prérequis : Quartier général Lvl3
+
+Dépôt de nourriture
+Dépôt de nourriture
+Le dépôt de nourriture augmente la capacité maximale de stockage de votre nourriture. Plus son niveau est élevé, plus vous pouvez en stocker.
+
+Prérequis : Quartier général Lvl1
+
+Dépôt de ressources
+Dépôt de ressources
+Le dépôt de ressources augmente la capacité maximale de stockage de vos ressources. Plus son niveau est élevé, plus vous pouvez en stocker.
+
+Prérequis : Quartier général Lvl1
+
+Camp d’entraînement
+Camp d’entraînement
+Le camp d’entraînement prépare vos ninjas. Augmenter son niveau améliore leur vitesse de déplacement.
+
+Prérequis : Quartier général Lvl3
+
+Mur d’enceinte
+Mur d’enceinte
+Le mur d’enceinte renforce la défense de votre village. Son amélioration augmente son efficacité défensive.
+
+Prérequis : Quartier général Lvl1
+
+Commerces
+Commerces
+Organisez des expéditions marchandes escortées par vos ninjas et échangez des ressources avec les joueurs. Les niveaux supérieurs débloquent de meilleures routes et davantage de caravanes.
+
+Prérequis : Quartier général Lvl5
+
+Réserve
+Réserve
+La réserve protège une partie de vos ressources en cas de pillage. Plus son niveau est élevé, plus elle permet de protéger de ressources.
+
+Prérequis : Quartier général Lvl1
+
+Tour de garde
+Tour de garde
+La tour de garde permet de surveiller les alentours du village et d’obtenir des informations sur les troupes qui approchent.
+
+Prérequis : Quartier général Lvl15, Centre Jounin Lvl10, Mur d’enceinte Lvl8
+
+Hôpital
+Hôpital
+Soigne une partie de vos pertes au combat pendant 24 heures.
+
+Prérequis : Académie Lvl1

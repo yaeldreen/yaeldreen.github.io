@@ -1,0 +1,137 @@
+@let r = result();
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+  @for (side of sides(); track side.id) {
+    <app-card class="p-6 space-y-5">
+      <div class="border-b border-stone-800 pb-3 flex justify-between items-center">
+        <h2 class="font-semibold text-stone-200 flex items-center">
+          <i class="fa-solid {{ side.icon }} {{ side.color }} mr-2"></i> {{ side.title }}
+        </h2>
+        <span class="text-xs text-stone-400">
+          Force <span class="font-mono font-bold {{ side.color }}">{{ power(side.stats.strength) }}</span>
+        </span>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3">
+        @for (troop of troopTypes; track troop.key) {
+          <div>
+            <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ troop.label }}</label>
+            <app-number-input
+              [value]="side.form.troops[troop.key]"
+              (valueChange)="setTroop(side.id, troop.key, $event)"
+              [min]="0"
+              placeholder="0"
+            />
+            <p class="text-[11px] text-stone-500 mt-1">
+              Puissance <span class="font-mono text-stone-300">{{ power(side.stats.unitPower[troop.key]) }}</span>
+              (+{{ side.stats.bonus[troop.key] }} %)
+            </p>
+          </div>
+        }
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 border-t border-stone-800 pt-5">
+        @for (field of side.fields; track field.key) {
+          <div>
+            <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
+              <i class="fa-solid {{ field.icon }} text-red-400 mr-1.5"></i> {{ field.label }}
+            </label>
+            <app-number-input
+              [value]="side.form.levels[field.key]"
+              (valueChange)="setLevel(side.id, field.key, $event)"
+              [min]="0"
+              [max]="levelMax"
+              placeholder="0"
+            />
+          </div>
+        }
+      </div>
+    </app-card>
+  }
+</div>
+
+<app-card class="p-6 space-y-6">
+  <div class="flex justify-between items-center border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200 flex items-center">
+      <i class="fa-solid fa-scale-balanced text-red-400 mr-2"></i> Résultat estimé
+    </h2>
+    @if (r.ratio !== null) {
+      <span
+        class="px-3 py-1 rounded-xl text-sm font-bold border"
+        [class]="r.attackerWins ? 'bg-red-700/10 text-red-300 border-red-700/30' : 'bg-emerald-700/10 text-emerald-300 border-emerald-700/30'"
+      >
+        {{ r.attackerWins ? 'Avantage assaillant' : 'Avantage défenseur' }}
+      </span>
+    }
+  </div>
+
+  @if (r.ratio === null) {
+    <p class="text-sm text-stone-400">Renseignez l'armée de l'assaillant.</p>
+  } @else {
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+        <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Défense / Attaque</span>
+        <span class="text-xl font-bold font-mono text-stone-100">{{ r.ratio.toFixed(3).replace('.', ',') }}</span>
+      </div>
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+        <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Pertes assaillant</span>
+        <span class="text-xl font-bold font-mono text-red-300">{{ percent(r.attackerLossRate) }}</span>
+      </div>
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+        <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Pertes défenseur</span>
+        <span class="text-xl font-bold font-mono text-emerald-300">{{ r.defenderLosses ? defenderRangePct : '?' }}</span>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-stone-400 uppercase tracking-wider border-b border-stone-800">
+            <th class="text-left py-2 pr-4 font-medium">Tués</th>
+            @for (troop of troopTypes; track troop.key) {
+              <th class="text-right py-2 px-4 font-medium">{{ troop.label }}</th>
+            }
+            <th class="text-right py-2 pl-4 font-medium">Points gagnés par l'adversaire</th>
+          </tr>
+        </thead>
+        <tbody class="font-mono">
+          <tr class="border-b border-stone-800/60">
+            <td class="py-2 pr-4 font-sans text-red-300 font-semibold">Assaillant</td>
+            @for (troop of troopTypes; track troop.key) {
+              <td class="text-right py-2 px-4 text-stone-200">{{ formatNumber(r.attackerLosses[troop.key]) }}</td>
+            }
+            <td class="text-right py-2 pl-4 text-emerald-300">+{{ formatNumber(r.defenderPoints) }}</td>
+          </tr>
+          <tr>
+            <td class="py-2 pr-4 font-sans text-emerald-300 font-semibold">Défenseur</td>
+            @if (r.defenderLosses; as d) {
+              @for (troop of troopTypes; track troop.key) {
+                <td class="text-right py-2 px-4 text-stone-200">
+                  {{ formatNumber(d.min[troop.key]) }} – {{ formatNumber(d.max[troop.key]) }}
+                </td>
+              }
+              <td class="text-right py-2 pl-4 text-red-300">
+                +{{ formatNumber(r.attackerPoints!.min) }} – {{ formatNumber(r.attackerPoints!.max) }}
+              </td>
+            } @else {
+              <td colspan="4" class="text-right py-2 pl-4 font-sans text-stone-500">Inconnu (aucun rapport dans ce cas)</td>
+            }
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <div class="bg-red-950/20 border border-red-700/20 rounded-xl p-3.5 text-xs text-red-300 flex space-x-3">
+    <i class="fa-solid fa-circle-info text-red-400 text-base mt-0.5"></i>
+    <span>
+      Formules provisoires, déduites de quelques rapports. Puissance de base 10 / 40 / 60, bonus additionnés
+      (Camp d'entraînement + centre du type de troupe, + Mur en défense). L'assaillant perd {{ lossFactorPct }} % ×
+      (défense / attaque) de chaque type ; le défenseur perd {{ defenderRangePct }} quand l'assaillant est plus fort.
+      Points : 1 / 5 / 10 par Genin / Chuunin / Jounin tué.
+    </span>
+  </div>
+
+  <button type="button" (click)="reset()" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">
+    Tout remettre à zéro
+  </button>
+</app-card>
