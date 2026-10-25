@@ -15,11 +15,11 @@ interface NavTab {
 })
 export class App {
   protected readonly tabs: readonly NavTab[] = [
-    { path: '/retour', label: 'Calcul Retour', icon: 'fa-route' },
-    { path: '/pillage', label: 'Pillage Ressources', icon: 'fa-coins' },
-    { path: '/batiments', label: 'Guide Bâtiments', icon: 'fa-hammer' },
-    { path: '/simulation', label: 'Simulation Construction', icon: 'fa-helmet-safety' },
-    { path: '/combat', label: 'Simulation de Combat', icon: 'fa-khanda' },
-    { path: '/ennemis', label: 'Infos Ennemis', icon: 'fa-user-secret' },
+    { path: '/retour', label: 'Retours', icon: 'fa-route' },
+    { path: '/pillage', label: 'Pillages', icon: 'fa-coins' },
+    { path: '/batiments', label: 'BuildGuide', icon: 'fa-hammer' },
+    { path: '/simulation', label: 'Simu constru', icon: 'fa-helmet-safety' },
+    { path: '/combat', label: 'Simu combat', icon: 'fa-khanda' },
+    { path: '/ennemis', label: 'infos enemis', icon: 'fa-user-secret' },
   ];
 }
