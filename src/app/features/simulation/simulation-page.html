@@ -1,0 +1,140 @@
+@let p = plan();
+@let i = input();
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+  <app-card class="lg:col-span-4 p-6 space-y-5">
+    <div class="border-b border-slate-800 pb-3">
+      <h2 class="font-semibold text-slate-200 flex items-center">
+        <i class="fa-solid fa-sliders text-indigo-400 mr-2"></i> Paramètres
+      </h2>
+      <p class="text-xs text-slate-400 mt-1">Bâtiment à améliorer et niveaux actuels de vos dépôts.</p>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+        <i class="fa-solid fa-building text-indigo-400 mr-1.5"></i> Bâtiment
+      </label>
+      <select
+        [ngModel]="buildingId()"
+        (ngModelChange)="buildingId.set($event)"
+        class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-slate-100 text-sm focus:outline-none focus:border-indigo-500 cursor-pointer"
+      >
+        @for (guide of guides; track guide.id) {
+          <option [value]="guide.id">{{ guide.label }}</option>
+        }
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Niveau actuel</label>
+        <app-number-input [(value)]="currentLevel" [min]="0" [max]="maxLevel() - 1" />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Niveau visé</label>
+        <app-number-input [(value)]="targetLevel" [min]="i.currentLevel + 1" [max]="maxLevel()" />
+      </div>
+    </div>
+    <p class="text-[11px] text-slate-500 -mt-2">Calcul : niveau {{ i.currentLevel }} → {{ i.targetLevel }} (max {{ maxLevel() }}).</p>
+
+    <div class="grid grid-cols-2 gap-4 border-t border-slate-800 pt-5">
+      <div>
+        <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-warehouse text-amber-400 mr-1.5"></i> Dépôt ressources
+        </label>
+        @if (isResourceDepot()) {
+          <p class="text-xs text-slate-500 py-2.5">= niveau actuel</p>
+        } @else {
+          <app-number-input [(value)]="resourceDepotLevel" [min]="1" [max]="depotMax" />
+        }
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-wheat-awn text-rose-400 mr-1.5"></i> Dépôt nourriture
+        </label>
+        @if (isFoodDepot()) {
+          <p class="text-xs text-slate-500 py-2.5">= niveau actuel</p>
+        } @else {
+          <app-number-input [(value)]="foodDepotLevel" [min]="1" [max]="depotMax" />
+        }
+      </div>
+    </div>
+
+    <div class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300 flex space-x-3">
+      <i class="fa-solid fa-circle-info text-indigo-400 text-base mt-0.5"></i>
+      <span>
+        Chaque coût (pierre, bois, fer) doit tenir dans la capacité du Dépôt de ressources, la nourriture dans celle du
+        Dépôt de nourriture. Les constructions sont faites l'une après l'autre.
+      </span>
+    </div>
+  </app-card>
+
+  <div class="lg:col-span-8 space-y-6">
+    <app-card class="p-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4">
+          <span class="text-xs text-slate-400 block uppercase tracking-wider font-medium">Temps total</span>
+          <span class="text-xl font-bold font-mono text-indigo-300">{{ formatDuration(p.totalSeconds) }}</span>
+        </div>
+        <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4">
+          <span class="text-xs text-slate-400 block uppercase tracking-wider font-medium">Constructions</span>
+          <span class="text-xl font-bold font-mono text-slate-100">{{ p.steps.length }}</span>
+          <span class="text-xs text-slate-500 block">dont {{ storageStepCount() }} de dépôts</span>
+        </div>
+        <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4">
+          <span class="text-xs text-slate-400 block uppercase tracking-wider font-medium">Temps dépôts</span>
+          <span class="text-xl font-bold font-mono text-amber-300">{{ formatDuration(p.storageSeconds) }}</span>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-4">
+        @for (resource of resources; track resource.key) {
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-lg border flex items-center justify-center" [class]="resource.iconBoxClass">
+              <i class="fa-solid {{ resource.icon }}"></i>
+            </div>
+            <div>
+              <span class="text-[11px] text-slate-400 block uppercase tracking-wider">{{ resource.label }}</span>
+              <span class="text-sm font-bold font-mono" [class]="resource.valueClass">{{ formatNumber(p.totals[resource.key]) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (p.blocker) {
+        <div class="mt-4 bg-rose-950/30 border border-rose-500/30 rounded-xl p-3.5 text-xs text-rose-300 flex items-center space-x-3">
+          <i class="fa-solid fa-triangle-exclamation text-rose-400 text-base"></i>
+          <span>Plan incomplet : {{ p.blocker }}</span>
+        </div>
+      }
+    </app-card>
+
+    <app-card class="p-6">
+      <h2 class="font-semibold text-slate-200 flex items-center border-b border-slate-800 pb-3 mb-4">
+        <i class="fa-solid fa-list-ol text-indigo-400 mr-2"></i> Ordre des constructions
+      </h2>
+      <ol class="space-y-3">
+        @for (step of p.steps; track $index) {
+          <li
+            class="rounded-xl border p-4"
+            [class]="step.isStorage ? 'border-amber-500/30 bg-amber-950/10' : 'border-indigo-500/30 bg-indigo-950/20'"
+          >
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <span class="w-7 h-7 rounded-lg bg-slate-800 text-slate-300 text-xs font-mono flex items-center justify-center">{{ $index + 1 }}</span>
+                <span class="font-semibold text-sm" [class]="step.isStorage ? 'text-amber-300' : 'text-indigo-300'">{{ step.label }}</span>
+                <span class="text-xs font-mono text-slate-400">niv. {{ step.level - 1 }} → {{ step.level }}</span>
+              </div>
+              <span class="text-xs font-mono text-slate-300"><i class="fa-solid fa-clock text-slate-500 mr-1"></i>{{ formatDuration(step.seconds) }}</span>
+            </div>
+            <p class="text-xs text-slate-300 mt-2">{{ step.explanation }}</p>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] font-mono">
+              @for (resource of resources; track resource.key) {
+                <span [class]="resource.cellClass">{{ resource.label }} {{ formatNumber(step.row[resource.key]) }}</span>
+              }
+            </div>
+          </li>
+        }
+      </ol>
+    </app-card>
+  </div>
+</div>

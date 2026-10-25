@@ -1,0 +1,59 @@
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+  <app-card class="md:col-span-5 p-6 space-y-5">
+    <div class="border-b border-slate-800 pb-3">
+      <h2 class="font-semibold text-slate-200 flex items-center">
+        <i class="fa-solid fa-users-gear text-indigo-400 mr-2"></i> Composition des Troupes
+      </h2>
+      <p class="text-xs text-slate-400 mt-1">Indiquez le nombre de combattants.</p>
+    </div>
+
+    @for (troop of troops(); track troop.id) {
+      <div>
+        <div class="flex justify-between items-center mb-1.5">
+          <span class="text-xs font-medium text-slate-300 flex items-center">
+            <span class="w-2.5 h-2.5 rounded-full mr-2" [class]="troop.dotClass"></span>
+            {{ troop.label }} <span class="text-slate-500 ml-1 text-[11px]">(cap: {{ troop.capacity }})</span>
+          </span>
+          <span class="text-xs font-mono" [class]="troop.textClass">{{ formatNumber(troop.max) }} max</span>
+        </div>
+        <app-number-input [value]="troop.count" (valueChange)="setCount(troop.id, $event)" [min]="0" placeholder="0" />
+      </div>
+    }
+
+    <button type="button" (click)="reset()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-xl text-xs font-medium transition border border-slate-700 cursor-pointer">
+      Réinitialiser les troupes
+    </button>
+  </app-card>
+
+  <app-card class="md:col-span-7 p-6 flex flex-col justify-between space-y-6">
+    <div>
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-6">
+        <h2 class="font-semibold text-slate-200 flex items-center">
+          <i class="fa-solid fa-boxes-stacked text-indigo-400 mr-2"></i> Capacité Totale de Pillage
+        </h2>
+        <span class="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-3 py-1 rounded-xl text-sm font-mono font-bold">
+          {{ formatNumber(totalCapacity()) }} unités max
+        </span>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        @for (resource of resources; track resource.key) {
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-4 flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl border flex items-center justify-center text-xl" [class]="resource.iconBoxClass">
+              <i class="fa-solid {{ resource.icon }}"></i>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block uppercase tracking-wider font-medium">{{ resource.label }}</span>
+              <span class="text-xl font-bold font-mono" [class]="resource.valueClass">{{ formatNumber(totalCapacity()) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bg-indigo-950/20 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300 flex items-center space-x-3">
+      <i class="fa-solid fa-circle-info text-indigo-400 text-base"></i>
+      <span>Formule : (Genin × 13) + (Chunin × 26) + (Jounin × 53) pour chaque ressource.</span>
+    </div>
+  </app-card>
+</div>
