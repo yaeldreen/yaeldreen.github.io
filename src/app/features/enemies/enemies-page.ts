@@ -7,6 +7,7 @@ import { formatNumber } from '../../shared/utils/format';
 import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PlayerMatch } from './clans.data';
 import { EnemiesStore } from './enemies-store';
 import { EnemyRecord, playerKey, ReportSide, survivors, TroopCounts, TROOPS, TroopKey } from './enemies.model';
+import { readClipboardImage } from '../../shared/utils/clipboard';
 import { readReportImage } from './report-ocr';
 import { ParsedReport, PartialCounts } from './report-parser';
 
@@ -65,6 +66,7 @@ export class EnemiesPage implements OnDestroy {
   /** Message affiché quand la capture n'a pas pu être lue entièrement. */
   protected readonly readWarning = signal<string | null>(null);
   protected readonly dragging = signal(false);
+  protected readonly pasteError = signal<string | null>(null);
 
   protected readonly draftSurvivors = computed(() => {
     const d = this.draft();
@@ -128,6 +130,18 @@ export class EnemiesPage implements OnDestroy {
     this.dragging.set(false);
     const file = event.dataTransfer?.files[0];
     if (file?.type.startsWith('image/')) void this.analyze(file);
+  }
+
+  /** Bouton « Coller » : indispensable sur iPhone, où le collage clavier n'atteint pas la page. */
+  protected async pasteFromClipboard(): Promise<void> {
+    this.pasteError.set(null);
+    try {
+      const image = await readClipboardImage();
+      if (image) void this.analyze(image);
+      else this.pasteError.set("Le presse-papiers ne contient pas d'image : copiez d'abord la capture du rapport.");
+    } catch {
+      this.pasteError.set('Accès au presse-papiers impossible : touchez la zone pour choisir la capture dans vos photos.');
+    }
   }
 
   protected onFilePicked(input: HTMLInputElement): void {
@@ -241,6 +255,7 @@ export class EnemiesPage implements OnDestroy {
   }
 
   private async analyze(file: Blob): Promise<void> {
+    this.pasteError.set(null);
     this.setImage(URL.createObjectURL(file));
     this.reading.set(true);
     this.readWarning.set(null);

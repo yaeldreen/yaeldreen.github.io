@@ -4,6 +4,7 @@ import { Card } from '../../shared/ui/card';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDateTime, formatDuration, toLocalIsoSeconds } from '../../shared/utils/format';
+import { readClipboardImage } from '../../shared/utils/clipboard';
 import { readReportImage } from '../enemies/report-ocr';
 import {
   computeDistance,
@@ -75,6 +76,7 @@ export class TravelPage implements OnDestroy {
   protected readonly reading = signal(false);
   protected readonly readWarning = signal<string | null>(null);
   protected readonly dragging = signal(false);
+  protected readonly pasteError = signal<string | null>(null);
 
   protected readonly distance = computed(() => {
     const mode = this.distanceMode();
@@ -164,6 +166,18 @@ export class TravelPage implements OnDestroy {
     if (file?.type.startsWith('image/')) void this.analyze(file);
   }
 
+  /** Bouton « Coller » : indispensable sur iPhone, où le collage clavier n'atteint pas la page. */
+  protected async pasteFromClipboard(): Promise<void> {
+    this.pasteError.set(null);
+    try {
+      const image = await readClipboardImage();
+      if (image) void this.analyze(image);
+      else this.pasteError.set("Le presse-papiers ne contient pas d'image : copiez d'abord la capture du rapport.");
+    } catch {
+      this.pasteError.set('Accès au presse-papiers impossible : touchez la zone pour choisir la capture dans vos photos.');
+    }
+  }
+
   protected onFilePicked(input: HTMLInputElement): void {
     const file = input.files?.[0];
     input.value = '';
@@ -176,6 +190,7 @@ export class TravelPage implements OnDestroy {
   }
 
   private async analyze(file: Blob): Promise<void> {
+    this.pasteError.set(null);
     this.setImage(URL.createObjectURL(file));
     this.reading.set(true);
     this.readWarning.set(null);

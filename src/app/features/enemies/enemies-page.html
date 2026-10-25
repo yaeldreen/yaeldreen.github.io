@@ -40,6 +40,16 @@
         <span class="text-sm text-stone-300">Collez la capture (Ctrl+V / Cmd+V), glissez-la ici ou cliquez pour la choisir</span>
         <span class="text-xs text-stone-500 mt-1">Section Assaillant ou Défenseur, avec les lignes Ninjas et Tués</span>
       }
+      <button
+        type="button"
+        (click)="$event.preventDefault(); $event.stopPropagation(); pasteFromClipboard()"
+        class="mt-3 bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer"
+      >
+        📋 Coller la capture
+      </button>
+      @if (pasteError(); as error) {
+        <span class="text-xs text-amber-300 mt-2">{{ error }}</span>
+      }
       <input type="file" accept="image/*" class="hidden" #imageInput (change)="onFilePicked(imageInput)" />
     </label>
 
