@@ -101,6 +101,24 @@ export function parseReport(lines: readonly (readonly OcrWord[])[]): ParsedRepor
     });
 }
 
+/**
+ * Heure du titre « Rapport de l’attaque | 25/10 à 06h11 » (heure locale, secondes à 0).
+ * Le rapport n'indique pas l'année : on prend celle de `now`, ou la précédente si la date tomberait dans le futur.
+ */
+export function parseReportTime(lines: readonly (readonly OcrWord[])[], now = new Date()): number | null {
+  for (const line of lines) {
+    const text = line.map((w) => w.text).join(' ');
+    if (!norm(text).includes('rapport')) continue;
+    const m = /(\d{1,2})\s*\/\s*(\d{1,2})\D+?(\d{1,2})\s*h\s*(\d{2})/.exec(text.replace(/[oO](?=\d)|(?<=\d)[oO]/g, '0'));
+    if (!m) continue;
+    const [day, month, hours, minutes] = m.slice(1).map(Number);
+    const at = (year: number) => new Date(year, month - 1, day, hours, minutes).getTime();
+    const time = at(now.getFullYear());
+    return time > now.getTime() + 86_400_000 ? at(now.getFullYear() - 1) : time;
+  }
+  return null;
+}
+
 function readRow(row: readonly OcrWord[] | null, columns: Record<TroopKey, number> | null): PartialCounts {
   const result: PartialCounts = { genin: null, chuunin: null, jounin: null };
   if (!row) return result;

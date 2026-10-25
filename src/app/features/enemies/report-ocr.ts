@@ -1,5 +1,10 @@
 import type { Worker } from 'tesseract.js';
-import { OcrWord, ParsedReport, parseReport } from './report-parser';
+import { OcrWord, ParsedReport, parseReport, parseReportTime } from './report-parser';
+
+export interface ReadReport {
+  sections: ParsedReport[];
+  /** Heure du titre du rapport (ms), null si illisible. */ attackedAt: number | null;
+}
 
 let worker: Promise<Worker> | null = null;
 
@@ -8,7 +13,7 @@ let worker: Promise<Worker> | null = null;
  * La bibliothèque n'est chargée qu'au premier appel ; le moteur et le modèle de langue sont
  * téléchargés une fois, l'image elle-même n'est envoyée nulle part.
  */
-export async function readReportImage(image: Blob): Promise<ParsedReport[]> {
+export async function readReportImage(image: Blob): Promise<ReadReport> {
   worker ??= import('tesseract.js').then(({ createWorker }) => createWorker('fra'));
   const { data } = await (await worker).recognize(image, {}, { blocks: true });
 
@@ -19,5 +24,5 @@ export async function readReportImage(image: Blob): Promise<ParsedReport[]> {
       ),
     ),
   );
-  return parseReport(lines);
+  return { sections: parseReport(lines), attackedAt: parseReportTime(lines) };
 }

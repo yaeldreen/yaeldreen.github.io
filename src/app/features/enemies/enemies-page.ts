@@ -247,7 +247,7 @@ export class EnemiesPage implements OnDestroy {
     this.draft.set(null);
     this.sections.set([]);
     try {
-      const sections = await readReportImage(file);
+      const { sections } = await readReportImage(file);
       this.sections.set(sections);
       if (!sections.length) {
         this.readWarning.set('Rapport non reconnu : complétez les champs à la main.');

@@ -17,6 +17,62 @@
         </div>
         <app-number-input [(value)]="manualDistance" [step]="0.5" [min]="0" placeholder="Ex: 5" />
       </div>
+    } @else if (distanceMode() === 'report') {
+      <div class="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6 bg-stone-950/40 p-4 rounded-xl border border-stone-800/80">
+        <label
+          class="flex flex-col items-center justify-center text-center rounded-xl border-2 border-dashed p-6 min-h-40 cursor-pointer transition"
+          [class]="dragging() ? 'border-red-500 bg-red-950/30' : 'border-stone-700 hover:border-red-700 bg-stone-950/40'"
+          (dragover)="$event.preventDefault(); dragging.set(true)"
+          (dragleave)="dragging.set(false)"
+          (drop)="onDrop($event)"
+        >
+          @if (imageUrl(); as url) {
+            <img [src]="url" alt="Capture du rapport" class="max-h-56 rounded-lg border border-stone-800" />
+          } @else {
+            <i class="fa-solid fa-image text-3xl text-stone-600 mb-3"></i>
+            <span class="text-sm text-stone-300">Collez la capture du rapport (Ctrl+V / Cmd+V), glissez-la ici ou cliquez pour la choisir</span>
+            <span class="text-xs text-stone-500 mt-1">Assaillant, défenseur et heure d'attaque sont lus automatiquement</span>
+          }
+          <input type="file" accept="image/*" class="hidden" #imageInput (change)="onFilePicked(imageInput)" />
+        </label>
+
+        <div class="space-y-4">
+          @if (reading()) {
+            <p class="text-sm text-stone-300"><i class="fa-solid fa-spinner fa-spin text-red-400 mr-2"></i> Lecture de la capture…</p>
+          }
+          @if (readWarning(); as warning) {
+            <p class="text-xs text-amber-300 bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5">{{ warning }}</p>
+          }
+          @for (side of reportVillages(); track side.label) {
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider mb-2" [class]="side.labelClass">{{ side.label }}</label>
+              <input
+                list="map-villages"
+                [ngModel]="side.name()"
+                (ngModelChange)="side.name.set($event)"
+                placeholder="Nom du village"
+                class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+              />
+              @if (side.village; as v) {
+                <p class="text-[11px] text-stone-400 mt-1">
+                  {{ v.name }} ({{ v.kage }}) : <span class="font-mono text-stone-200">{{ v.x }} / {{ v.y }}</span>
+                </p>
+              } @else if (side.name()) {
+                <p class="text-[11px] text-amber-300 mt-1">Village introuvable dans la carte.</p>
+              }
+            </div>
+          }
+          <datalist id="map-villages">
+            @for (name of villageNames; track name) {
+              <option [value]="name"></option>
+            }
+          </datalist>
+          <div class="flex justify-between items-center bg-stone-900 px-4 py-3 rounded-xl border border-stone-800">
+            <span class="text-xs text-stone-300">Distance calculée (arrondie à X ou X,5) :</span>
+            <span class="font-mono font-bold text-red-400 text-sm">{{ distance() }} km</span>
+          </div>
+        </div>
+      </div>
     } @else {
       <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 bg-stone-950/40 p-4 rounded-xl border border-stone-800/80">
         @for (village of villages; track village.n) {
@@ -60,6 +116,44 @@
       />
       <p class="text-xs text-stone-500 mt-3">* Vitesses officielles de déplacement par kilomètre (Niveaux 1 à 20).</p>
     </div>
+
+    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-4 gap-4 border-t border-stone-800 pt-5 items-end">
+      <div>
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-user text-red-400 mr-1.5"></i> Qui es-tu ?
+        </label>
+        <select
+          [ngModel]="me()"
+          (ngModelChange)="setMe($event)"
+          class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700 cursor-pointer"
+        >
+          <option value="">Le défenseur</option>
+          @for (v of clanVillages; track v.kage) {
+            <option [value]="v.kage">{{ v.kage }} ({{ v.name }})</option>
+          }
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
+          <i class="fa-solid fa-dumbbell text-red-400 mr-1.5"></i> Mon CE
+        </label>
+        <app-number-input [value]="ourLevel()" (valueChange)="setOurLevel($event)" [min]="1" [max]="20" placeholder="11" />
+      </div>
+      <div class="sm:col-span-2 bg-stone-900 px-4 py-3 rounded-xl border border-stone-800 text-xs text-stone-300">
+        @if (counterFromMyVillage()) {
+          Mon trajet ({{ myVillage()!.name }} → assaillant) :
+        } @else {
+          Mon trajet (défenseur → assaillant) :
+        }
+        <span class="font-mono font-bold text-red-400">{{ counter().distanceKm }} km</span>.
+        Départ maintenant (CE {{ counter().level }}) → arrivée
+        <span class="font-mono font-bold text-emerald-400">{{ counterArrival().time }}</span>
+        <span class="text-stone-500">{{ counterArrival().date }}</span>
+        @if (myVillage() && !counterFromMyVillage()) {
+          <span class="block text-stone-500 mt-1">En saisie km directe, la position de l'assaillant est inconnue : distance du défenseur.</span>
+        }
+      </div>
+    </div>
   </div>
 </app-card>
 
@@ -78,7 +172,9 @@
           <th class="py-3 px-5">Niveau du Centre</th>
           <th class="py-3 px-5">Vitesse de déplacement / Km</th>
           <th class="py-3 px-5">Heure de retour</th>
-          <th class="py-3 px-5 text-right">Heure de retour - ticket</th>
+          <th class="py-3 px-5">Heure de retour - ticket</th>
+          <th class="py-3 px-5 text-center">Retour faisable</th>
+          <th class="py-3 px-5 text-center">Retour faisable avec ticket</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-stone-800/60 font-mono text-sm">
@@ -93,9 +189,25 @@
               {{ row.arrival.time }}
               <span class="block text-xs font-normal text-stone-500">{{ row.arrival.date }}</span>
             </td>
-            <td class="py-3 px-5 text-right font-bold text-violet-400">
+            <td class="py-3 px-5 font-bold text-violet-400">
               {{ row.ticketArrival.time }}
               <span class="block text-xs font-normal text-stone-500">{{ row.ticketArrival.date }}</span>
+            </td>
+            <td class="py-3 px-5 text-center">
+              @if (row.feasible) {
+                <span class="font-bold text-emerald-400" title="Nos troupes arrivent avant leur retour">✓ Oui</span>
+              } @else {
+                <span class="font-bold text-red-500" title="Leurs troupes sont rentrées avant notre arrivée">✗ Non</span>
+              }
+              <span class="block text-xs font-normal text-stone-500">{{ formatMargin(row.marginMs) }}</span>
+            </td>
+            <td class="py-3 px-5 text-center">
+              @if (row.ticketFeasible) {
+                <span class="font-bold text-emerald-400" title="Nos troupes arrivent avant leur retour avec ticket">✓ Oui</span>
+              } @else {
+                <span class="font-bold text-red-500" title="Avec ticket, leurs troupes sont rentrées avant notre arrivée">✗ Non</span>
+              }
+              <span class="block text-xs font-normal text-stone-500">{{ formatMargin(row.ticketMarginMs) }}</span>
             </td>
           </tr>
         }

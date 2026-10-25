@@ -1,7 +1,9 @@
 import { TRAVEL_SPEEDS } from '../../core/game-data/travel-speeds';
+import { COORDONNEES } from '../../shared/utils/coordonnees';
+import { OWN_CLAN } from '../enemies/clans.data';
 import { FormattedDateTime, formatDateTime, formatSpeed } from '../../shared/utils/format';
 
-export type DistanceMode = 'manual' | 'coords';
+export type DistanceMode = 'manual' | 'coords' | 'report';
 
 /** `null` = champ vidé par l'utilisateur, traité comme 0. */
 export interface Coordinate {
@@ -14,6 +16,56 @@ export interface ReturnRow {
   speedPerKm: string;
   arrival: FormattedDateTime;
   ticketArrival: FormattedDateTime;
+  /** true si nos troupes, parties à `counter.nowMs`, arrivent avant le retour de l'ennemi (sans ticket). */
+  feasible: boolean;
+  /** Avance (> 0) ou retard (< 0) de nos troupes sur leur retour, en ms. */
+  marginMs: number;
+  /** Idem face à un retour avec ticket. */
+  ticketFeasible: boolean;
+  ticketMarginMs: number;
+}
+
+/** Notre contre-attaque : notre CE, notre trajet jusqu'au village de l'ennemi et l'heure de départ. */
+export interface CounterAttack {
+  level: number;
+  distanceKm: number;
+  nowMs: number;
+}
+
+export interface MapVillage {
+  name: string;
+  kage: string;
+  x: number;
+  y: number;
+  clan: string | null;
+}
+
+export const MAP_VILLAGES: readonly MapVillage[] = COORDONNEES.map(({ name, kage, x, y, clan }) => ({
+  name,
+  kage,
+  x,
+  y,
+  clan: clan?.name ?? null,
+}));
+
+/** Villages des membres de notre clan, triés par joueur (le kage). */
+export const CLAN_VILLAGES: readonly MapVillage[] = MAP_VILLAGES.filter((v) => v.clan === OWN_CLAN).sort((a, b) =>
+  a.kage.localeCompare(b.kage, 'fr'),
+);
+
+const normName = (s: string): string =>
+  s
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+
+/** Village dont le nom (ou le kage) correspond, sans tenir compte des accents, de la casse ni des espaces. */
+export function findVillage(name: string): MapVillage | null {
+  const key = normName(name);
+  if (!key) return null;
+  return MAP_VILLAGES.find((v) => normName(v.name) === key) ?? MAP_VILLAGES.find((v) => normName(v.kage) === key) ?? null;
 }
 
 /** Le ticket divise le temps de trajet par deux. */
@@ -21,7 +73,7 @@ const TICKET_TIME_FACTOR = 0.5;
 
 const num = (value: number | null): number => Number(value) || 0;
 
-/** Distance en km, arrondie au 0,5 le plus proche. */
+/** Distance en km, arrondie au 0,5 le plus proche (les modes « coordonnées » et « rapport » mesurent entre deux points). */
 export function computeDistance(
   mode: DistanceMode,
   manualKm: number | null,
@@ -33,14 +85,27 @@ export function computeDistance(
   return Math.round(raw * 2) / 2;
 }
 
-export function computeReturnRows(distanceKm: number, departureMs: number): ReturnRow[] {
+/** Durée du trajet en ms pour un niveau de CE (1 à 20). */
+export const travelMs = (distanceKm: number, level: number): number =>
+  distanceKm * TRAVEL_SPEEDS[Math.min(20, Math.max(1, level)) - 1].centisecondsPerKm * 10;
+
+/** Arrivée de nos troupes au village ennemi si elles partent à `nowMs`. */
+export const counterArrivalMs = ({ level, distanceKm, nowMs }: CounterAttack): number => nowMs + travelMs(distanceKm, level);
+
+export function computeReturnRows(distanceKm: number, departureMs: number, counter: CounterAttack): ReturnRow[] {
+  const ourArrival = counterArrivalMs(counter);
   return TRAVEL_SPEEDS.map(({ level, centisecondsPerKm }) => {
-    const travelMs = distanceKm * centisecondsPerKm * 10;
+    const returnAt = departureMs + travelMs(distanceKm, level);
+    const ticketReturnAt = departureMs + travelMs(distanceKm, level) * TICKET_TIME_FACTOR;
     return {
+      feasible: ourArrival < returnAt,
+      marginMs: returnAt - ourArrival,
+      ticketFeasible: ourArrival < ticketReturnAt,
+      ticketMarginMs: ticketReturnAt - ourArrival,
       level,
       speedPerKm: formatSpeed(centisecondsPerKm),
-      arrival: formatDateTime(departureMs + travelMs),
-      ticketArrival: formatDateTime(departureMs + travelMs * TICKET_TIME_FACTOR),
+      arrival: formatDateTime(returnAt),
+      ticketArrival: formatDateTime(ticketReturnAt),
     };
   });
 }

@@ -1,4 +1,4 @@
-import { OcrWord, parseReport } from './report-parser';
+import { OcrWord, parseReport, parseReportTime } from './report-parser';
 
 /** "texte@x" → mot OCR (y sans importance pour l'analyse). */
 const line = (...words: string[]): OcrWord[] =>
@@ -78,5 +78,21 @@ describe('parseReport', () => {
 
   it('ne retourne rien sans rapport reconnaissable', () => {
     expect(parseReport([line('Bonjour@10', 'tout@50', 'le@80', 'monde@110')])).toEqual([]);
+  });
+});
+
+describe('parseReportTime', () => {
+  const title = line('Rapport@110', 'de@220', 'l’attaque@337', '|@436', '25/10@502', 'à@574', '06h11@654');
+
+  it('lit la date et l’heure du titre', () => {
+    expect(parseReportTime([title], new Date(2026, 9, 25, 12))).toBe(new Date(2026, 9, 25, 6, 11).getTime());
+  });
+
+  it('prend l’année précédente pour une date encore à venir', () => {
+    expect(parseReportTime([title], new Date(2027, 0, 2))).toBe(new Date(2026, 9, 25, 6, 11).getTime());
+  });
+
+  it('retourne null sans titre lisible', () => {
+    expect(parseReportTime([line('Ninjas@106', '500@376')])).toBeNull();
   });
 });
