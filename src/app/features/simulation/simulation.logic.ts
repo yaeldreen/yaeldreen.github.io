@@ -94,7 +94,14 @@ export function simulateUpgrades(input: SimulationInput): SimulationPlan {
     const guide = guideOf(id);
     const next = levels.get(id)! + 1;
     const row = guide.rows.find((r) => r.level === next);
-    if (!row) throw new PlanBlocked(`${guide.label} est déjà au niveau maximum (${next - 1}).`);
+    if (!row) {
+      const maxLevel = guide.rows[guide.rows.length - 1].level;
+      throw new PlanBlocked(
+        next > maxLevel
+          ? `${guide.label} est déjà au niveau maximum (${maxLevel}).`
+          : `coûts de ${guide.label} niv. ${next} non renseignés dans le guide.`,
+      );
+    }
 
     ensureCapacity(row, `${guide.label} niv. ${next}`);
     steps.push({ buildingId: id, label: guide.label, level: next, row, seconds: parseDuration(row.buildTime), isStorage, explanation: explain(row, guide.label) });

@@ -21,6 +21,7 @@ import {
   RESERVE_LEVELS,
   StorageLevel,
   RAPTOR_LEVELS,
+  COMMERCE_LEVELS,
   HIGH_COUNCIL_LEVELS,
   CouncilLevel,
 } from './buildings.data';
@@ -38,6 +39,7 @@ export type BuildingId =
   | 'foodDepot'
   | 'reserve'
   | 'raptor'
+  | 'commerce'
   | 'highCouncil';
 
 export interface BuildingGuide<T extends BuildingLevel = BuildingLevel> {
@@ -211,6 +213,13 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
     icon: 'fa-crow',
     columns: [levelColumn, ...costColumns],
     rows: RAPTOR_LEVELS,
+  } satisfies BuildingGuide,
+  {
+    id: 'commerce',
+    label: 'Commerce',
+    icon: 'fa-store',
+    columns: [levelColumn, ...costColumns],
+    rows: COMMERCE_LEVELS,
   } satisfies BuildingGuide,
   {
     id: 'highCouncil',

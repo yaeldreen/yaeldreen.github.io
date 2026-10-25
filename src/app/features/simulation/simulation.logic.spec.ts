@@ -64,6 +64,12 @@ describe('simulateUpgrades', () => {
     expect(plan.steps.map((s) => s.level)).toEqual([4, 5]);
   });
 
+  it('signale un niveau sans données (Commerce niv. 5)', () => {
+    const plan = simulateUpgrades({ ...base, buildingId: 'commerce', currentLevel: 3, targetLevel: 7 });
+    expect(plan.steps.map((s) => s.level)).toEqual([4]);
+    expect(plan.blocker).toContain('niv. 5 non renseignés');
+  });
+
   it("signale un niveau visé au-delà du maximum", () => {
     const plan = simulateUpgrades({ ...base, currentLevel: 19, targetLevel: 21 });
     expect(plan.steps).toHaveLength(1);

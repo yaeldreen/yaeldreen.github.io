@@ -373,6 +373,21 @@ const RAPTOR_RAW: readonly RawLevel[] = [
 
 export const RAPTOR_LEVELS: readonly BuildingLevel[] = RAPTOR_RAW.map(toLevel);
 
+// ⚠ Source partielle : niveaux 1, 2, 5 et 13 à 20 non communiqués.
+const COMMERCE_RAW: readonly RawLevel[] = [
+  [3, '10 min', 2, 959, 910, 510, 411],
+  [4, '17 min', 2, 1404, 1310, 910, 602],
+  [6, '47 min', 3, 2674, 2470, 1830, 1310],
+  [7, '1 h 16 min', 3, 3495, 3210, 2470, 1830],
+  [8, '2 h 5 min', 3, 4432, 4100, 3210, 2410],
+  [9, '3 h 27 min', 3, 5533, 5020, 4100, 3210],
+  [10, '5 h 42 min', 3, 6987, 6290, 5020, 4100],
+  [11, '10 h 22 min', 3, 8808, 7830, 6290, 5020],
+  [12, '18 h 53 min', 3, 11118, 9790, 7830, 6290],
+];
+
+export const COMMERCE_LEVELS: readonly BuildingLevel[] = COMMERCE_RAW.map(toLevel);
+
 const HIGH_COUNCIL_RAW: readonly RawLevel[] = [
   [1, '1 min', 2, 180, 200, 140, 110],
   [2, '4 min 50 s', 2, 900, 900, 510, 198],
