@@ -15,15 +15,15 @@ export interface Column<T> {
     <div class="overflow-x-auto">
       <table class="w-full text-left border-collapse font-mono text-xs">
         <thead>
-          <tr class="border-b border-slate-800 text-slate-400 uppercase bg-slate-950/60">
+          <tr class="border-b border-stone-800 text-stone-400 uppercase bg-stone-950/60">
             @for (col of columns(); track col.header) {
               <th class="py-3 px-3" [class]="col.headerClass ?? ''">{{ col.header }}</th>
             }
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-800/60">
+        <tbody class="divide-y divide-stone-800/60">
           @for (row of rows(); track row.level) {
-            <tr class="hover:bg-indigo-950/20 transition">
+            <tr class="hover:bg-red-950/20 transition">
               @for (col of columns(); track col.header) {
                 <td class="py-2.5 px-3" [class]="col.cellClass ?? ''">{{ col.value(row) }}</td>
               }

@@ -1,23 +1,21 @@
-<div class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-indigo-500 selection:text-white flex flex-col justify-between">
-  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+<div class="bg-stone-950 text-stone-100 min-h-screen font-sans antialiased selection:bg-red-800 selection:text-white flex flex-col justify-between">
+  <header class="border-b border-stone-800 bg-stone-900/60 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <i class="fa-solid fa-bolt text-white text-lg"></i>
-        </div>
+        <img src="Rinne_Sharingan.webp" alt="" class="w-10 h-10 rounded-xl shadow-lg shadow-red-700/30" />
         <div>
-          <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Calculateur Stratégique</h1>
-          <p class="text-xs text-slate-400">Calcul Retour, Pillage & Guide Complet des Bâtiments</p>
+          <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-stone-400 bg-clip-text text-transparent">Tsukuyomi HUB</h1>
+          <p class="text-xs text-stone-400">Calcul Retour, Pillage & Guide Complet des Bâtiments</p>
         </div>
       </div>
 
-      <nav class="flex items-center space-x-2 bg-slate-800/80 p-1.5 rounded-xl border border-slate-700/50 flex-wrap justify-center">
+      <nav class="flex items-center space-x-2 bg-stone-800/80 p-1.5 rounded-xl border border-stone-700/50 flex-wrap justify-center">
         @for (tab of tabs; track tab.path) {
           <a
             #rla="routerLinkActive"
             [routerLink]="tab.path"
             routerLinkActive
-            [class]="rla.isActive ? 'bg-indigo-600 text-white shadow' : 'text-slate-400 hover:text-white'"
+            [class]="rla.isActive ? 'bg-red-800 text-white shadow' : 'text-stone-400 hover:text-white'"
             class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center"
           >
             <i class="fa-solid {{ tab.icon }} mr-1.5"></i> {{ tab.label }}
@@ -31,7 +29,7 @@
     <router-outlet />
   </main>
 
-  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500 bg-slate-900/40">
-    <p>Calculateur Stratégique & Guide des Bâtiments</p>
+  <footer class="border-t border-stone-800 py-4 text-center text-xs text-stone-500 bg-stone-900/40">
+    <p>Tsukuyomi HUB</p>
   </footer>
 </div>

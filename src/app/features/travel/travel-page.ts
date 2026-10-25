@@ -6,9 +6,6 @@ import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-contr
 import { toLocalIsoSeconds } from '../../shared/utils/format';
 import { computeDistance, computeReturnRows, Coordinate, DistanceMode } from './travel.logic';
 
-/** Niveau du centre mis en évidence dans le tableau. */
-const HIGHLIGHTED_LEVEL = 5;
-
 @Component({
   selector: 'app-travel-page',
   imports: [FormsModule, Card, NumberInput, SegmentedControl],
@@ -16,7 +13,6 @@ const HIGHLIGHTED_LEVEL = 5;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TravelPage {
-  protected readonly highlightedLevel = HIGHLIGHTED_LEVEL;
   protected readonly axes = ['x', 'y'] as const;
   protected readonly modeOptions: readonly SegmentOption<DistanceMode>[] = [
     { id: 'manual', label: 'Saisie km directe' },
@@ -30,7 +26,7 @@ export class TravelPage {
   private readonly origin = signal<Coordinate>({ x: 8194, y: -15 });
   private readonly target = signal<Coordinate>({ x: 8199, y: -11 });
   protected readonly villages = [
-    { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-indigo-300', point: this.origin },
+    { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-red-300', point: this.origin },
     { n: 2, label: 'Village 2 (Cible / Arrivée)', labelClass: 'text-emerald-300', point: this.target },
   ];
 

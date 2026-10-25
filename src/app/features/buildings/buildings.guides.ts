@@ -52,14 +52,14 @@ export interface BuildingGuide<T extends BuildingLevel = BuildingLevel> {
 
 const levelColumn: Column<BuildingLevel> = {
   header: 'Niveau du Centre',
-  cellClass: 'font-bold text-indigo-300',
+  cellClass: 'font-bold text-red-300',
   value: (r) => `Niveau ${r.level}`,
 };
 
 /** Temps, habitants, puis une colonne par ressource. */
 const costColumns: Column<BuildingLevel>[] = [
-  { header: 'Temps de construction', cellClass: 'text-slate-200', value: (r) => r.buildTime },
-  { header: "Nombre d'habitant", cellClass: 'text-slate-300', value: (r) => r.population },
+  { header: 'Temps de construction', cellClass: 'text-stone-200', value: (r) => r.buildTime },
+  { header: "Nombre d'habitant", cellClass: 'text-stone-300', value: (r) => r.population },
   ...RESOURCES.map((res) => ({
     header: res.label,
     headerClass: res.headerClass,
@@ -72,8 +72,8 @@ const [buildTimeColumn, ...otherCostColumns] = costColumns;
 
 const powerColumn: Column<PowerLevel> = {
   header: 'Puissance',
-  headerClass: 'text-indigo-300',
-  cellClass: 'text-indigo-300 font-semibold',
+  headerClass: 'text-red-300',
+  cellClass: 'text-red-300 font-semibold',
   value: (r) => `${r.power.toFixed(2)}%`,
 };
 
@@ -148,7 +148,7 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
       ...costColumns,
       {
         header: 'Commentaire',
-        cellClass: 'text-slate-300 font-sans whitespace-normal min-w-64',
+        cellClass: 'text-stone-300 font-sans whitespace-normal min-w-64',
         value: (r) => r.comment,
       },
     ],
