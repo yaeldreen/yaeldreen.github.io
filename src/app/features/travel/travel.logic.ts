@@ -1,5 +1,5 @@
 import { TRAVEL_SPEEDS } from '../../core/game-data/travel-speeds';
-import { COORDONNEES } from '../../shared/utils/coordonnees';
+import { MAP_VILLAGES, MapVillage } from '../../core/game-data/map-villages';
 import { OWN_CLAN } from '../enemies/clans.data';
 import { FormattedDateTime, formatDateTime, formatSpeed } from '../../shared/utils/format';
 
@@ -32,41 +32,10 @@ export interface CounterAttack {
   nowMs: number;
 }
 
-export interface MapVillage {
-  name: string;
-  kage: string;
-  x: number;
-  y: number;
-  clan: string | null;
-}
-
-export const MAP_VILLAGES: readonly MapVillage[] = COORDONNEES.map(({ name, kage, x, y, clan }) => ({
-  name,
-  kage,
-  x,
-  y,
-  clan: clan?.name ?? null,
-}));
-
 /** Villages des membres de notre clan, triés par joueur (le kage). */
 export const CLAN_VILLAGES: readonly MapVillage[] = MAP_VILLAGES.filter((v) => v.clan === OWN_CLAN).sort((a, b) =>
   a.kage.localeCompare(b.kage, 'fr'),
 );
-
-const normName = (s: string): string =>
-  s
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
-
-/** Village dont le nom (ou le kage) correspond, sans tenir compte des accents, de la casse ni des espaces. */
-export function findVillage(name: string): MapVillage | null {
-  const key = normName(name);
-  if (!key) return null;
-  return MAP_VILLAGES.find((v) => normName(v.name) === key) ?? MAP_VILLAGES.find((v) => normName(v.kage) === key) ?? null;
-}
 
 /** Le ticket divise le temps de trajet par deux. */
 const TICKET_TIME_FACTOR = 0.5;

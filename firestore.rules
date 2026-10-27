@@ -25,11 +25,18 @@ service cloud.firestore {
       return value is string && value.size() > 0 && value.size() <= 64;
     }
 
+    function isOptionalCount(data, field) {
+      return !(field in data) || data[field] == null || isTroopCount(data[field]);
+    }
+
     function isValidPlayer(data) {
-      return data.keys().hasOnly(['name', 'village', 'clan'])
+      return data.keys().hasOnly(['name', 'village', 'clan', 'points', 'inhabitants', 'ce'])
         && isName(data.name)
         && data.village is string && data.village.size() <= 64
-        && (data.clan == null || isName(data.clan));
+        && (data.clan == null || isName(data.clan))
+        && isOptionalCount(data, 'points')
+        && isOptionalCount(data, 'inhabitants')
+        && (!('ce' in data) || data.ce == null || (data.ce is int && data.ce >= 0 && data.ce <= 20));
     }
 
     match /enemies/{player} {

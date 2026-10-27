@@ -117,6 +117,11 @@ export class EnemiesStore {
     this.run(`Changement de clan de ${player}`, (db) => updateDoc(doc(db, PLAYERS, docId(player)), { clan }));
   }
 
+  /** Ne modifie que les infos fournies. */
+  setPlayerStats(player: string, stats: Partial<Pick<Player, 'points' | 'inhabitants' | 'ce'>>): void {
+    this.run(`Mise à jour de ${player}`, (db) => updateDoc(doc(db, PLAYERS, docId(player)), stats));
+  }
+
   /** Supprime le joueur et son armée. */
   removePlayer(player: string): void {
     this.run(`Suppression de ${player}`, (db) => {

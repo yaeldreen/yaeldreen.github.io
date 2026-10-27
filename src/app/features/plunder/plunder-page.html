@@ -1,59 +1,135 @@
-<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+@let p = plan();
+@let s = storage();
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
   <app-card class="md:col-span-5 p-6 space-y-5">
     <div class="border-b border-stone-800 pb-3">
       <h2 class="font-semibold text-stone-200 flex items-center">
-        <i class="fa-solid fa-users-gear text-red-400 mr-2"></i> Composition des Troupes
+        <i class="fa-solid fa-warehouse text-red-400 mr-2"></i> Mes dépôts
       </h2>
-      <p class="text-xs text-stone-400 mt-1">Indiquez le nombre de combattants.</p>
+      <p class="text-xs text-stone-400 mt-1">Ce que vous pouvez stocker : au-delà, le pillage est gâché.</p>
     </div>
 
-    @for (troop of troops(); track troop.id) {
+    <div class="grid grid-cols-2 gap-4">
       <div>
-        <div class="flex justify-between items-center mb-1.5">
-          <span class="text-xs font-medium text-stone-300 flex items-center">
-            <span class="w-2.5 h-2.5 rounded-full mr-2" [class]="troop.dotClass"></span>
-            {{ troop.label }} <span class="text-stone-500 ml-1 text-[11px]">(cap: {{ troop.capacity }})</span>
-          </span>
-          <span class="text-xs font-mono" [class]="troop.textClass">{{ formatNumber(troop.max) }} max</span>
-        </div>
-        <app-number-input [value]="troop.count" (valueChange)="setCount(troop.id, $event)" [min]="0" placeholder="0" />
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Dépôt ressources</label>
+        <app-number-input [(value)]="resourceDepotLevel" [min]="1" [max]="depotMax" />
+        <p class="text-[11px] text-stone-500 mt-1">{{ formatNumber(s.resources) }} par ressource</p>
       </div>
-    }
+      <div>
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Dépôt nourriture</label>
+        <app-number-input [(value)]="foodDepotLevel" [min]="1" [max]="depotMax" />
+        <p class="text-[11px] text-stone-500 mt-1">{{ formatNumber(s.food) }} de nourriture</p>
+      </div>
+    </div>
 
-    <button type="button" (click)="reset()" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">
-      Réinitialiser les troupes
-    </button>
+    <div class="border-t border-stone-800 pt-5 space-y-4">
+      <div>
+        <h2 class="font-semibold text-stone-200 flex items-center">
+          <i class="fa-solid fa-users-gear text-red-400 mr-2"></i> Mon armée
+        </h2>
+        <p class="text-xs text-stone-400 mt-1">Troupes disponibles pour piller.</p>
+      </div>
+
+      @for (troop of troops(); track troop.id) {
+        <div>
+          <div class="flex justify-between items-center mb-1.5">
+            <span class="text-xs font-medium text-stone-300 flex items-center">
+              <span class="w-2.5 h-2.5 rounded-full mr-2" [class]="troop.dotClass"></span>
+              {{ troop.label }} <span class="text-stone-500 ml-1 text-[11px]">(pille {{ troop.capacity }})</span>
+            </span>
+          </div>
+          <app-number-input [value]="troop.count" (valueChange)="setCount(troop.id, $event)" [min]="0" placeholder="0" />
+        </div>
+      }
+      <p class="text-[11px] text-stone-500">Armée entière : {{ formatNumber(armyCapacity()) }} par ressource.</p>
+
+      <button type="button" (click)="reset()" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">
+        Réinitialiser les troupes
+      </button>
+    </div>
   </app-card>
 
-  <app-card class="md:col-span-7 p-6 flex flex-col justify-between space-y-6">
-    <div>
-      <div class="flex justify-between items-center border-b border-stone-800 pb-3 mb-6">
-        <h2 class="font-semibold text-stone-200 flex items-center">
-          <i class="fa-solid fa-boxes-stacked text-red-400 mr-2"></i> Capacité Totale de Pillage
-        </h2>
-        <span class="bg-red-700/10 text-red-400 border border-red-700/20 px-3 py-1 rounded-xl text-sm font-mono font-bold">
-          {{ formatNumber(totalCapacity()) }} unités max
-        </span>
-      </div>
+  <app-card class="md:col-span-7 p-6 space-y-6">
+    <div class="flex flex-wrap gap-3 justify-between items-center border-b border-stone-800 pb-3">
+      <h2 class="font-semibold text-stone-200 flex items-center">
+        <i class="fa-solid fa-boxes-stacked text-red-400 mr-2"></i> Équipe de pillage optimale
+      </h2>
+      <span class="bg-red-700/10 text-red-400 border border-red-700/20 px-3 py-1 rounded-xl text-sm font-mono font-bold">
+        Objectif : {{ formatNumber(s.target) }} / ressource
+      </span>
+    </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        @for (resource of resources; track resource.key) {
-          <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4 flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-xl border flex items-center justify-center text-xl" [class]="resource.iconBoxClass">
-              <i class="fa-solid {{ resource.icon }}"></i>
-            </div>
-            <div>
-              <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">{{ resource.label }}</span>
-              <span class="text-xl font-bold font-mono" [class]="resource.valueClass">{{ formatNumber(totalCapacity()) }}</span>
-            </div>
+    @if (p.teams === 0) {
+      <p class="text-sm text-stone-400">Renseignez votre armée pour calculer l'équipe.</p>
+    } @else {
+      <div class="grid grid-cols-3 gap-4">
+        @for (troop of troopTypes; track troop.id) {
+          <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+            <span class="text-xs text-stone-400 flex items-center uppercase tracking-wider font-medium">
+              <span class="w-2 h-2 rounded-full mr-1.5" [class]="troop.dotClass"></span> {{ troop.label }}
+            </span>
+            <span class="text-2xl font-bold font-mono" [class]="troop.textClass">{{ formatNumber(p.team[troop.id]) }}</span>
           </div>
         }
       </div>
-    </div>
 
-    <div class="bg-red-950/20 border border-red-700/20 rounded-xl p-3.5 text-xs text-red-300 flex items-center space-x-3">
-      <i class="fa-solid fa-circle-info text-red-400 text-base"></i>
-      <span>Formule : (Genin × 13) + (Chunin × 26) + (Jounin × 53) pour chaque ressource.</span>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+          <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Pillage par équipe</span>
+          <span class="text-xl font-bold font-mono text-red-300">{{ formatNumber(p.capacity) }}</span>
+          <span class="block text-[11px] text-stone-500">par ressource</span>
+        </div>
+        <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+          <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Nombre d'équipes</span>
+          <span class="text-xl font-bold font-mono text-stone-100">{{ p.teams }}</span>
+          <span class="block text-[11px] text-stone-500">avec votre armée</span>
+        </div>
+        <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+          <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Pillage total</span>
+          <span class="text-xl font-bold font-mono text-emerald-300">{{ formatNumber(p.capacity * p.teams) }}</span>
+          <span class="block text-[11px] text-stone-500">par ressource, {{ p.teams }} équipe(s)</span>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-xs text-stone-400 uppercase tracking-wider border-b border-stone-800">
+              <th class="text-left py-2 pr-4 font-medium">Une équipe</th>
+              <th class="text-right py-2 px-4 font-medium">Pillé</th>
+              <th class="text-right py-2 px-4 font-medium">Dépôt</th>
+              <th class="text-right py-2 pl-4 font-medium">Place restante</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            @for (resource of resources; track resource.key) {
+              <tr class="border-b border-stone-800/60">
+                <td class="py-2 pr-4 font-sans" [class]="resource.valueClass">{{ resource.label }}</td>
+                <td class="text-right py-2 px-4 text-stone-200">{{ formatNumber(p.capacity) }}</td>
+                <td class="text-right py-2 px-4 text-stone-400">{{ formatNumber(depotFor(resource.key)) }}</td>
+                <td class="text-right py-2 pl-4 text-stone-400">{{ formatNumber(depotFor(resource.key) - p.capacity) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4 text-xs text-stone-300">
+        <span class="text-stone-400 uppercase tracking-wider font-medium">Troupes restantes</span> :
+        @for (troop of troopTypes; track troop.id) {
+          <span class="font-mono" [class]="troop.textClass">{{ formatNumber(p.leftover[troop.id]) }}</span> {{ troop.label }}@if (!$last) { · }
+        }
+        <span class="text-stone-500">(pillage {{ formatNumber(leftoverCapacity()) }})</span>
+      </div>
+    }
+
+    <div class="bg-red-950/20 border border-red-700/20 rounded-xl p-3.5 text-xs text-red-300 flex space-x-3">
+      <i class="fa-solid fa-circle-info text-red-400 text-base mt-0.5"></i>
+      <span>
+        Chaque unité pille la même quantité de chaque ressource (Genin 13, Chunin 26, Jounin 53). L'équipe est la plus proche
+        possible du plus petit dépôt sans le dépasser (dépôts vides), pour ne rien gâcher. À pillage égal, on garde la composition
+        qui permet le plus d'équipes, puis la moins nombreuse.
+      </span>
     </div>
   </app-card>
 </div>

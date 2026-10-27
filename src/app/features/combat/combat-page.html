@@ -23,7 +23,7 @@
             />
             <p class="text-[11px] text-stone-500 mt-1">
               Puissance <span class="font-mono text-stone-300">{{ power(side.stats.unitPower[troop.key]) }}</span>
-              (+{{ side.stats.bonus[troop.key] }} %)
+              (+{{ side.stats.bonus[troop.key] }} %@if (side.form.combatTicket) { ×1,2 })
             </p>
           </div>
         }
@@ -44,6 +44,25 @@
             />
           </div>
         }
+        <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            [checked]="side.form.combatTicket"
+            (change)="setTicket(side.id, 'combatTicket', $any($event.target).checked)"
+            class="accent-red-700 w-4 h-4 cursor-pointer"
+          />
+          {{ side.ticketLabel }} activé (puissance ×1,2)
+        </label>
+        <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            [checked]="side.form.hospitalTicket"
+            (change)="setTicket(side.id, 'hospitalTicket', $any($event.target).checked)"
+            class="accent-red-700 w-4 h-4 cursor-pointer"
+          />
+          Ticket hôpital activé (+{{ ticketBonus }} %)
+          <span class="ml-auto text-stone-400">Récupération <span class="font-mono font-bold text-emerald-300">{{ side.recoveryRate }} %</span></span>
+        </label>
       </div>
     </app-card>
   }
@@ -101,6 +120,20 @@
             }
             <td class="text-right py-2 pl-4 text-emerald-300">+{{ formatNumber(r.defenderPoints) }}</td>
           </tr>
+          <tr class="border-b border-stone-800/60 text-xs">
+            <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ récupérés (hôpital {{ r.attackerRecoveryRate }} %)</td>
+            @for (troop of troopTypes; track troop.key) {
+              <td class="text-right py-1.5 px-4 text-emerald-300">+{{ formatNumber(r.attackerRecovered[troop.key]) }}</td>
+            }
+            <td></td>
+          </tr>
+          <tr class="border-b border-stone-800 text-xs">
+            <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ pertes définitives</td>
+            @for (troop of troopTypes; track troop.key) {
+              <td class="text-right py-1.5 px-4 text-red-300 font-bold">{{ formatNumber(r.attackerLosses[troop.key] - r.attackerRecovered[troop.key]) }}</td>
+            }
+            <td></td>
+          </tr>
           <tr>
             <td class="py-2 pr-4 font-sans text-emerald-300 font-semibold">Défenseur</td>
             @if (r.defenderLosses; as d) {
@@ -116,6 +149,26 @@
               <td colspan="4" class="text-right py-2 pl-4 font-sans text-stone-500">Inconnu (aucun rapport dans ce cas)</td>
             }
           </tr>
+          @if (r.defenderLosses && r.defenderRecovered; as dr) {
+            <tr class="border-b border-stone-800/60 text-xs">
+              <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ récupérés (hôpital {{ r.defenderRecoveryRate }} %)</td>
+              @for (troop of troopTypes; track troop.key) {
+                <td class="text-right py-1.5 px-4 text-emerald-300">
+                  +{{ formatNumber(dr.min[troop.key]) }} – {{ formatNumber(dr.max[troop.key]) }}
+                </td>
+              }
+              <td></td>
+            </tr>
+            <tr class="text-xs">
+              <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ pertes définitives</td>
+              @for (troop of troopTypes; track troop.key) {
+                <td class="text-right py-1.5 px-4 text-red-300 font-bold">
+                  {{ formatNumber(r.defenderLosses.min[troop.key] - dr.min[troop.key]) }} – {{ formatNumber(r.defenderLosses.max[troop.key] - dr.max[troop.key]) }}
+                </td>
+              }
+              <td></td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>
@@ -125,9 +178,10 @@
     <i class="fa-solid fa-circle-info text-red-400 text-base mt-0.5"></i>
     <span>
       Formules provisoires, déduites de quelques rapports. Puissance de base 10 / 40 / 60, bonus additionnés
-      (Camp d'entraînement + centre du type de troupe, + Mur en défense). L'assaillant perd {{ lossFactorPct }} % ×
+      (Camp d'entraînement + centre du type de troupe, + Mur en défense), puis ×1,2 avec le ticket attaque / défense. L'assaillant perd {{ lossFactorPct }} % ×
       (défense / attaque) de chaque type ; le défenseur perd {{ defenderRangePct }} quand l'assaillant est plus fort.
-      Points : 1 / 5 / 10 par Genin / Chuunin / Jounin tué.
+      Points : 1 / 5 / 10 par Genin / Chuunin / Jounin tué. L'hôpital soigne ensuite une part des tués de son camp
+      (10 % au niveau 1, +1 % par niveau, 30 % au niveau 20 ; +{{ ticketBonus }} % avec le ticket).
     </span>
   </div>
 

@@ -72,11 +72,6 @@
               }
             </div>
           }
-          <datalist id="map-villages">
-            @for (name of villageNames; track name) {
-              <option [value]="name"></option>
-            }
-          </datalist>
           <div class="flex justify-between items-center bg-stone-900 px-4 py-3 rounded-xl border border-stone-800">
             <span class="text-xs text-stone-300">Distance calculée (arrondie à X ou X,5) :</span>
             <span class="font-mono font-bold text-red-400 text-sm">{{ distance() }} km</span>
@@ -85,20 +80,23 @@
       </div>
     } @else {
       <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 bg-stone-950/40 p-4 rounded-xl border border-stone-800/80">
-        @for (village of villages; track village.n) {
-          <div class="space-y-3">
-            <span class="text-xs font-bold block uppercase tracking-wider" [class]="village.labelClass">{{ village.label }}</span>
-            <div class="grid grid-cols-2 gap-3">
-              @for (axis of axes; track axis) {
-                <div>
-                  <label class="block text-[11px] text-stone-400 mb-1">Position {{ axis.toUpperCase() }}{{ village.n }}</label>
-                  <app-number-input
-                    [value]="village.point()[axis]"
-                    (valueChange)="setCoordinate(village.point, axis, $event)"
-                  />
-                </div>
-              }
-            </div>
+        @for (side of villages(); track side.n) {
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider mb-2" [class]="side.labelClass">{{ side.label }}</label>
+            <input
+              list="map-villages"
+              [ngModel]="side.name()"
+              (ngModelChange)="side.name.set($event)"
+              placeholder="Nom du village"
+              class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+            />
+            @if (side.village; as v) {
+              <p class="text-[11px] text-stone-400 mt-1">
+                {{ v.name }} ({{ v.kage }}) : <span class="font-mono text-stone-200">{{ v.x }} / {{ v.y }}</span>
+              </p>
+            } @else if (side.name()) {
+              <p class="text-[11px] text-amber-300 mt-1">Village introuvable dans la carte.</p>
+            }
           </div>
         }
         <div class="sm:col-span-2 flex justify-between items-center bg-stone-900 px-4 py-3 rounded-xl border border-stone-800">
@@ -225,3 +223,9 @@
     </table>
   </div>
 </app-card>
+
+<datalist id="map-villages">
+  @for (name of villageNames; track name) {
+    <option [value]="name"></option>
+  }
+</datalist>

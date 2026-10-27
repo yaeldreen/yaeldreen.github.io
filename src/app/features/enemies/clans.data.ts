@@ -2,6 +2,10 @@ export interface Player {
   name: string;
   village: string;
   /** `null` = sans clan */ clan: string | null;
+  /** Saisis à la main (absents = inconnus). */
+  points?: number | null;
+  inhabitants?: number | null;
+  /** Camp d'entraînement estimé par le clan. */ ce?: number | null;
 }
 
 export interface Clan {

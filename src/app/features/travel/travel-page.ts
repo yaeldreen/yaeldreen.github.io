@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, OnDestroy, signal, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../shared/ui/card';
 import { NumberInput } from '../../shared/ui/number-input';
@@ -14,9 +14,8 @@ import {
   CounterAttack,
   counterArrivalMs,
   DistanceMode,
-  findVillage,
-  MAP_VILLAGES,
 } from './travel.logic';
+import { findVillage, MAP_VILLAGES } from '../../core/game-data/map-villages';
 
 // Choix mémorisés dans le navigateur (si le stockage est disponible).
 const ME_KEY = 'travel.me';
@@ -46,10 +45,9 @@ const writeStored = (key: string, value: string): void => {
   host: { '(window:paste)': 'onPaste($event)' },
 })
 export class TravelPage implements OnDestroy {
-  protected readonly axes = ['x', 'y'] as const;
   protected readonly modeOptions: readonly SegmentOption<DistanceMode>[] = [
     { id: 'manual', label: 'Saisie km directe' },
-    { id: 'coords', label: 'Coordonnées (Village 1 / 2)' },
+    { id: 'coords', label: 'Villages (1 / 2)' },
     { id: 'report', label: 'Calcul rapport' },
   ];
   protected readonly villageNames = MAP_VILLAGES.map((v) => v.name).sort((a, b) => a.localeCompare(b, 'fr'));
@@ -58,12 +56,13 @@ export class TravelPage implements OnDestroy {
   protected readonly manualDistance = signal<number | null>(5);
   protected readonly departureTime = signal(toLocalIsoSeconds(new Date()));
 
-  private readonly origin = signal<Coordinate>({ x: 8194, y: -15 });
-  private readonly target = signal<Coordinate>({ x: 8199, y: -11 });
-  protected readonly villages = [
-    { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-red-300', point: this.origin },
-    { n: 2, label: 'Village 2 (Cible / Arrivée)', labelClass: 'text-emerald-300', point: this.target },
-  ];
+  // Mode « Coordonnées » : deux villages choisis dans la carte.
+  private readonly originName = signal('');
+  private readonly targetName = signal('');
+  protected readonly villages = computed(() => [
+    { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-red-300', name: this.originName, village: findVillage(this.originName()) },
+    { n: 2, label: 'Village 2 (Cible / Arrivée)', labelClass: 'text-emerald-300', name: this.targetName, village: findVillage(this.targetName()) },
+  ]);
 
   // Mode « Calcul rapport » : villages lus dans la capture (ou saisis), coordonnées prises dans la carte.
   protected readonly attackerName = signal('');
@@ -80,9 +79,9 @@ export class TravelPage implements OnDestroy {
 
   protected readonly distance = computed(() => {
     const mode = this.distanceMode();
-    if (mode !== 'report') return computeDistance(mode, this.manualDistance(), this.origin(), this.target());
-    const [attacker, defender] = this.reportVillages().map((v) => v.village);
-    return attacker && defender ? computeDistance(mode, null, attacker, defender) : 0;
+    if (mode === 'manual') return computeDistance(mode, this.manualDistance(), { x: 0, y: 0 }, { x: 0, y: 0 });
+    const [from, to] = (mode === 'coords' ? this.villages() : this.reportVillages()).map((v) => v.village);
+    return from && to ? computeDistance(mode, null, from, to) : 0;
   });
 
   // Contre-attaque : mes troupes partent maintenant avec mon CE vers le village de l'assaillant.
@@ -98,7 +97,7 @@ export class TravelPage implements OnDestroy {
   private readonly attackerPoint = computed((): Coordinate | null => {
     switch (this.distanceMode()) {
       case 'coords':
-        return this.origin();
+        return this.villages()[0].village;
       case 'report':
         return this.reportVillages()[0].village;
       default:
@@ -126,10 +125,6 @@ export class TravelPage implements OnDestroy {
     const departure = this.departureTime();
     return computeReturnRows(this.distance(), departure ? new Date(departure).getTime() : Date.now(), this.counter());
   });
-
-  protected setCoordinate(point: WritableSignal<Coordinate>, axis: 'x' | 'y', value: number | null): void {
-    point.update((p) => ({ ...p, [axis]: value }));
-  }
 
   /** "+12 min 30 s" d'avance, "−3 min" de retard. */
   protected formatMargin(ms: number): string {
