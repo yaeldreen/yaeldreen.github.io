@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../shared/ui/card';
+import { Combobox, ComboboxOption } from '../../shared/ui/combobox';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDateTime, formatDuration, toLocalIsoSeconds } from '../../shared/utils/format';
@@ -39,7 +40,7 @@ const writeStored = (key: string, value: string): void => {
 
 @Component({
   selector: 'app-travel-page',
-  imports: [FormsModule, Card, NumberInput, SegmentedControl],
+  imports: [FormsModule, Card, NumberInput, SegmentedControl, Combobox],
   templateUrl: './travel-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(window:paste)': 'onPaste($event)' },
@@ -50,7 +51,9 @@ export class TravelPage implements OnDestroy {
     { id: 'coords', label: 'Villages (1 / 2)' },
     { id: 'report', label: 'Calcul rapport' },
   ];
-  protected readonly villageNames = MAP_VILLAGES.map((v) => v.name).sort((a, b) => a.localeCompare(b, 'fr'));
+  protected readonly villageOptions: readonly ComboboxOption[] = MAP_VILLAGES.map((v) => ({ value: v.name, hint: v.kage })).sort((a, b) =>
+    a.value.localeCompare(b.value, 'fr'),
+  );
 
   protected readonly distanceMode = signal<DistanceMode>('manual');
   protected readonly manualDistance = signal<number | null>(5);
