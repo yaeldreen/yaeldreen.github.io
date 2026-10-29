@@ -26,7 +26,7 @@ export class App {
     { path: '/secondes', label: 'Calcul seconde', icon: 'fa-stopwatch' },
     { path: '/proches', label: 'Qui est le plus proche', icon: 'fa-location-crosshairs' },
     { path: '/ennemis', label: 'infos enemis', icon: 'fa-user-secret' },
-    { path: '/clan', label: 'Gestion clan', icon: 'fa-people-group' },
+    { path: '/joueurs', label: 'MAJ joueurs', icon: 'fa-people-group' },
   ];
 
   protected readonly menuOpen = signal(false);

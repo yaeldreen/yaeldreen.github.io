@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import { firebaseApp, isFirebaseConfigured } from '../../core/firebase';
 import { MapVillage } from '../../core/game-data/map-villages';
-import { Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
+import { OWN_CLAN, Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
 import { EnemyRecord, playerKey } from './enemies.model';
 
 /** `unconfigured` : configuration web Firebase absente (core/firebase.ts). */
@@ -52,7 +52,7 @@ export class EnemiesStore {
   /** Liste initiale tant que la base n'a pas répondu (ou sans configuration). */
   readonly players = signal<readonly Player[]>(SEED_PLAYERS);
   readonly clanNames = signal<readonly string[]>(SEED_CLANS);
-  /** Carte du jeu (coordonnées, points, habitants, clans), importée depuis Gestion clan. */
+  /** Carte du jeu (coordonnées, points, habitants, clans), importée depuis MAJ joueurs. */
   readonly villages = signal<readonly MapVillage[]>([]);
   readonly status = signal<StoreStatus>(isFirebaseConfigured() ? 'loading' : 'unconfigured');
   readonly error = signal<string | null>(null);
@@ -153,7 +153,7 @@ export class EnemiesStore {
   /**
    * Remplace la carte par l'export du jeu et synchronise les joueurs (clan, village, points, habitants)
    * et les clans. Les villages neutres vont seulement dans la carte. Les infos saisies à la main
-   * (armées, CE, centres…) ne sont pas touchées.
+   * (armées, CE, centres…) ne sont pas touchées, sauf pour notre clan dont on ne garde que village et kage.
    */
   async importMap(villages: readonly MapVillage[]): Promise<MapImportSummary> {
     const db = this.db;
@@ -178,6 +178,15 @@ export class EnemiesStore {
     for (const v of villages.filter((v) => !v.neutral)) {
       const existing =
         players.find((p) => playerKey(p.name) === playerKey(v.kage)) ?? players.find((p) => playerKey(p.village) === playerKey(v.name));
+      // Notre clan : seulement le village et le kage (les coordonnées sont dans la carte), sans armée ni niveaux.
+      if (v.clan === OWN_CLAN) {
+        const name = existing?.name ?? v.kage;
+        if (existing) summary.playersUpdated++;
+        else summary.playersAdded++;
+        ops.push((b) => b.set(doc(db, PLAYERS, docId(name)), { name, village: v.name, clan: v.clan }));
+        if (this.records()[playerKey(name)]) ops.push((b) => b.delete(doc(db, ENEMIES, docId(name))));
+        continue;
+      }
       const fromMap = { village: v.name, clan: v.clan, points: v.points, inhabitants: v.inhabitants };
       if (existing) {
         summary.playersUpdated++;

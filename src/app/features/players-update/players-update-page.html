@@ -1,0 +1,61 @@
+@let status = store.status();
+@if (status !== 'ready' || store.error()) {
+  <app-card class="p-4">
+    @switch (status) {
+      @case ('unconfigured') {
+        <p class="text-xs text-amber-300">Base partagée non configurée : la liste affichée est la liste initiale, les modifications ne seront pas enregistrées.</p>
+      }
+      @case ('loading') {
+        <p class="text-xs text-stone-400">Connexion à la base partagée…</p>
+      }
+    }
+    @if (store.error(); as error) {
+      <p class="text-xs text-rose-300">{{ error }}</p>
+    }
+  </app-card>
+}
+
+<app-card class="p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200 flex items-center">
+      Liste des joueurs (JSON)
+    </h2>
+    <p class="text-xs text-stone-400 mt-1">
+      Collez l'export JSON de la carte du jeu (la liste complète, de « [ » à « ] »). La carte partagée est remplacée :
+      coordonnées, points, habitants et clan de chaque joueur sont mis à jour, les nouveaux joueurs et clans sont ajoutés.
+      Les armées et niveaux saisis à la main dans « infos enemis » ne sont pas touchés. Pour Tsukuyomi, seuls le village,
+      le kage et les coordonnées sont gardés.
+      @if (store.villages().length) {
+        Carte actuelle : {{ store.villages().length }} villages.
+      } @else {
+        <span class="text-amber-300">Carte vide pour l'instant.</span>
+      }
+    </p>
+  </div>
+  <textarea
+    [ngModel]="mapText()"
+    (ngModelChange)="mapText.set($event)"
+    rows="6"
+    placeholder='[ { "id": 70, "name": "Memen", "kage": "Maaminou", "x": 8208, "y": 10, … } ]'
+    class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
+  ></textarea>
+  <button
+    type="button"
+    (click)="importMap()"
+    [disabled]="!mapText().trim() || importing()"
+    class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    {{ importing() ? 'Import en cours…' : 'Mettre à jour les joueurs' }}
+  </button>
+  @if (importError(); as e) {
+    <p class="text-xs text-rose-300">{{ e }}</p>
+  }
+  @if (importResult(); as r) {
+    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">
+      Carte importée : {{ r.villages }} villages, {{ r.playersUpdated }} joueurs mis à jour, {{ r.playersAdded }} ajoutés
+      @if (r.clansAdded.length) {
+        , clans créés : {{ r.clansAdded.join(', ') }}
+      }.
+    </p>
+  }
+</app-card>

@@ -137,7 +137,7 @@ export class CombatPage {
   protected readonly loaded = signal<Record<Side, string | null>>({ attacker: null, defender: null });
 
   /**
-   * Un joueur reconnu (nom ou village) préremplit son camp avec ce qu'on sait de lui (infos enemis ou Gestion clan) :
+   * Un joueur reconnu (nom ou village) préremplit son camp avec ce qu'on sait de lui (infos enemis) :
    * dernière armée connue et niveaux renseignés. Les cases inconnues sont vidées ; tout reste modifiable.
    */
   protected selectPlayer(side: Side, name: string): void {

@@ -33,7 +33,7 @@ export interface CounterAttack {
 }
 
 /**
- * Villages des membres de notre clan (liste partagée, onglet « Gestion clan »), localisés sur la carte
+ * Villages des membres de notre clan (liste partagée, mise à jour par « MAJ joueurs »), localisés sur la carte
  * et triés par joueur. Un membre dont le village n'est pas sur la carte est ignoré.
  */
 export function clanVillages(players: readonly Player[], villages: readonly MapVillage[]): MapVillage[] {

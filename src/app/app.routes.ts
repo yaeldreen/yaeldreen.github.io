@@ -43,9 +43,9 @@ export const routes: Routes = [
     loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),
   },
   {
-    path: 'clan',
-    title: 'Gestion clan',
-    loadComponent: () => import('./features/clan/clan-page').then((m) => m.ClanPage),
+    path: 'joueurs',
+    title: 'MAJ joueurs',
+    loadComponent: () => import('./features/players-update/players-update-page').then((m) => m.PlayersUpdatePage),
   },
   { path: '**', redirectTo: 'retour' },
 ];
