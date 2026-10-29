@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Règles de sécurité Firestore pour « Infos ennemis ».
+// Règles de sécurité Firestore de Tsukuyomi HUB (infos ennemis, clans, carte).
 // À coller dans la console Firebase : Firestore Database → Règles → Publier.
 //
 // Lecture et écriture ouvertes à tous (choix assumé : données non sensibles).
@@ -29,14 +29,27 @@ service cloud.firestore {
       return !(field in data) || data[field] == null || isTroopCount(data[field]);
     }
 
+    // Niveau de bâtiment saisi à la main : absent, vide ou entre 0 et 20.
+    function isOptionalLevel(data, field) {
+      return !(field in data) || data[field] == null || (data[field] is int && data[field] >= 0 && data[field] <= 20);
+    }
+
     function isValidPlayer(data) {
-      return data.keys().hasOnly(['name', 'village', 'clan', 'points', 'inhabitants', 'ce'])
+      return data.keys().hasOnly([
+          'name', 'village', 'clan', 'points', 'inhabitants',
+          'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall'
+        ])
         && isName(data.name)
         && data.village is string && data.village.size() <= 64
         && (data.clan == null || isName(data.clan))
         && isOptionalCount(data, 'points')
         && isOptionalCount(data, 'inhabitants')
-        && (!('ce' in data) || data.ce == null || (data.ce is int && data.ce >= 0 && data.ce <= 20));
+        && isOptionalLevel(data, 'ce')
+        && isOptionalLevel(data, 'academy')
+        && isOptionalLevel(data, 'chunninCenter')
+        && isOptionalLevel(data, 'jouninCenter')
+        && isOptionalLevel(data, 'hospital')
+        && isOptionalLevel(data, 'wall');
     }
 
     match /enemies/{player} {
@@ -52,6 +65,23 @@ service cloud.firestore {
     match /clans/{clan} {
       allow read, delete: if true;
       allow create, update: if request.resource.data.keys().hasOnly(['name']) && isName(request.resource.data.name);
+    }
+
+    // Carte du jeu, importée depuis « Gestion clan ».
+    function isValidVillage(data) {
+      return data.keys().hasOnly(['name', 'kage', 'x', 'y', 'clan', 'points', 'inhabitants', 'neutral'])
+        && isName(data.name)
+        && isName(data.kage)
+        && data.x is int && data.y is int
+        && (data.clan == null || isName(data.clan))
+        && isTroopCount(data.points)
+        && isTroopCount(data.inhabitants)
+        && data.neutral is bool;
+    }
+
+    match /villages/{village} {
+      allow read, delete: if true;
+      allow create, update: if isValidVillage(request.resource.data);
     }
 
     // Témoin de la copie initiale des joueurs : créé une seule fois, jamais modifié.

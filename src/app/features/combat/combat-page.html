@@ -1,70 +1,94 @@
 @let r = result();
+
+<app-card class="p-3 flex justify-center">
+  <app-segmented-control [options]="tabOptions" [(value)]="tab" />
+</app-card>
+
+<ng-template #sideCard let-side>
+  <app-card class="p-6 space-y-5">
+    <div class="border-b border-stone-800 pb-3 flex justify-between items-center">
+      <h2 class="font-semibold text-stone-200 flex items-center">
+        <i class="fa-solid {{ side.icon }} {{ side.color }} mr-2"></i> {{ side.title }}
+      </h2>
+      <span class="text-xs text-stone-400">
+        Force <span class="font-mono font-bold {{ side.color }}">{{ power(side.stats.strength) }}</span>
+      </span>
+    </div>
+
+    <div>
+      <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Joueur</label>
+      <app-combobox
+        [value]="side.playerName"
+        (valueChange)="selectPlayer(side.id, $event)"
+        [options]="playerOptions()"
+        placeholder="Choisir un joueur (facultatif)"
+      />
+      @if (side.loaded; as info) {
+        <p class="text-[11px] text-cyan-300 mt-1">{{ info }}</p>
+      }
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      @for (troop of troopTypes; track troop.key) {
+        <div>
+          <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ troop.label }}</label>
+          <app-number-input
+            [value]="side.form.troops[troop.key]"
+            (valueChange)="setTroop(side.id, troop.key, $event)"
+            [min]="0"
+            placeholder="0"
+          />
+          <p class="text-[11px] text-stone-500 mt-1">
+            Puissance <span class="font-mono text-stone-300">{{ power(side.stats.unitPower[troop.key]) }}</span>
+            (+{{ side.stats.bonus[troop.key] }} %@if (side.form.combatTicket) { ×1,2 })
+          </p>
+        </div>
+      }
+    </div>
+
+    <div class="grid grid-cols-2 gap-3 border-t border-stone-800 pt-5">
+      @for (field of side.fields; track field.key) {
+        <div>
+          <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
+            <i class="fa-solid {{ field.icon }} text-red-400 mr-1.5"></i> {{ field.label }}
+          </label>
+          <app-number-input
+            [value]="side.form.levels[field.key]"
+            (valueChange)="setLevel(side.id, field.key, $event)"
+            [min]="0"
+            [max]="levelMax"
+            placeholder="0"
+          />
+        </div>
+      }
+      <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          [checked]="side.form.combatTicket"
+          (change)="setTicket(side.id, 'combatTicket', $any($event.target).checked)"
+          class="accent-red-700 w-4 h-4 cursor-pointer"
+        />
+        {{ side.ticketLabel }} activé (puissance ×1,2)
+      </label>
+      <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          [checked]="side.form.hospitalTicket"
+          (change)="setTicket(side.id, 'hospitalTicket', $any($event.target).checked)"
+          class="accent-red-700 w-4 h-4 cursor-pointer"
+        />
+        Ticket hôpital activé (+{{ ticketBonus }} %)
+        <span class="ml-auto text-stone-400">Récupération <span class="font-mono font-bold text-emerald-300">{{ side.recoveryRate }} %</span></span>
+      </label>
+    </div>
+
+  </app-card>
+</ng-template>
+
+@if (tab() === 'simulation') {
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
   @for (side of sides(); track side.id) {
-    <app-card class="p-6 space-y-5">
-      <div class="border-b border-stone-800 pb-3 flex justify-between items-center">
-        <h2 class="font-semibold text-stone-200 flex items-center">
-          <i class="fa-solid {{ side.icon }} {{ side.color }} mr-2"></i> {{ side.title }}
-        </h2>
-        <span class="text-xs text-stone-400">
-          Force <span class="font-mono font-bold {{ side.color }}">{{ power(side.stats.strength) }}</span>
-        </span>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3">
-        @for (troop of troopTypes; track troop.key) {
-          <div>
-            <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ troop.label }}</label>
-            <app-number-input
-              [value]="side.form.troops[troop.key]"
-              (valueChange)="setTroop(side.id, troop.key, $event)"
-              [min]="0"
-              placeholder="0"
-            />
-            <p class="text-[11px] text-stone-500 mt-1">
-              Puissance <span class="font-mono text-stone-300">{{ power(side.stats.unitPower[troop.key]) }}</span>
-              (+{{ side.stats.bonus[troop.key] }} %@if (side.form.combatTicket) { ×1,2 })
-            </p>
-          </div>
-        }
-      </div>
-
-      <div class="grid grid-cols-2 gap-3 border-t border-stone-800 pt-5">
-        @for (field of side.fields; track field.key) {
-          <div>
-            <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
-              <i class="fa-solid {{ field.icon }} text-red-400 mr-1.5"></i> {{ field.label }}
-            </label>
-            <app-number-input
-              [value]="side.form.levels[field.key]"
-              (valueChange)="setLevel(side.id, field.key, $event)"
-              [min]="0"
-              [max]="levelMax"
-              placeholder="0"
-            />
-          </div>
-        }
-        <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            [checked]="side.form.combatTicket"
-            (change)="setTicket(side.id, 'combatTicket', $any($event.target).checked)"
-            class="accent-red-700 w-4 h-4 cursor-pointer"
-          />
-          {{ side.ticketLabel }} activé (puissance ×1,2)
-        </label>
-        <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            [checked]="side.form.hospitalTicket"
-            (change)="setTicket(side.id, 'hospitalTicket', $any($event.target).checked)"
-            class="accent-red-700 w-4 h-4 cursor-pointer"
-          />
-          Ticket hôpital activé (+{{ ticketBonus }} %)
-          <span class="ml-auto text-stone-400">Récupération <span class="font-mono font-bold text-emerald-300">{{ side.recoveryRate }} %</span></span>
-        </label>
-      </div>
-    </app-card>
+    <ng-container [ngTemplateOutlet]="sideCard" [ngTemplateOutletContext]="{ $implicit: side }" />
   }
 </div>
 
@@ -97,7 +121,7 @@
       </div>
       <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
         <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Pertes défenseur</span>
-        <span class="text-xl font-bold font-mono text-emerald-300">{{ r.defenderLosses ? defenderRangePct : '?' }}</span>
+        <span class="text-xl font-bold font-mono text-emerald-300">@if (r.defenderLossRate; as dl) { {{ percent(dl.min) }} – {{ percent(dl.max) }} } @else { ? }</span>
       </div>
     </div>
 
@@ -146,7 +170,7 @@
                 +{{ formatNumber(r.attackerPoints!.min) }} – {{ formatNumber(r.attackerPoints!.max) }}
               </td>
             } @else {
-              <td colspan="4" class="text-right py-2 pl-4 font-sans text-stone-500">Inconnu (aucun rapport dans ce cas)</td>
+              <td colspan="4" class="text-right py-2 pl-4 font-sans text-stone-500">Renseignez l'armée de l'assaillant</td>
             }
           </tr>
           @if (r.defenderLosses && r.defenderRecovered; as dr) {
@@ -179,7 +203,9 @@
     <span>
       Formules provisoires, déduites de quelques rapports. Puissance de base 10 / 40 / 60, bonus additionnés
       (Camp d'entraînement + centre du type de troupe, + Mur en défense), puis ×1,2 avec le ticket attaque / défense. L'assaillant perd {{ lossFactorPct }} % ×
-      (défense / attaque) de chaque type ; le défenseur perd {{ defenderRangePct }} quand l'assaillant est plus fort.
+      (défense / attaque) de chaque type et le défenseur {{ defenderRangePct }} quand l'assaillant est plus fort ; quand la défense est
+      plus forte, l'assaillant perd {{ defenseWins.attacker }} % × (défense / attaque) et le défenseur {{ defenseWins.defender }} % ×
+      (attaque / défense).
       Points : 1 / 5 / 10 par Genin / Chuunin / Jounin tué. L'hôpital soigne ensuite une part des tués de son camp
       (10 % au niveau 1, +1 % par niveau, 30 % au niveau 20 ; +{{ ticketBonus }} % avec le ticket).
     </span>
@@ -189,3 +215,116 @@
     Tout remettre à zéro
   </button>
 </app-card>
+} @else {
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+  <app-card class="p-6 space-y-5">
+    <div class="border-b border-stone-800 pb-3">
+      <h2 class="font-semibold text-stone-200 flex items-center">
+        <i class="fa-solid fa-hand-fist text-red-400 mr-2"></i> Mon attaque
+      </h2>
+      <p class="text-xs text-stone-400 mt-1">Vos niveaux et votre armée disponible, retenus dans ce navigateur.</p>
+    </div>
+
+    <div class="grid grid-cols-2 gap-3">
+      @for (field of myLevelFields; track field.key) {
+        <div>
+          <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ field.label }}</label>
+          <app-number-input [value]="me().levels[field.key]" (valueChange)="setMyLevel(field.key, $event)" [min]="0" [max]="levelMax" placeholder="0" />
+        </div>
+      }
+      <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
+        <input type="checkbox" [checked]="me().combatTicket" (change)="setMyTicket($any($event.target).checked)" class="accent-red-700 w-4 h-4 cursor-pointer" />
+        Ticket attaque activé (puissance ×1,2)
+      </label>
+    </div>
+
+    <div class="border-t border-stone-800 pt-5 space-y-3">
+      <span class="block text-xs font-medium text-stone-300 uppercase tracking-wider">Armée disponible</span>
+      <div class="grid grid-cols-3 gap-3">
+        @for (troop of troopTypes; track troop.key) {
+          <div>
+            <label class="block text-[11px] text-stone-400 mb-1">{{ troop.label }}</label>
+            <app-number-input [value]="available()[troop.key]" (valueChange)="setAvailable(troop.key, $event)" [min]="0" placeholder="0" />
+            <p class="text-[11px] text-stone-500 mt-1">Puissance <span class="font-mono text-stone-300">{{ power(myPower().unitPower[troop.key]) }}</span></p>
+          </div>
+        }
+      </div>
+      <div class="w-28">
+        <label class="block text-[11px] text-stone-400 mb-1">Marge (%)</label>
+        <app-number-input [value]="margin()" (valueChange)="margin.set($event)" [min]="0" placeholder="10" />
+      </div>
+    </div>
+  </app-card>
+
+  @for (side of sides(); track side.id) {
+    @if (side.id === 'defender') {
+      <ng-container [ngTemplateOutlet]="sideCard" [ngTemplateOutletContext]="{ $implicit: side }" />
+    }
+  }
+</div>
+
+<app-card class="p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200 flex items-center">
+      <i class="fa-solid fa-chess-knight text-red-400 mr-2"></i> Armée optimale
+    </h2>
+    <p class="text-xs text-stone-400 mt-1">
+      Hors hôpital : la composition dont les pertes se reforment le plus vite, type par type (Genin {{ minutes.genin }} min,
+      Chuunin {{ minutes.chuunin }} min, Jounin {{ minutes.jounin }} min), en battant la défense + la marge.
+    </p>
+  </div>
+
+  @if (optimal(); as o) {
+    @if (o.enough) {
+      <div class="grid grid-cols-3 gap-4">
+        @for (troop of troopTypes; track troop.key) {
+          <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+            <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">{{ troop.label }}</span>
+            <span class="text-2xl font-bold font-mono text-red-300">{{ formatNumber(o.troops[troop.key]) }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-xs text-stone-400 uppercase tracking-wider border-b border-stone-800">
+              <th class="text-left py-2 pr-4 font-medium">À reformer</th>
+              <th class="text-right py-2 px-4 font-medium">Vous</th>
+              <th class="text-right py-2 pl-4 font-medium">Ennemi (au moins)</th>
+            </tr>
+          </thead>
+          <tbody class="font-mono">
+            @for (troop of troopTypes; track troop.key) {
+              <tr class="border-b border-stone-800/60">
+                <td class="py-2 pr-4 font-sans text-stone-300">{{ troop.label }}</td>
+                <td class="py-2 px-4 text-right text-red-300">
+                  {{ formatNumber(o.result.attackerLosses[troop.key]) }} · {{ formatDuration(o.lostMinutes[troop.key] * 60) }}
+                </td>
+                <td class="py-2 pl-4 text-right text-emerald-300">
+                  @if (o.result.defenderLosses && o.enemyLostMinutes; as e) {
+                    {{ formatNumber(o.result.defenderLosses.min[troop.key]) }} · {{ formatDuration(e.min[troop.key] * 60) }}
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <p class="text-[11px] text-stone-500">
+        Chaque type se reforme en parallèle dans son bâtiment : l'armée est répartie (15 Genin pour 10 Chuunin pour 6 Jounin)
+        pour que vos trois files se reconstituent en même temps, le plus vite possible.
+      </p>
+      <button type="button" (click)="simulateOptimal()" class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-medium transition cursor-pointer">
+        Voir cette attaque dans la simulation
+      </button>
+    } @else {
+      <p class="text-xs text-amber-300 bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5">
+        Votre armée disponible ne suffit pas à battre la défense (+ marge).
+      </p>
+    }
+  } @else {
+    <p class="text-sm text-stone-400">Renseignez la défense à attaquer.</p>
+  }
+</app-card>
+}

@@ -28,9 +28,24 @@ export const routes: Routes = [
     loadComponent: () => import('./features/combat/combat-page').then((m) => m.CombatPage),
   },
   {
+    path: 'secondes',
+    title: 'Calcul seconde',
+    loadComponent: () => import('./features/production/production-page').then((m) => m.ProductionPage),
+  },
+  {
+    path: 'proches',
+    title: 'Qui est le plus proche',
+    loadComponent: () => import('./features/nearest/nearest-page').then((m) => m.NearestPage),
+  },
+  {
     path: 'ennemis',
     title: 'Infos Ennemis',
     loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),
+  },
+  {
+    path: 'clan',
+    title: 'Gestion clan',
+    loadComponent: () => import('./features/clan/clan-page').then((m) => m.ClanPage),
   },
   { path: '**', redirectTo: 'retour' },
 ];

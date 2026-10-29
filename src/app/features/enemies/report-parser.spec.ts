@@ -1,4 +1,4 @@
-import { OcrWord, parseReport, parseReportTime } from './report-parser';
+import { looksLikeReportText, OcrWord, parseReport, parseReportText, parseReportTime } from './report-parser';
 
 /** "texte@x" → mot OCR (y sans importance pour l'analyse). */
 const line = (...words: string[]): OcrWord[] =>
@@ -94,5 +94,57 @@ describe('parseReportTime', () => {
 
   it('retourne null sans titre lisible', () => {
     expect(parseReportTime([line('Ninjas@106', '500@376')])).toBeNull();
+  });
+});
+
+describe('parseReportText', () => {
+  const TEXT = `Rapport de l’attaque | 28/10 à 06h30
+Heure française
+
+Assaillant — Ninjas de Dragnir-City
+Genin | Chuunin | Jounin
+Ninjas : 2 841 | 1 799 | 464
+Tués : 0 | 0 | 0
+Pillage : Pierre 6 748 | Bois 7 044 | Fer 6 824 | Nourriture 0
+Points gagnés : +0
+
+Défenseur — Ninjas de Valyria
+Genin | Chuunin | Jounin
+Ninjas : 0 | 0 | 0
+Tués : 0 | 0 | 0
+Points gagnés : +0`;
+
+  it('lit les deux sections et l’heure', () => {
+    const { sections, attackedAt } = parseReportText(TEXT, new Date(2026, 9, 29));
+    expect(sections).toEqual([
+      { village: 'Dragnir-City', side: 'Assaillant', ninjas: { genin: 2841, chuunin: 1799, jounin: 464 }, killed: { genin: 0, chuunin: 0, jounin: 0 } },
+      { village: 'Valyria', side: 'Défenseur', ninjas: { genin: 0, chuunin: 0, jounin: 0 }, killed: { genin: 0, chuunin: 0, jounin: 0 } },
+    ]);
+    expect(attackedAt).toBe(new Date(2026, 9, 28, 6, 30).getTime());
+  });
+
+  it('reconnaît un rapport copié, pas un texte quelconque', () => {
+    expect(looksLikeReportText(TEXT)).toBe(true);
+    expect(looksLikeReportText('Bonjour tout le monde')).toBe(false);
+  });
+
+  it('lit la copie du tableau du site (tabulations, sans « : »)', () => {
+    const table = [
+      'Assaillant\tNinjas de Reggaeton',
+      'Genin\tChuunin\tJounin',
+      'Ninjas\t1 951\t1 312\t303',
+      'Tués\t0\t0\t0',
+      'Pillage\tpierre13 839 | bois13 875 | fer13 907 | nourriture0',
+      'Points gagnés : +1',
+    ].join('\n');
+    expect(looksLikeReportText(table)).toBe(true);
+    expect(parseReportText(table).sections).toEqual([
+      { village: 'Reggaeton', side: 'Assaillant', ninjas: { genin: 1951, chuunin: 1312, jounin: 303 }, killed: { genin: 0, chuunin: 0, jounin: 0 } },
+    ]);
+  });
+
+  it('accepte des espaces multiples à la place des tabulations', () => {
+    const spaced = 'Assaillant    Ninjas de Reggaeton\nNinjas    1 951    1 312    303\nTués    0    0    0';
+    expect(parseReportText(spaced).sections[0].ninjas).toEqual({ genin: 1951, chuunin: 1312, jounin: 303 });
   });
 });

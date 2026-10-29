@@ -139,3 +139,49 @@ function readRow(row: readonly OcrWord[] | null, columns: Record<TroopKey, numbe
   for (const { key } of TROOPS) result[key] = digits[key] ? Number(digits[key]) : null;
   return result;
 }
+
+/**
+ * Lit un rapport copié en texte brut, sous l'une ou l'autre forme :
+ * - « Assaillant — Ninjas de <village> », puis « Ninjas : 2 841 | 1 799 | 464 » et « Tués : 0 | 0 | 0 » ;
+ * - copie du tableau du site : colonnes séparées par des tabulations (ou plusieurs espaces), sans « : ».
+ * Une espace simple reste un séparateur de milliers (« 1 951 »). L'heure vient de « Rapport de l’attaque | 28/10 à 06h30 ».
+ */
+export function parseReportText(text: string, now = new Date()): { sections: ParsedReport[]; attackedAt: number | null } {
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  const sections: ParsedReport[] = [];
+  let current: ParsedReport | null = null;
+
+  for (const line of lines) {
+    // Les valeurs commencent par un chiffre : « Ninjas de <village> » n'est pas une ligne de nombres.
+    const row = /^(ninjas|tu[eé]s)\s*:?\s*(\d.*)$/i.exec(line);
+    if (row) {
+      if (!current) continue;
+      const values = row[2].split(/\s*\|\s*|\t+|\s{2,}/).map((v) => v.replace(/\D/g, ''));
+      const counts = Object.fromEntries(TROOPS.map((t, i) => [t.key, values[i] ? Number(values[i]) : null])) as PartialCounts;
+      if (norm(row[1]).startsWith('ninjas')) current.ninjas = counts;
+      else current.killed = counts;
+      continue;
+    }
+    const header = /ninjas de\s+(.+)$/i.exec(line);
+    if (header) {
+      const start = norm(line);
+      current = {
+        village: header[1].trim(),
+        side: start.startsWith('assaillant') ? 'Assaillant' : start.startsWith('defenseur') ? 'Défenseur' : null,
+        ninjas: { genin: null, chuunin: null, jounin: null },
+        killed: { genin: null, chuunin: null, jounin: null },
+      };
+      sections.push(current);
+    }
+  }
+
+  const attackedAt = parseReportTime(lines.map((l) => [{ text: l, x: 0, y: 0 }]), now);
+  return { sections, attackedAt };
+}
+
+/** Le texte ressemble à un rapport de combat copié (au moins une section « Ninjas de … »). */
+export const looksLikeReportText = (text: string): boolean =>
+  /ninjas de\s+\S/i.test(text) && /^\s*ninjas\s*:?\s*\d/im.test(text);

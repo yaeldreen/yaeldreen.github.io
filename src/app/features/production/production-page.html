@@ -1,0 +1,89 @@
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+  <app-card class="lg:col-span-5 p-6 space-y-5">
+    <div class="border-b border-stone-800 pb-3">
+      <h2 class="font-semibold text-stone-200 flex items-center">
+        <i class="fa-solid fa-seedling text-red-400 mr-2"></i> Mes champs
+      </h2>
+      <p class="text-xs text-stone-400 mt-1">Niveau de chaque champ (0 à {{ maxLevel }}), retenu dans ce navigateur.</p>
+    </div>
+
+    @for (row of rows(); track row.resource.key) {
+      <div>
+        <div class="flex justify-between items-center mb-1.5">
+          <span class="text-xs font-medium uppercase tracking-wider" [class]="row.resource.valueClass">{{ row.resource.label }}</span>
+          <span class="text-[11px] text-stone-400 font-mono">{{ formatNumber(row.perHour) }} / h</span>
+        </div>
+        <div class="grid gap-2" [class]="row.fields.length === 3 ? 'grid-cols-3' : 'grid-cols-2'">
+          @for (level of row.fields; track $index) {
+            <app-number-input [value]="level" (valueChange)="setLevel(row.resource.key, $index, $event)" [min]="0" [max]="maxLevel" placeholder="0" />
+          }
+        </div>
+      </div>
+    }
+  </app-card>
+
+  <app-card class="lg:col-span-7 p-6 space-y-5">
+    <div class="border-b border-stone-800 pb-3">
+      <h2 class="font-semibold text-stone-200 flex items-center">
+        <i class="fa-solid fa-stopwatch text-red-400 mr-2"></i> Depuis quand suis-je à 0 ?
+      </h2>
+      <p class="text-xs text-stone-400 mt-1">Saisissez vos ressources et l'heure exacte où vous les avez relevées.</p>
+    </div>
+
+    <div>
+      <div class="flex justify-between items-center mb-2">
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider">Heure du relevé (avec secondes)</label>
+        <button type="button" (click)="setNow()" class="text-xs text-red-400 hover:text-red-300 underline transition cursor-pointer">Maintenant</button>
+      </div>
+      <input
+        type="datetime-local"
+        step="1"
+        [ngModel]="time()"
+        (ngModelChange)="time.set($event)"
+        class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-red-700 font-mono text-sm"
+      />
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-stone-400 uppercase tracking-wider border-b border-stone-800">
+            <th class="text-left py-2 pr-3 font-medium">Ressource</th>
+            <th class="text-left py-2 px-3 font-medium">Stock actuel</th>
+            <th class="text-right py-2 px-3 font-medium">Temps écoulé</th>
+            <th class="text-right py-2 pl-3 font-medium">À 0 à</th>
+          </tr>
+        </thead>
+        <tbody class="font-mono">
+          @for (row of rows(); track row.resource.key) {
+            <tr class="border-b border-stone-800/60">
+              <td class="py-2 pr-3 font-sans font-medium" [class]="row.resource.valueClass">{{ row.resource.label }}</td>
+              <td class="py-2 px-3 w-36">
+                <app-number-input [value]="row.amount" (valueChange)="setAmount(row.resource.key, $event)" [min]="0" placeholder="0" />
+              </td>
+              <td class="text-right py-2 px-3 text-stone-200">
+                {{ row.elapsedSeconds !== null ? formatDuration(row.elapsedSeconds) : '—' }}
+              </td>
+              <td class="text-right py-2 pl-3 font-bold text-emerald-400">
+                @if (row.zero; as z) {
+                  {{ z.time }}
+                  <span class="block text-xs font-normal text-stone-500">{{ z.date }}</span>
+                } @else {
+                  <span class="text-stone-600 font-normal">—</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-red-950/20 border border-red-700/20 rounded-xl p-3.5 text-xs text-red-300 flex space-x-3">
+      <i class="fa-solid fa-circle-info text-red-400 text-base mt-0.5"></i>
+      <span>
+        Production horaire = somme des champs de la ressource (2 pierre, 2 bois, 2 fer, 3 nourriture). Temps écoulé = stock ÷
+        production, arrondi à la seconde ; « À 0 à » = heure du relevé − temps écoulé.
+      </span>
+    </div>
+  </app-card>
+</div>

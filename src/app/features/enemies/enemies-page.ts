@@ -4,15 +4,15 @@ import { Card } from '../../shared/ui/card';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatNumber } from '../../shared/utils/format';
-import { findVillage, MAP_VILLAGES } from '../../core/game-data/map-villages';
-import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PlayerMatch } from './clans.data';
+import { findVillage } from '../../core/game-data/map-villages';
+import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PLAYER_STATS, PlayerMatch, PlayerStatKey } from './clans.data';
 import { EnemiesStore } from './enemies-store';
 import { EnemyRecord, playerKey, ReportSide, survivors, TroopCounts, TROOPS, TroopKey } from './enemies.model';
 import { readClipboardImage } from '../../shared/utils/clipboard';
 import { ocrErrorDetail, readReportImage } from './report-ocr';
-import { ParsedReport, PartialCounts } from './report-parser';
+import { looksLikeReportText, ParsedReport, parseReportText, PartialCounts } from './report-parser';
 
-type StatKey = 'points' | 'inhabitants' | 'ce';
+type StatKey = PlayerStatKey;
 type DraftStats = Record<StatKey, number | null>;
 
 interface Draft {
@@ -25,8 +25,8 @@ interface Draft {
   stats: DraftStats;
 }
 
-const EMPTY_STATS: DraftStats = { points: null, inhabitants: null, ce: null };
-const STAT_MAX: Record<StatKey, number> = { points: Infinity, inhabitants: Infinity, ce: 20 };
+const EMPTY_STATS = Object.fromEntries(PLAYER_STATS.map((f) => [f.key, null])) as DraftStats;
+const STAT_MAX = Object.fromEntries(PLAYER_STATS.map((f) => [f.key, f.max ?? Infinity])) as Record<StatKey, number>;
 
 interface TableRow {
   player: string;
@@ -34,10 +34,7 @@ interface TableRow {
   /** Clan actuel (`null` = sans clan) ; `undefined` = joueur absent des listes. */
   clan: string | null | undefined;
   record: EnemyRecord | undefined;
-  /** Saisis à la main (null = non renseigné). */
-  points: number | null;
-  inhabitants: number | null;
-  /** Camp d'entraînement estimé, saisi à la main. */ ce: number | null;
+  /** Infos saisies à la main (null = non renseigné). */ stats: DraftStats;
 }
 
 interface PlayerForm {
@@ -65,7 +62,7 @@ const UNLISTED = 'Non classés';
 const byName = (a: TableRow, b: TableRow): number => a.player.localeCompare(b.player, 'fr');
 
 const toRow = (
-  player: Pick<Player, 'name' | 'village' | 'points' | 'inhabitants' | 'ce'>,
+  player: Omit<Player, 'clan'>,
   clan: string | null | undefined,
   record: EnemyRecord | undefined,
 ): TableRow => ({
@@ -73,9 +70,7 @@ const toRow = (
   village: player.village,
   clan,
   record,
-  points: player.points ?? null,
-  inhabitants: player.inhabitants ?? null,
-  ce: player.ce ?? null,
+  stats: Object.fromEntries(PLAYER_STATS.map((f) => [f.key, player[f.key] ?? null])) as DraftStats,
 });
 
 @Component({
@@ -89,11 +84,7 @@ export class EnemiesPage implements OnDestroy {
   protected readonly store = inject(EnemiesStore);
   protected readonly troops = TROOPS;
   protected readonly formatNumber = formatNumber;
-  protected readonly statFields: readonly { key: StatKey; label: string; max: number | null }[] = [
-    { key: 'points', label: 'Points', max: null },
-    { key: 'inhabitants', label: 'Habitants', max: null },
-    { key: 'ce', label: 'CE estimé', max: 20 },
-  ];
+  protected readonly statFields = PLAYER_STATS;
 
   protected readonly draft = signal<Draft | null>(null);
   /** Sections lues dans la capture (Assaillant, Défenseur…) et celle en cours d'édition. */
@@ -172,11 +163,16 @@ export class EnemiesPage implements OnDestroy {
     return filter === ALL ? this.tables() : this.tables().filter((t) => t.name === filter);
   });
 
+  /** Collage (Ctrl+V / Cmd+V) d'une capture ou d'un rapport copié en texte. */
   protected onPaste(event: ClipboardEvent): void {
     const file = [...(event.clipboardData?.items ?? [])].find((i) => i.type.startsWith('image/'))?.getAsFile();
+    const text = event.clipboardData?.getData('text/plain') ?? '';
     if (file) {
       event.preventDefault();
       void this.analyze(file);
+    } else if (looksLikeReportText(text)) {
+      event.preventDefault();
+      this.analyzeText(text);
     }
   }
 
@@ -191,9 +187,15 @@ export class EnemiesPage implements OnDestroy {
   protected async pasteFromClipboard(): Promise<void> {
     this.pasteError.set(null);
     try {
-      const image = await readClipboardImage();
-      if (image) void this.analyze(image);
-      else this.pasteError.set("Le presse-papiers ne contient pas d'image : copiez d'abord la capture du rapport.");
+      // Image d'abord ; si le navigateur ne sait pas la lire, on tente quand même le texte.
+      const image = await readClipboardImage().catch(() => null);
+      if (image) {
+        void this.analyze(image);
+        return;
+      }
+      const text = await navigator.clipboard.readText();
+      if (looksLikeReportText(text)) this.analyzeText(text);
+      else this.pasteError.set('Le presse-papiers ne contient ni capture ni rapport en texte : copiez d’abord le rapport.');
     } catch {
       this.pasteError.set('Accès au presse-papiers impossible : touchez la zone pour choisir la capture dans vos photos.');
     }
@@ -262,7 +264,7 @@ export class EnemiesPage implements OnDestroy {
       side: row.record?.side ?? null,
       ninjas: troops ? { ...troops } : { ...EMPTY_COUNTS },
       killed: troops ? { genin: 0, chuunin: 0, jounin: 0 } : { ...EMPTY_COUNTS },
-      stats: { points: row.points, inhabitants: row.inhabitants, ce: row.ce },
+      stats: { ...row.stats },
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -295,7 +297,7 @@ export class EnemiesPage implements OnDestroy {
 
   // --- Gestion des clans et joueurs ---
 
-  protected readonly mapVillageNames = MAP_VILLAGES.map((v) => v.name).sort((a, b) => a.localeCompare(b, 'fr'));
+  protected readonly mapVillageNames = computed(() => this.store.villages().map((v) => v.name).sort((a, b) => a.localeCompare(b, 'fr')));
   protected readonly addingClan = signal(false);
   protected readonly newClan = signal('');
   protected readonly playerForm = signal<PlayerForm | null>(null);
@@ -328,7 +330,7 @@ export class EnemiesPage implements OnDestroy {
 
   /** Un village de la carte choisi : le nom du joueur (kage) est pré-rempli. */
   protected setPlayerFormVillage(village: string): void {
-    const onMap = findVillage(village);
+    const onMap = findVillage(this.store.villages(), village);
     this.playerForm.update((f) => f && { ...f, village, name: f.name || (onMap?.name === village ? onMap.kage : '') });
   }
 
@@ -401,16 +403,7 @@ export class EnemiesPage implements OnDestroy {
     this.draft.set(null);
     this.sections.set([]);
     try {
-      const { sections } = await readReportImage(file);
-      this.sections.set(sections);
-      if (!sections.length) {
-        this.readWarning.set('Rapport non reconnu : complétez les champs à la main.');
-        this.draft.set(this.emptyDraft());
-        return;
-      }
-      // Par défaut, la première section qui n'est pas de notre clan.
-      const enemy = sections.findIndex((s) => this.match(s.village)?.clan !== OWN_CLAN);
-      this.selectSection(enemy < 0 ? 0 : enemy);
+      this.loadSections((await readReportImage(file)).sections);
     } catch (e) {
       this.readWarning.set(
         `La lecture a échoué (connexion nécessaire au premier usage) : saisissez les valeurs à la main. Détail : ${ocrErrorDetail(e)}`,
@@ -419,6 +412,25 @@ export class EnemiesPage implements OnDestroy {
     } finally {
       this.reading.set(false);
     }
+  }
+
+  /** Rapport copié en texte brut : lu directement, sans OCR. */
+  private analyzeText(text: string): void {
+    this.cancel();
+    this.pasteError.set(null);
+    this.loadSections(parseReportText(text).sections);
+  }
+
+  private loadSections(sections: ParsedReport[]): void {
+    this.sections.set(sections);
+    if (!sections.length) {
+      this.readWarning.set('Rapport non reconnu : complétez les champs à la main.');
+      this.draft.set(this.emptyDraft());
+      return;
+    }
+    // Par défaut, la première section qui n'est pas de notre clan.
+    const enemy = sections.findIndex((s) => this.match(s.village)?.clan !== OWN_CLAN);
+    this.selectSection(enemy < 0 ? 0 : enemy);
   }
 
   protected selectSection(index: number): void {

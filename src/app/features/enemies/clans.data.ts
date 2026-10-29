@@ -1,11 +1,21 @@
-export interface Player {
+/** Infos saisies à la main sur un joueur (infos enemis), reprises par Simu combat. */
+export const PLAYER_STATS = [
+  { key: 'points', label: 'Points', short: 'Points', max: null },
+  { key: 'inhabitants', label: 'Habitants', short: 'Hab.', max: null },
+  { key: 'ce', label: 'CE estimé', short: 'CE', max: 20 },
+  { key: 'academy', label: 'Académie', short: 'Acad.', max: 20 },
+  { key: 'chunninCenter', label: 'Centre Chuunin', short: 'C. Chu', max: 20 },
+  { key: 'jouninCenter', label: 'Centre Jounin', short: 'C. Jou', max: 20 },
+  { key: 'hospital', label: 'Hôpital', short: 'Hôp.', max: 20 },
+  { key: 'wall', label: "Mur d'enceinte", short: 'Mur', max: 20 },
+] as const;
+
+export type PlayerStatKey = (typeof PLAYER_STATS)[number]['key'];
+
+export interface Player extends Partial<Record<PlayerStatKey, number | null>> {
   name: string;
   village: string;
   /** `null` = sans clan */ clan: string | null;
-  /** Saisis à la main (absents = inconnus). */
-  points?: number | null;
-  inhabitants?: number | null;
-  /** Camp d'entraînement estimé par le clan. */ ce?: number | null;
 }
 
 export interface Clan {

@@ -1,0 +1,52 @@
+<app-card class="p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200 flex items-center">
+      <i class="fa-solid fa-location-crosshairs text-red-400 mr-2"></i> Qui est le plus proche ?
+    </h2>
+    <p class="text-xs text-stone-400 mt-1">Choisissez un village : les membres de {{ clan }} sont classés du plus proche au plus éloigné.</p>
+  </div>
+
+  @if (!store.villages().length) {
+    <p class="text-xs text-amber-300">Carte vide : importez l'export du jeu dans « Gestion clan ».</p>
+  }
+  <div>
+    <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Village</label>
+    <app-combobox [value]="targetName()" (valueChange)="targetName.set($event)" [options]="villageOptions()" placeholder="Nom du village ou du joueur" />
+    @if (target(); as t) {
+      <p class="text-[11px] text-stone-400 mt-1">
+        {{ t.name }} ({{ t.kage }}{{ t.clan ? ' · ' + t.clan : '' }}) : <span class="font-mono text-stone-200">{{ t.x }} / {{ t.y }}</span>
+      </p>
+    } @else if (targetName()) {
+      <p class="text-[11px] text-amber-300 mt-1">Village introuvable dans la carte.</p>
+    }
+  </div>
+</app-card>
+
+@if (ranking().length) {
+  <app-card class="overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse text-sm">
+        <thead>
+          <tr class="border-b border-stone-800 text-xs text-stone-400 uppercase tracking-wider bg-stone-950/40">
+            <th class="py-3 px-5 w-12">#</th>
+            <th class="py-3 px-5">Joueur</th>
+            <th class="py-3 px-5">Village</th>
+            <th class="py-3 px-5 text-right">Coordonnées</th>
+            <th class="py-3 px-5 text-right">Distance</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-800/60">
+          @for (member of ranking(); track member.village.name; let i = $index) {
+            <tr class="hover:bg-red-950/20 transition">
+              <td class="py-3 px-5 font-mono text-stone-500">{{ i + 1 }}</td>
+              <td class="py-3 px-5 font-bold text-red-300">{{ member.village.kage }}</td>
+              <td class="py-3 px-5 text-stone-300">{{ member.village.name }}</td>
+              <td class="py-3 px-5 text-right font-mono text-stone-400">{{ member.village.x }} / {{ member.village.y }}</td>
+              <td class="py-3 px-5 text-right font-mono font-bold text-emerald-400">{{ member.distance }} km</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </app-card>
+}

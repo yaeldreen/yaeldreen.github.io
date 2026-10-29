@@ -1,6 +1,6 @@
 import { TRAVEL_SPEEDS } from '../../core/game-data/travel-speeds';
-import { MAP_VILLAGES, MapVillage } from '../../core/game-data/map-villages';
-import { OWN_CLAN } from '../enemies/clans.data';
+import { findVillage, MapVillage } from '../../core/game-data/map-villages';
+import { OWN_CLAN, Player } from '../enemies/clans.data';
 import { FormattedDateTime, formatDateTime, formatSpeed } from '../../shared/utils/format';
 
 export type DistanceMode = 'manual' | 'coords' | 'report';
@@ -32,10 +32,19 @@ export interface CounterAttack {
   nowMs: number;
 }
 
-/** Villages des membres de notre clan, triés par joueur (le kage). */
-export const CLAN_VILLAGES: readonly MapVillage[] = MAP_VILLAGES.filter((v) => v.clan === OWN_CLAN).sort((a, b) =>
-  a.kage.localeCompare(b.kage, 'fr'),
-);
+/**
+ * Villages des membres de notre clan (liste partagée, onglet « Gestion clan »), localisés sur la carte
+ * et triés par joueur. Un membre dont le village n'est pas sur la carte est ignoré.
+ */
+export function clanVillages(players: readonly Player[], villages: readonly MapVillage[]): MapVillage[] {
+  return players
+    .filter((p) => p.clan === OWN_CLAN)
+    .flatMap((p) => {
+      const onMap = findVillage(villages, p.village) ?? findVillage(villages, p.name);
+      return onMap ? [{ ...onMap, kage: p.name }] : [];
+    })
+    .sort((a, b) => a.kage.localeCompare(b.kage, 'fr'));
+}
 
 /** Le ticket divise le temps de trajet par deux. */
 const TICKET_TIME_FACTOR = 0.5;

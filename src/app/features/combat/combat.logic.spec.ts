@@ -1,4 +1,4 @@
-import { Army, recoveryRate, sideStats, simulateCombat } from './combat.logic';
+import { Army, optimalAttack, rebuildMinutes, recoveryRate, sideStats, simulateCombat } from './combat.logic';
 
 const army = (
   troops: [number, number, number],
@@ -55,11 +55,23 @@ describe('simulateCombat', () => {
     expect(attackerPoints!.max).toBeGreaterThanOrEqual(1806);
   });
 
-  it('ne prédit pas les pertes du défenseur quand il est plus fort', () => {
-    const result = simulateCombat(army([100, 0, 0], {}), army([1000, 0, 0], {}));
+  it('quand la défense est plus forte, retrouve le rapport Gogokage → Weedland (26/10)', () => {
+    // Bonus inconnus : comparaison sans bonus. Réel : assaillant 900 / 527 / 74, défenseur 383 / 268 / 62.
+    const result = simulateCombat(army([1922, 1125, 159], {}), army([2188, 1529, 353], {}));
     expect(result.attackerWins).toBe(false);
+    const { genin, chuunin, jounin } = result.attackerLosses;
+    expect(Math.abs(genin - 900)).toBeLessThanOrEqual(10);
+    expect(Math.abs(chuunin - 527)).toBeLessThanOrEqual(10);
+    expect(Math.abs(jounin - 74)).toBeLessThanOrEqual(2);
+    const d = result.defenderLosses!;
+    expect([d.min.genin, d.min.chuunin, d.min.jounin].every((v, i) => v <= [383, 268, 62][i])).toBe(true);
+    expect([d.max.genin, d.max.chuunin, d.max.jounin].every((v, i) => v >= [383, 268, 62][i])).toBe(true);
+  });
+
+  it('plafonne les pertes à 100 %', () => {
+    const result = simulateCombat(army([100, 0, 0], {}), army([1000, 0, 0], {}));
     expect(result.attackerLossRate).toBe(1);
-    expect(result.defenderLosses).toBeNull();
+    expect(result.defenderLossRate!.max).toBeLessThan(0.1);
   });
 });
 
@@ -75,10 +87,51 @@ describe('hôpital', () => {
     const guerre = army([1108, 703, 114], { training: 5, academy: 8, chunnin: 8, jounin: 5, hospital: 10 });
     const matrice = army([693, 414, 53], { training: 2, academy: 8, chunnin: 8, jounin: 5, wall: 1 }, true);
     const result = simulateCombat(guerre, matrice);
-    // Pertes 132 / 84 / 14, hôpital 10 → 19 %.
-    expect(result.attackerRecovered).toEqual({ genin: 25, chuunin: 16, jounin: 3 });
+    // Pertes 132 / 84 / 14, hôpital 10 → 19 % : 25,08 / 15,96 / 2,66, arrondis à l'inférieur.
+    expect(result.attackerRecovered).toEqual({ genin: 25, chuunin: 15, jounin: 2 });
     // Ticket seul : 20 % des pertes du défenseur.
     expect(result.defenderRecoveryRate).toBe(20);
-    expect(result.defenderRecovered!.max.genin).toBe(Math.round(result.defenderLosses!.max.genin * 0.2));
+    expect(result.defenderRecovered!.max.genin).toBe(Math.floor(result.defenderLosses!.max.genin * 0.2));
+  });
+});
+
+describe('optimalAttack', () => {
+  const matrice = army([693, 414, 53], { training: 2, academy: 8, chunnin: 8, jounin: 5, wall: 1 });
+  const levels = army([0, 0, 0], { training: 5, academy: 8, chunnin: 8, jounin: 5 });
+  const plenty = { genin: 10_000, chuunin: 10_000, jounin: 10_000 };
+
+  it('envoie 15 Genin pour 10 Chuunin pour 6 Jounin, juste assez pour gagner', () => {
+    const plan = optimalAttack(levels, matrice, plenty, 0);
+    const { genin, chuunin, jounin } = plan.troops;
+    expect(genin / chuunin).toBeCloseTo(1.5, 1);
+    expect(chuunin / jounin).toBeCloseTo(10 / 6, 1);
+    expect(plan.enough).toBe(true);
+    expect(plan.result.attackerWins).toBe(true);
+  });
+
+  it('reconstitue plus vite qu’une armée d’un seul type', () => {
+    const plan = optimalAttack(levels, matrice, plenty, 10);
+    for (const only of ['genin', 'chuunin', 'jounin'] as const) {
+      const single = optimalAttack(levels, matrice, { genin: 0, chuunin: 0, jounin: 0, [only]: 10_000 }, 10);
+      expect(rebuildMinutes(plan.result.attackerLosses)).toBeLessThan(rebuildMinutes(single.result.attackerLosses));
+    }
+  });
+
+  it('envoie tout un type limité et complète avec les autres', () => {
+    const plan = optimalAttack(levels, matrice, { genin: 10_000, chuunin: 50, jounin: 10_000 }, 10);
+    expect(plan.troops.chuunin).toBe(50);
+    expect(plan.troops.genin / plan.troops.jounin).toBeCloseTo(50 / 20, 1);
+    expect(plan.enough).toBe(true);
+  });
+
+  it('signale une armée insuffisante', () => {
+    const plan = optimalAttack(levels, matrice, { genin: 100, chuunin: 10, jounin: 1 }, 10);
+    expect(plan.enough).toBe(false);
+    expect(plan.troops).toEqual({ genin: 100, chuunin: 10, jounin: 1 });
+  });
+
+  it('ignore l’hôpital', () => {
+    const withHospital = { ...levels, levels: { ...levels.levels, hospital: 20 }, hospitalTicket: true };
+    expect(optimalAttack(withHospital, matrice, plenty, 10).result.attackerRecoveryRate).toBe(0);
   });
 });

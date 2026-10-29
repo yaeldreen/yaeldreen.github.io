@@ -1,28 +1,44 @@
 <div class="bg-stone-950 text-stone-100 min-h-screen font-sans antialiased selection:bg-red-800 selection:text-white flex flex-col justify-between">
   <header class="border-b border-stone-800 bg-stone-900/60 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div class="flex items-center space-x-3">
-        <img src="Rinne_Sharingan.webp" alt="" class="w-10 h-10 rounded-xl shadow-lg shadow-red-700/30" />
-        <div>
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center space-x-3 min-w-0">
+        <img src="Rinne_Sharingan.webp" alt="" class="w-10 h-10 rounded-xl shadow-lg shadow-red-700/30 shrink-0" />
+        <div class="min-w-0">
           <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-stone-400 bg-clip-text text-transparent">Tsukuyomi HUB</h1>
-          <p class="text-xs text-stone-400">Calcul Retour, Pillage & Guide Complet des Bâtiments</p>
+          @if (currentTab(); as tab) {
+            <p class="text-xs text-red-300 truncate">{{ tab.label }}</p>
+          }
         </div>
       </div>
 
-      <nav class="flex items-center space-x-2 bg-stone-800/80 p-1.5 rounded-xl border border-stone-700/50 flex-wrap justify-center">
+      <button
+        type="button"
+        (click)="menuOpen.set(!menuOpen())"
+        [attr.aria-expanded]="menuOpen()"
+        aria-label="Menu"
+        class="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl border border-stone-700/60 bg-stone-800/80 text-stone-200 text-xl hover:text-white hover:border-red-700 transition cursor-pointer"
+      >
+        {{ menuOpen() ? '✕' : '☰' }}
+      </button>
+    </div>
+
+    @if (menuOpen()) {
+      <div class="fixed inset-0 h-screen bg-black/40" (click)="menuOpen.set(false)"></div>
+      <nav class="absolute right-0 left-0 sm:left-auto sm:right-4 top-full sm:mt-2 sm:w-72 bg-stone-900 border border-stone-800 sm:rounded-2xl shadow-2xl p-2 flex flex-col gap-1">
         @for (tab of tabs; track tab.path) {
           <a
             #rla="routerLinkActive"
             [routerLink]="tab.path"
             routerLinkActive
-            [class]="rla.isActive ? 'bg-red-800 text-white shadow' : 'text-stone-400 hover:text-white'"
-            class="px-3.5 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center"
+            (click)="menuOpen.set(false)"
+            [class]="rla.isActive ? 'bg-red-800 text-white' : 'text-stone-300 hover:bg-stone-800 hover:text-white'"
+            class="px-4 py-3 rounded-xl text-sm font-medium transition cursor-pointer flex items-center"
           >
-            <i class="fa-solid {{ tab.icon }} mr-1.5"></i> {{ tab.label }}
+            <i class="fa-solid {{ tab.icon }} mr-2"></i> {{ tab.label }}
           </a>
         }
       </nav>
-    </div>
+    }
   </header>
 
   <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">

@@ -37,7 +37,7 @@
         <img [src]="url" alt="Capture du rapport" class="max-h-56 rounded-lg border border-stone-800" />
       } @else {
         <i class="fa-solid fa-image text-3xl text-stone-600 mb-3"></i>
-        <span class="text-sm text-stone-300">Collez la capture (Ctrl+V / Cmd+V), glissez-la ici ou cliquez pour la choisir</span>
+        <span class="text-sm text-stone-300">Collez la capture ou le rapport copié en texte (Ctrl+V / Cmd+V), glissez la capture ici ou cliquez pour la choisir</span>
         <span class="text-xs text-stone-500 mt-1">Section Assaillant ou Défenseur, avec les lignes Ninjas et Tués</span>
       }
       <button
@@ -45,7 +45,7 @@
         (click)="$event.preventDefault(); $event.stopPropagation(); pasteFromClipboard()"
         class="mt-3 bg-red-800 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-medium transition cursor-pointer"
       >
-        📋 Coller la capture
+        📋 Coller la capture ou le texte
       </button>
       @if (pasteError(); as error) {
         <span class="text-xs text-amber-300 mt-2">{{ error }}</span>
@@ -139,14 +139,14 @@
             </table>
           </div>
 
-          <div class="grid grid-cols-3 gap-2 border-t border-stone-800 pt-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-stone-800 pt-3">
             @for (field of statFields; track field.key) {
               <div>
                 <label class="block text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1">{{ field.label }}</label>
                 <app-number-input [value]="d.stats[field.key]" (valueChange)="setStat(field.key, $event)" [min]="0" [max]="field.max ?? undefined" />
               </div>
             }
-            <p class="col-span-3 text-[11px] text-stone-500">Seuls les champs remplis sont enregistrés : armée si des ninjas sont saisis, puis chaque info renseignée.</p>
+            <p class="col-span-2 sm:col-span-4 text-[11px] text-stone-500">Seuls les champs remplis sont enregistrés : armée si des ninjas sont saisis, puis chaque info renseignée.</p>
           </div>
 
           <div class="flex gap-2">
@@ -245,9 +245,9 @@
             <tr class="border-b border-stone-800 text-stone-400 uppercase bg-stone-950/60">
               <th class="py-3 px-4">Joueur</th>
               <th class="py-3 px-4">Village</th>
-              <th class="py-3 px-4 text-right">Points</th>
-              <th class="py-3 px-4 text-right">Habitants</th>
-              <th class="py-3 px-4 text-right" title="Camp d'entraînement estimé par le clan">CE estimé</th>
+              @for (field of statFields; track field.key) {
+                <th class="py-3 px-3 text-right whitespace-nowrap" [title]="field.label">{{ field.short }}</th>
+              }
               @for (t of troops; track t.key) {
                 <th class="py-3 px-4 text-right">{{ t.label }}</th>
               }
@@ -261,8 +261,8 @@
                 <td class="py-2.5 px-4 font-bold text-red-300">{{ row.player }}</td>
                 <td class="py-2.5 px-4 text-stone-400 font-sans">{{ row.village }}</td>
                 @for (field of statFields; track field.key) {
-                  <td class="py-2.5 px-4 text-right" [class]="row[field.key] !== null ? (field.key === 'ce' ? 'text-cyan-300' : 'text-stone-200') : 'text-stone-600'">
-                    {{ row[field.key] !== null ? formatNumber(row[field.key]!) : '—' }}
+                  <td class="py-2.5 px-3 text-right" [class]="row.stats[field.key] !== null ? (field.max ? 'text-cyan-300' : 'text-stone-200') : 'text-stone-600'">
+                    {{ row.stats[field.key] !== null ? formatNumber(row.stats[field.key]!) : '—' }}
                   </td>
                 }
                 @for (t of troops; track t.key) {
@@ -322,7 +322,7 @@
 }
 
 <datalist id="map-village-names">
-  @for (name of mapVillageNames; track name) {
+  @for (name of mapVillageNames(); track name) {
     <option [value]="name"></option>
   }
 </datalist>

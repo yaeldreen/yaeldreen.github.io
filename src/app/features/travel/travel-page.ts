@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, OnDestroy, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../shared/ui/card';
 import { Combobox, ComboboxOption } from '../../shared/ui/combobox';
@@ -6,37 +6,22 @@ import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDateTime, formatDuration, toLocalIsoSeconds } from '../../shared/utils/format';
 import { readClipboardImage } from '../../shared/utils/clipboard';
+import { readStored, writeStored } from '../../shared/utils/storage';
+import { EnemiesStore } from '../enemies/enemies-store';
 import { ocrErrorDetail, readReportImage } from '../enemies/report-ocr';
 import {
   computeDistance,
   computeReturnRows,
   Coordinate,
-  CLAN_VILLAGES,
+  clanVillages,
   CounterAttack,
   counterArrivalMs,
   DistanceMode,
 } from './travel.logic';
-import { findVillage, MAP_VILLAGES } from '../../core/game-data/map-villages';
+import { findVillage, villageOptions } from '../../core/game-data/map-villages';
 
-// Choix mémorisés dans le navigateur (si le stockage est disponible).
 const ME_KEY = 'travel.me';
 const CE_KEY = 'travel.ce';
-
-const readStored = (key: string): string | null => {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-const writeStored = (key: string, value: string): void => {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // Stockage indisponible (navigation privée…) : le choix ne sera simplement pas retenu.
-  }
-};
 
 @Component({
   selector: 'app-travel-page',
@@ -51,9 +36,9 @@ export class TravelPage implements OnDestroy {
     { id: 'coords', label: 'Villages (1 / 2)' },
     { id: 'report', label: 'Calcul rapport' },
   ];
-  protected readonly villageOptions: readonly ComboboxOption[] = MAP_VILLAGES.map((v) => ({ value: v.name, hint: v.kage })).sort((a, b) =>
-    a.value.localeCompare(b.value, 'fr'),
-  );
+  private readonly store = inject(EnemiesStore);
+  protected readonly villageOptions = computed((): ComboboxOption[] => villageOptions(this.store.villages()));
+  private readonly findVillage = (name: string) => findVillage(this.store.villages(), name);
 
   protected readonly distanceMode = signal<DistanceMode>('manual');
   protected readonly manualDistance = signal<number | null>(5);
@@ -63,16 +48,16 @@ export class TravelPage implements OnDestroy {
   private readonly originName = signal('');
   private readonly targetName = signal('');
   protected readonly villages = computed(() => [
-    { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-red-300', name: this.originName, village: findVillage(this.originName()) },
-    { n: 2, label: 'Village 2 (Cible / Arrivée)', labelClass: 'text-emerald-300', name: this.targetName, village: findVillage(this.targetName()) },
+    { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-red-300', name: this.originName, village: this.findVillage(this.originName()) },
+    { n: 2, label: 'Village 2 (Cible / Arrivée)', labelClass: 'text-emerald-300', name: this.targetName, village: this.findVillage(this.targetName()) },
   ]);
 
   // Mode « Calcul rapport » : villages lus dans la capture (ou saisis), coordonnées prises dans la carte.
   protected readonly attackerName = signal('');
   protected readonly defenderName = signal('');
   protected readonly reportVillages = computed(() => [
-    { label: 'Assaillant', labelClass: 'text-red-300', name: this.attackerName, village: findVillage(this.attackerName()) },
-    { label: 'Défenseur', labelClass: 'text-emerald-300', name: this.defenderName, village: findVillage(this.defenderName()) },
+    { label: 'Assaillant', labelClass: 'text-red-300', name: this.attackerName, village: this.findVillage(this.attackerName()) },
+    { label: 'Défenseur', labelClass: 'text-emerald-300', name: this.defenderName, village: this.findVillage(this.defenderName()) },
   ]);
   protected readonly imageUrl = signal<string | null>(null);
   protected readonly reading = signal(false);
@@ -88,10 +73,10 @@ export class TravelPage implements OnDestroy {
   });
 
   // Contre-attaque : mes troupes partent maintenant avec mon CE vers le village de l'assaillant.
-  protected readonly clanVillages = CLAN_VILLAGES;
+  protected readonly clanVillages = computed(() => clanVillages(this.store.players(), this.store.villages()));
   /** Kage choisi dans « Qui es-tu ? » ('' = on suppose que je suis le défenseur). */
   protected readonly me = signal(readStored(ME_KEY) ?? '');
-  protected readonly myVillage = computed(() => CLAN_VILLAGES.find((v) => v.kage === this.me()) ?? null);
+  protected readonly myVillage = computed(() => this.clanVillages().find((v) => v.kage === this.me()) ?? null);
   protected readonly ourLevel = signal<number | null>(Number(readStored(CE_KEY)) || 11);
   private readonly now = signal(Date.now());
   private readonly clock = setInterval(() => this.now.set(Date.now()), 1000);
