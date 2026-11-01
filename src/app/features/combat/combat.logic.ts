@@ -34,10 +34,12 @@ export const ATTACKER_LOSS_FACTOR = 0.211;
 export const DEFENDER_LOSS_RANGE = { min: 0.5, max: 0.55 } as const;
 
 /**
- * Quand la défense est la plus forte (4 rapports du 21 au 29/10, bonus inconnus) :
- * l'assaillant perd ≈ 33 % × défense / attaque, le défenseur 19 à 25 % × attaque / défense.
+ * Quand la défense est la plus forte (crashs Gogokage → Weedland 26/10, Leaf village → Malice 31/10, Boboch → Ninjed 29/10) :
+ * l'assaillant perd ≈ 22 % × (défense / attaque)², le défenseur ≈ 23 à 26 % × attaque / défense.
+ * Les trois rapports vérifient pertes assaillant × (pertes défenseur)² ≈ constante, ce qui donne ces deux formes ;
+ * à rapport de force égal, l'assaillant perd ≈ 22 % comme quand il gagne de justesse.
  */
-export const DEFENSE_WINS = { attackerFactor: 0.33, defenderFactor: { min: 0.19, max: 0.25 } } as const;
+export const DEFENSE_WINS = { attackerFactor: 0.22, defenderFactor: { min: 0.23, max: 0.26 } } as const;
 
 /** Ticket attaque (assaillant) ou défense (défenseur) : multiplie la puissance après les bonus additionnés. */
 export const COMBAT_TICKET_MULTIPLIER = 1.2;
@@ -127,7 +129,7 @@ const pointsFor = (killed: TroopCounts): number => TROOPS.reduce((sum, t) => sum
  * Chaque camp perd le même pourcentage de chaque type de troupe (arrondi).
  * Attaquant : ≈ 21,1 % de (défense / attaque), plafonné à 100 %.
  * Assaillant plus fort : il perd ≈ 21,1 % × (défense / attaque), le défenseur 50 à 55 %.
- * Défense plus forte : l'assaillant perd ≈ 33 % × (défense / attaque), le défenseur 19 à 25 % × (attaque / défense).
+ * Défense plus forte : l'assaillant perd ≈ 22 % × (défense / attaque)², le défenseur 23 à 26 % × (attaque / défense).
  * L'hôpital de chaque camp soigne ensuite une partie de ses pertes (les points restent comptés sur les tués).
  */
 export function simulateCombat(attacker: Army, defender: Army): CombatResult {
@@ -137,7 +139,7 @@ export function simulateCombat(attacker: Army, defender: Army): CombatResult {
   const attackerWins = ratio !== null && ratio < 1;
 
   const attackerLossRate =
-    ratio === null ? 0 : Math.min(1, (attackerWins ? ATTACKER_LOSS_FACTOR : DEFENSE_WINS.attackerFactor) * ratio);
+    ratio === null ? 0 : Math.min(1, attackerWins ? ATTACKER_LOSS_FACTOR * ratio : DEFENSE_WINS.attackerFactor * ratio * ratio);
   const attackerLosses = lossesAt(attacker.troops, attackerLossRate);
   const defenderLossRate =
     ratio === null

@@ -21,7 +21,7 @@
       Liste des joueurs (JSON)
     </h2>
     <p class="text-xs text-stone-400 mt-1">
-      Collez l'export JSON de la carte du jeu (la liste complète, de « [ » à « ] »). La carte partagée est remplacée :
+      Collez l'export JSON de la carte du jeu (la liste complète, de « [ » à « ] »). Les villages de joueurs de la carte partagée sont remplacés :
       coordonnées, points, habitants et clan de chaque joueur sont mis à jour, les nouveaux joueurs et clans sont ajoutés.
       Les armées et niveaux saisis à la main dans « infos enemis » ne sont pas touchés. Pour Tsukuyomi, seuls le village,
       le kage et les coordonnées sont gardés.
@@ -50,6 +50,9 @@
   @if (importError(); as e) {
     <p class="text-xs text-rose-300">{{ e }}</p>
   }
+  @if (snapshotMessage(); as m) {
+    <p class="text-xs text-cyan-300">{{ m }}</p>
+  }
   @if (importResult(); as r) {
     <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">
       Carte importée : {{ r.villages }} villages, {{ r.playersUpdated }} joueurs mis à jour, {{ r.playersAdded }} ajoutés
@@ -57,5 +60,135 @@
         , clans créés : {{ r.clansAdded.join(', ') }}
       }.
     </p>
+  }
+</app-card>
+
+<app-card class="p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200">MAJ villages neutres</h2>
+    <p class="text-xs text-stone-400 mt-1">
+      Collez la liste compacte (clés 0 à 9). Seuls les villages avec « 9: true » sont gardés et remplacent les villages
+      neutres de la carte ; les villages de joueurs ne sont pas touchés. Villages neutres actuels : {{ neutralCount() }}.
+    </p>
+  </div>
+  <textarea
+    [ngModel]="neutralText()"
+    (ngModelChange)="neutralText.set($event)"
+    rows="6"
+    placeholder='[ { 0: -71, 1: "Hisatsuki", 2: "Yui Hisatsuki", 3: "feu", 4: 8126, 5: 5, 6: 0, 7: 0, 8: null, 9: true } ]'
+    class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
+  ></textarea>
+  <button
+    type="button"
+    (click)="importNeutral()"
+    [disabled]="!neutralText().trim() || neutralImporting()"
+    class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    {{ neutralImporting() ? 'Import en cours…' : 'Mettre à jour les villages neutres' }}
+  </button>
+  @if (neutralError(); as e) {
+    <p class="text-xs text-rose-300">{{ e }}</p>
+  }
+  @if (neutralResult(); as n) {
+    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">{{ n }} villages neutres importés.</p>
+  }
+</app-card>
+
+<app-card class="p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200">Mot de passe d'accès</h2>
+    <p class="text-xs text-stone-400 mt-1">Change le mot de passe demandé à l'ouverture du site, pour tout le clan.</p>
+  </div>
+  <form (submit)="$event.preventDefault(); changePassword()" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+    <label class="block">
+      <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Mot de passe actuel</span>
+      <input type="password" autocomplete="current-password" [value]="currentPassword()" (input)="currentPassword.set($any($event.target).value)"
+        class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700" />
+    </label>
+    <label class="block">
+      <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Nouveau mot de passe</span>
+      <input type="password" autocomplete="new-password" [value]="newPassword()" (input)="newPassword.set($any($event.target).value)"
+        class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700" />
+    </label>
+    <button type="submit" [disabled]="!currentPassword() || !newPassword()"
+      class="bg-red-800 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+      Changer
+    </button>
+  </form>
+  @if (passwordMessage(); as m) {
+    <p class="text-xs" [class]="m.ok ? 'text-emerald-300' : 'text-rose-300'">{{ m.text }}</p>
+  }
+</app-card>
+
+@let snaps = store.snapshots();
+<app-card class="overflow-hidden">
+  <div class="px-6 py-4 border-b border-stone-800 space-y-3">
+    <div>
+      <h2 class="font-semibold text-stone-200">Évolution mensuelle</h2>
+      <p class="text-xs text-stone-400 mt-1">
+        Le 1er de chaque mois, le premier import de la liste des joueurs enregistre leurs points et habitants.
+        @if (snaps.current) {
+          Mois en cours : <span class="text-stone-200">{{ monthLabel(snaps.current.month) }}</span>
+          @if (snaps.previous) {
+            · mois précédent : <span class="text-stone-200">{{ monthLabel(snaps.previous.month) }}</span>.
+          } @else {
+            · pas encore de mois précédent : les évolutions apparaîtront après le prochain relevé.
+          }
+        } @else {
+          <span class="text-amber-300">Aucun relevé pour l'instant.</span>
+        }
+      </p>
+    </div>
+    @if (snaps.current) {
+      <div class="flex flex-wrap gap-2">
+        <select
+          [ngModel]="evolutionClan()"
+          (ngModelChange)="evolutionClan.set($event)"
+          class="bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700 cursor-pointer"
+        >
+          <option value="">Tous les clans</option>
+          @for (c of evolutionClans(); track c) {
+            <option [value]="c">{{ c }}</option>
+          }
+        </select>
+        <select
+          [ngModel]="evolutionSort()"
+          (ngModelChange)="evolutionSort.set($event)"
+          class="bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700 cursor-pointer"
+        >
+          <option value="points">Tri : progression des points</option>
+          <option value="inhabitants">Tri : progression des habitants</option>
+          <option value="name">Tri : nom</option>
+        </select>
+      </div>
+    }
+  </div>
+  @if (snaps.current) {
+    <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
+      <table class="w-full text-left border-collapse text-xs font-mono">
+        <thead class="sticky top-0 bg-stone-900">
+          <tr class="border-b border-stone-800 text-stone-400 uppercase">
+            <th class="py-3 px-4 font-sans">Joueur</th>
+            <th class="py-3 px-3 font-sans">Clan</th>
+            <th class="py-3 px-3 text-right">Points</th>
+            <th class="py-3 px-3 text-right">Évol.</th>
+            <th class="py-3 px-3 text-right">Habitants</th>
+            <th class="py-3 px-3 text-right">Évol.</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-800/60">
+          @for (r of evolution(); track r.name) {
+            <tr class="hover:bg-red-950/20">
+              <td class="py-2 px-4 font-sans font-semibold text-stone-200">{{ r.name }}</td>
+              <td class="py-2 px-3 font-sans text-stone-400">{{ r.clan ?? 'Sans clan' }}</td>
+              <td class="py-2 px-3 text-right text-stone-200" [title]="r.previousPoints !== null ? 'Mois précédent : ' + r.previousPoints : ''">{{ r.points.toLocaleString('fr-FR') }}</td>
+              <td class="py-2 px-3 text-right" [class]="r.pointsDelta === null ? 'text-stone-500' : r.pointsDelta > 0 ? 'text-emerald-300' : r.pointsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">{{ signed(r.pointsDelta) }}</td>
+              <td class="py-2 px-3 text-right text-stone-200" [title]="r.previousInhabitants !== null ? 'Mois précédent : ' + r.previousInhabitants : ''">{{ r.inhabitants.toLocaleString('fr-FR') }}</td>
+              <td class="py-2 px-3 text-right" [class]="r.inhabitantsDelta === null ? 'text-stone-500' : r.inhabitantsDelta > 0 ? 'text-emerald-300' : r.inhabitantsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">{{ signed(r.inhabitantsDelta) }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </app-card>

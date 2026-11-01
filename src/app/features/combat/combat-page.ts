@@ -1,17 +1,15 @@
-import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core';
 import { Card } from '../../shared/ui/card';
-import { Combobox, ComboboxOption } from '../../shared/ui/combobox';
+import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDuration, formatNumber } from '../../shared/utils/format';
 import { readStored, writeStored } from '../../shared/utils/storage';
-import { findPlayer, NO_CLAN } from '../enemies/clans.data';
-import { EnemiesStore } from '../enemies/enemies-store';
-import { playerKey, TROOPS, TroopKey } from '../enemies/enemies.model';
+import { TROOPS, TroopKey } from '../enemies/enemies.model';
+import { ArmyCard, PlayerPick } from './army-card';
+import { clamp, emptySide, LEVEL_FIELDS, LEVEL_MAX, toArmy } from './army-form';
+import { encodeHistory, HistoryEntry, HistorySide, loadHistory, pushHistory, saveHistory, SideForm } from './combat-history';
 import {
-  Army,
-  ArmyLevels,
   ATTACKER_LOSS_FACTOR,
   DEFENDER_LOSS_RANGE,
   DEFENSE_WINS,
@@ -22,7 +20,6 @@ import {
   simulateCombat,
 } from './combat.logic';
 
-type LevelKey = keyof ArmyLevels;
 type Side = 'attacker' | 'defender';
 type Tab = 'simulation' | 'optimisation';
 
@@ -32,24 +29,6 @@ interface MyForm {
   levels: Record<MyLevelKey, number | null>;
   combatTicket: boolean;
 }
-
-interface SideForm {
-  troops: Record<TroopKey, number | null>;
-  levels: Record<LevelKey, number | null>;
-  hospitalTicket: boolean;
-  combatTicket: boolean;
-}
-
-const LEVEL_MAX = 20;
-
-const LEVEL_FIELDS: readonly { key: LevelKey; label: string; icon: string }[] = [
-  { key: 'training', label: "Camp d'entraînement", icon: 'fa-dumbbell' },
-  { key: 'academy', label: 'Académie', icon: 'fa-graduation-cap' },
-  { key: 'chunnin', label: 'Centre Chuunin', icon: 'fa-user-ninja' },
-  { key: 'jounin', label: 'Centre Jounin', icon: 'fa-user-shield' },
-  { key: 'hospital', label: 'Hôpital', icon: 'fa-hospital' },
-  { key: 'wall', label: "Mur d'enceinte", icon: 'fa-shield' },
-];
 
 const AVAILABLE_KEY = 'combat.available';
 const MY_LEVELS_KEY = 'combat.myLevels';
@@ -63,38 +42,9 @@ function stored<T extends object>(key: string, fallback: T): T {
   }
 }
 
-const clamp = (value: number | null, min: number, max: number): number =>
-  Math.min(max, Math.max(min, Math.floor(Number(value) || 0)));
-
-const toArmy = ({ troops: t, levels: l, hospitalTicket, combatTicket }: SideForm): Army => {
-  const count = (v: number | null) => clamp(v, 0, Infinity);
-  const level = (v: number | null) => clamp(v, 0, LEVEL_MAX);
-  return {
-    troops: { genin: count(t.genin), chuunin: count(t.chuunin), jounin: count(t.jounin) },
-    levels: {
-      training: level(l.training),
-      academy: level(l.academy),
-      chunnin: level(l.chunnin),
-      jounin: level(l.jounin),
-      wall: level(l.wall),
-      hospital: level(l.hospital),
-    },
-    hospitalTicket,
-    combatTicket,
-  };
-};
-
-/** Camp vide : la page démarre sans aucune valeur. */
-const emptySide = (): SideForm => ({
-  troops: { genin: null, chuunin: null, jounin: null },
-  levels: { training: null, academy: null, chunnin: null, jounin: null, wall: null, hospital: null },
-  hospitalTicket: false,
-  combatTicket: false,
-});
-
 @Component({
   selector: 'app-combat-page',
-  imports: [Card, NumberInput, SegmentedControl, NgTemplateOutlet, Combobox],
+  imports: [Card, NumberInput, SegmentedControl, LevelInput, ArmyCard],
   templateUrl: './combat-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -102,8 +52,6 @@ export class CombatPage {
   protected readonly troopTypes = TROOPS;
   protected readonly formatNumber = formatNumber;
   protected readonly levelMax = LEVEL_MAX;
-  protected readonly attackLevelFields = LEVEL_FIELDS.filter((f) => f.key !== 'wall');
-  protected readonly defenseLevelFields = LEVEL_FIELDS;
   protected readonly lossFactorPct = (ATTACKER_LOSS_FACTOR * 100).toFixed(1);
   protected readonly ticketBonus = HOSPITAL_TICKET_BONUS;
   protected readonly defenderRangePct = `${DEFENDER_LOSS_RANGE.min * 100} à ${DEFENDER_LOSS_RANGE.max * 100} %`;
@@ -125,69 +73,17 @@ export class CombatPage {
 
   // --- Joueur choisi pour chaque camp (infos enemis) ---
 
-  private readonly store = inject(EnemiesStore);
-  protected readonly playerOptions = computed((): ComboboxOption[] =>
-    this.store
-      .players()
-      .map((p) => ({ value: p.name, hint: `${p.village} · ${p.clan ?? NO_CLAN}` }))
-      .sort((a, b) => a.value.localeCompare(b.value, 'fr')),
-  );
   protected readonly playerNames = signal<Record<Side, string>>({ attacker: '', defender: '' });
   /** Message sous le champ joueur : ce qui a été prérempli. */
   protected readonly loaded = signal<Record<Side, string | null>>({ attacker: null, defender: null });
 
-  /**
-   * Un joueur reconnu (nom ou village) préremplit son camp avec ce qu'on sait de lui (infos enemis) :
-   * dernière armée connue et niveaux renseignés. Les cases inconnues sont vidées ; tout reste modifiable.
-   */
-  protected selectPlayer(side: Side, name: string): void {
+  /** Un joueur reconnu préremplit son camp (voir `prefillFromPlayer`) ; tout reste modifiable. */
+  protected selectPlayer(side: Side, { name, prefill }: PlayerPick): void {
     this.playerNames.update((n) => ({ ...n, [side]: name }));
-    const match = findPlayer(this.store.players(), name);
-    if (!match) {
-      this.loaded.update((l) => ({ ...l, [side]: null }));
-      return;
-    }
-    const p = match.player;
-    const record = this.store.records()[playerKey(p.name)];
-    const levels = { ...this[side]().levels };
-    let knownLevels = 0;
-    const fromPlayer: [LevelKey, number | null | undefined][] = [
-      ['training', p.ce],
-      ['academy', p.academy],
-      ['chunnin', p.chunninCenter],
-      ['jounin', p.jouninCenter],
-      ['hospital', p.hospital],
-      ['wall', p.wall],
-    ];
-    for (const [key, value] of fromPlayer) {
-      levels[key] = value ?? null;
-      if (value !== null && value !== undefined) knownLevels++;
-    }
-
-    this[side].update((f) => ({
-      ...f,
-      troops: record ? { ...record.troops } : { genin: null, chuunin: null, jounin: null },
-      levels,
-    }));
-    const filled = (record ? TROOPS.length : 0) + knownLevels;
-    this.loaded.update((l) => ({ ...l, [side]: `${p.name} (${p.village}) : ${filled} champ(s) prérempli(s).` }));
-  }
-
-  protected readonly sides = computed(() => [
-    { id: 'attacker' as const, title: 'Assaillant', icon: 'fa-hand-fist', color: 'text-red-400', form: this.attacker(), fields: this.attackLevelFields, stats: this.result().attack, ticketLabel: 'Ticket attaque', recoveryRate: this.result().attackerRecoveryRate, playerName: this.playerNames().attacker, loaded: this.loaded().attacker },
-    { id: 'defender' as const, title: 'Défenseur', icon: 'fa-shield-halved', color: 'text-emerald-400', form: this.defender(), fields: this.defenseLevelFields, stats: this.result().defense, ticketLabel: 'Ticket défense', recoveryRate: this.result().defenderRecoveryRate, playerName: this.playerNames().defender, loaded: this.loaded().defender },
-  ]);
-
-  protected setTroop(side: Side, key: TroopKey, value: number | null): void {
-    this[side].update((f) => ({ ...f, troops: { ...f.troops, [key]: value } }));
-  }
-
-  protected setLevel(side: Side, key: LevelKey, value: number | null): void {
-    this[side].update((f) => ({ ...f, levels: { ...f.levels, [key]: value } }));
-  }
-
-  protected setTicket(side: Side, ticket: 'hospitalTicket' | 'combatTicket', active: boolean): void {
-    this[side].update((f) => ({ ...f, [ticket]: active }));
+    this.loaded.update((l) => ({ ...l, [side]: prefill?.loaded ?? null }));
+    if (!prefill) return;
+    this.historySession = null;
+    this[side].set(prefill.form);
   }
 
   // --- Optimisation attaque : nos niveaux + armée disponible, contre la défense saisie ---
@@ -249,7 +145,97 @@ export class CombatPage {
     this.tab.set('simulation');
   }
 
+  // --- Historique : les 5 dernières simulations, enregistrées automatiquement dans un cookie de ce navigateur ---
+
+  protected readonly history = signal<HistoryEntry[]>(loadHistory());
+  protected readonly historyRows = computed(() =>
+    this.history().map((entry) => ({ entry, result: simulateCombat(toArmy(entry.attacker.form), toArmy(entry.defender.form)) })),
+  );
+
+  /**
+   * Entrée de la simulation en cours : tant qu'on modifie la même simulation, son entrée est mise à jour.
+   * Une nouvelle entrée commence après « Tout remettre à zéro », un chargement depuis l'historique ou le choix d'un joueur.
+   */
+  private historySession: number | null = null;
+  /** Contenu déjà enregistré (ou rechargé) : rien à faire tant qu'il ne change pas. */
+  private lastSaved = '';
+  private saveTimer: ReturnType<typeof setTimeout> | undefined;
+
+  private readonly autoSave = effect(() => {
+    const side = (s: Side): HistorySide => ({ player: this.playerNames()[s], form: this[s]() });
+    const entry: HistoryEntry = { at: 0, attacker: side('attacker'), defender: side('defender') };
+    const ready = this.result().ratio !== null;
+    clearTimeout(this.saveTimer);
+    if (!ready) return;
+    // Attend une pause dans la saisie pour ne pas enregistrer chaque chiffre tapé.
+    this.saveTimer = setTimeout(() => this.record(entry), 1500);
+  });
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.saveTimer));
+  }
+
+  private record(entry: HistoryEntry): void {
+    const key = encodeHistory([entry]);
+    if (key === this.lastSaved) return;
+    this.lastSaved = key;
+    const at = Date.now();
+    const session = this.historySession;
+    this.history.update((h) => pushHistory(session === null ? h : h.filter((e) => e.at !== session), { ...entry, at }));
+    this.historySession = at;
+    saveHistory(this.history());
+  }
+
+  // Popup : on choisit une armée d'attaque et/ou une armée de défense, éventuellement de deux simulations différentes.
+  protected readonly historyOpen = signal(false);
+  protected readonly picked = signal<Record<Side, number | null>>({ attacker: null, defender: null });
+
+  protected openHistory(): void {
+    this.picked.set({ attacker: null, defender: null });
+    this.historyOpen.set(true);
+  }
+
+  protected pick(side: Side, at: number): void {
+    this.picked.update((p) => ({ ...p, [side]: p[side] === at ? null : at }));
+  }
+
+  protected applyPicked(): void {
+    const picked = this.picked();
+    for (const side of ['attacker', 'defender'] as const) {
+      const entry = this.history().find((e) => e.at === picked[side]);
+      if (!entry) continue;
+      this[side].set(structuredClone(entry[side].form));
+      this.playerNames.update((n) => ({ ...n, [side]: entry[side].player }));
+      this.loaded.update((l) => ({ ...l, [side]: null }));
+    }
+    this.historySession = null;
+    this.lastSaved = encodeHistory([{ at: 0, attacker: { player: this.playerNames().attacker, form: this.attacker() }, defender: { player: this.playerNames().defender, form: this.defender() } }]);
+    this.tab.set('simulation');
+    this.historyOpen.set(false);
+  }
+
+  protected removeFromHistory(at: number): void {
+    this.history.update((h) => h.filter((e) => e.at !== at));
+    this.picked.update((p) => ({ attacker: p.attacker === at ? null : p.attacker, defender: p.defender === at ? null : p.defender }));
+    if (this.historySession === at) this.historySession = null;
+    saveHistory(this.history());
+  }
+
+  @HostListener('document:keydown.escape')
+  protected closeHistory(): void {
+    this.historyOpen.set(false);
+  }
+
+  protected troopsSummary(form: SideForm): string {
+    return TROOPS.map((t) => formatNumber(Number(form.troops[t.key]) || 0)).join(' / ');
+  }
+
+  protected historyDate(at: number): string {
+    return new Date(at).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
   protected reset(): void {
+    this.historySession = null;
     this.attacker.set(emptySide());
     this.defender.set(emptySide());
     this.playerNames.set({ attacker: '', defender: '' });

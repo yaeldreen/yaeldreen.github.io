@@ -28,6 +28,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/combat/combat-page').then((m) => m.CombatPage),
   },
   {
+    path: 'raz',
+    title: 'Simu raz',
+    loadComponent: () => import('./features/raz/raz-page').then((m) => m.RazPage),
+  },
+  {
     path: 'secondes',
     title: 'Calcul seconde',
     loadComponent: () => import('./features/production/production-page').then((m) => m.ProductionPage),

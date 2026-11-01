@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../shared/ui/card';
+import { DateTimeSecondsInput } from '../../shared/ui/datetime-seconds-input';
 import { Combobox, ComboboxOption } from '../../shared/ui/combobox';
+import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDateTime, formatDuration, toLocalIsoSeconds } from '../../shared/utils/format';
@@ -25,7 +27,7 @@ const CE_KEY = 'travel.ce';
 
 @Component({
   selector: 'app-travel-page',
-  imports: [FormsModule, Card, NumberInput, SegmentedControl, Combobox],
+  imports: [FormsModule, Card, NumberInput, SegmentedControl, Combobox, LevelInput, DateTimeSecondsInput],
   templateUrl: './travel-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(window:paste)': 'onPaste($event)' },
@@ -116,7 +118,7 @@ export class TravelPage implements OnDestroy {
 
   /** "+12 min 30 s" d'avance, "−3 min" de retard. */
   protected formatMargin(ms: number): string {
-    return `${ms >= 0 ? '+' : '−'}${formatDuration(Math.floor(Math.abs(ms) / 1000))}`;
+    return `${ms >= 0 ? '+' : '−'}${formatDuration(Math.abs(ms) / 1000)}`;
   }
 
   protected setMe(kage: string): void {

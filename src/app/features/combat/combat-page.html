@@ -1,95 +1,99 @@
 @let r = result();
 
-<app-card class="p-3 flex justify-center">
+<app-card class="p-3 flex flex-wrap items-center justify-center gap-3">
   <app-segmented-control [options]="tabOptions" [(value)]="tab" />
+  <button
+    type="button"
+    (click)="openHistory()"
+    class="bg-stone-800 hover:bg-stone-700 text-stone-200 px-4 py-2 rounded-xl text-sm font-medium border border-stone-700 cursor-pointer"
+  >
+    🕘 Historique <span class="text-stone-400">({{ history().length }})</span>
+  </button>
 </app-card>
 
-<ng-template #sideCard let-side>
-  <app-card class="p-6 space-y-5">
-    <div class="border-b border-stone-800 pb-3 flex justify-between items-center">
-      <h2 class="font-semibold text-stone-200 flex items-center">
-        <i class="fa-solid {{ side.icon }} {{ side.color }} mr-2"></i> {{ side.title }}
-      </h2>
-      <span class="text-xs text-stone-400">
-        Force <span class="font-mono font-bold {{ side.color }}">{{ power(side.stats.strength) }}</span>
-      </span>
-    </div>
-
-    <div>
-      <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Joueur</label>
-      <app-combobox
-        [value]="side.playerName"
-        (valueChange)="selectPlayer(side.id, $event)"
-        [options]="playerOptions()"
-        placeholder="Choisir un joueur (facultatif)"
-      />
-      @if (side.loaded; as info) {
-        <p class="text-[11px] text-cyan-300 mt-1">{{ info }}</p>
-      }
-    </div>
-
-    <div class="grid grid-cols-3 gap-3">
-      @for (troop of troopTypes; track troop.key) {
+@if (historyOpen()) {
+  @let picks = picked();
+  <div class="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div class="absolute inset-0 bg-black/60 cursor-pointer" (click)="closeHistory()"></div>
+    <div role="dialog" aria-modal="true" aria-label="Historique des simulations" class="relative w-full max-w-2xl max-h-[85dvh] flex flex-col bg-stone-900 border border-stone-700 rounded-2xl shadow-2xl">
+      <div class="px-5 py-4 border-b border-stone-800 flex justify-between items-start gap-3">
         <div>
-          <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ troop.label }}</label>
-          <app-number-input
-            [value]="side.form.troops[troop.key]"
-            (valueChange)="setTroop(side.id, troop.key, $event)"
-            [min]="0"
-            placeholder="0"
-          />
-          <p class="text-[11px] text-stone-500 mt-1">
-            Puissance <span class="font-mono text-stone-300">{{ power(side.stats.unitPower[troop.key]) }}</span>
-            (+{{ side.stats.bonus[troop.key] }} %@if (side.form.combatTicket) { ×1,2 })
-          </p>
+          <h2 class="font-semibold text-stone-200">Historique</h2>
+          <p class="text-xs text-stone-400 mt-1">5 dernières simulations, enregistrées automatiquement dans ce navigateur. Choisissez l'armée d'attaque et/ou de défense à remettre.</p>
         </div>
-      }
-    </div>
+        <button type="button" (click)="closeHistory()" class="text-stone-400 hover:text-white text-lg leading-none cursor-pointer" aria-label="Fermer">✕</button>
+      </div>
 
-    <div class="grid grid-cols-2 gap-3 border-t border-stone-800 pt-5">
-      @for (field of side.fields; track field.key) {
-        <div>
-          <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
-            <i class="fa-solid {{ field.icon }} text-red-400 mr-1.5"></i> {{ field.label }}
-          </label>
-          <app-number-input
-            [value]="side.form.levels[field.key]"
-            (valueChange)="setLevel(side.id, field.key, $event)"
-            [min]="0"
-            [max]="levelMax"
-            placeholder="0"
-          />
-        </div>
-      }
-      <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          [checked]="side.form.combatTicket"
-          (change)="setTicket(side.id, 'combatTicket', $any($event.target).checked)"
-          class="accent-red-700 w-4 h-4 cursor-pointer"
-        />
-        {{ side.ticketLabel }} activé (puissance ×1,2)
-      </label>
-      <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
-        <input
-          type="checkbox"
-          [checked]="side.form.hospitalTicket"
-          (change)="setTicket(side.id, 'hospitalTicket', $any($event.target).checked)"
-          class="accent-red-700 w-4 h-4 cursor-pointer"
-        />
-        Ticket hôpital activé (+{{ ticketBonus }} %)
-        <span class="ml-auto text-stone-400">Récupération <span class="font-mono font-bold text-emerald-300">{{ side.recoveryRate }} %</span></span>
-      </label>
-    </div>
+      <div class="p-5 space-y-3 overflow-y-auto overscroll-contain">
+        @for (row of historyRows(); track row.entry.at) {
+          <div class="border border-stone-800 rounded-xl p-3 space-y-2 text-xs">
+            <div class="flex items-center gap-2">
+              <span class="text-stone-500 font-mono">{{ historyDate(row.entry.at) }}</span>
+              <span class="px-2 py-0.5 rounded-lg font-bold border" [class]="row.result.attackerWins ? 'bg-red-700/10 text-red-300 border-red-700/30' : 'bg-emerald-700/10 text-emerald-300 border-emerald-700/30'">
+                {{ row.result.attackerWins ? 'Avantage assaillant' : 'Avantage défenseur' }}
+              </span>
+              <span class="text-stone-500 ml-auto hidden sm:inline">Pertes att. <span class="font-mono text-red-300">{{ percent(row.result.attackerLossRate) }}</span></span>
+              <button type="button" (click)="removeFromHistory(row.entry.at)" class="text-stone-500 hover:text-rose-400 px-1 cursor-pointer" aria-label="Supprimer">✕</button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              @for (s of [{ id: 'attacker', label: 'Attaque', data: row.entry.attacker, on: picks.attacker === row.entry.at }, { id: 'defender', label: 'Défense', data: row.entry.defender, on: picks.defender === row.entry.at }]; track s.id) {
+                <button
+                  type="button"
+                  (click)="pick($any(s.id), row.entry.at)"
+                  [attr.aria-pressed]="s.on"
+                  class="text-left rounded-lg border px-3 py-2 cursor-pointer transition"
+                  [class]="s.on ? (s.id === 'attacker' ? 'border-red-600 bg-red-950/40' : 'border-emerald-600 bg-emerald-950/30') : 'border-stone-800 bg-stone-950/60 hover:border-stone-600'"
+                >
+                  <span class="flex justify-between gap-2">
+                    <span [class]="s.id === 'attacker' ? 'text-red-300' : 'text-emerald-300'" class="font-semibold">{{ s.label }} · {{ s.data.player || '—' }}</span>
+                    <span class="text-stone-300">{{ s.on ? '✓' : '' }}</span>
+                  </span>
+                  <span class="block font-mono text-stone-400 mt-0.5">{{ troopsSummary(s.data.form) }}</span>
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="text-xs text-stone-500">Aucune simulation pour l'instant : elles s'ajoutent toutes seules dès qu'un résultat s'affiche.</p>
+        }
+      </div>
 
-  </app-card>
-</ng-template>
+      <div class="px-5 py-4 border-t border-stone-800 flex gap-2">
+        <button
+          type="button"
+          (click)="applyPicked()"
+          [disabled]="picks.attacker === null && picks.defender === null"
+          class="flex-1 bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Remettre sur la page
+        </button>
+        <button type="button" (click)="closeHistory()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-5 py-2.5 rounded-xl text-sm border border-stone-700 cursor-pointer">Fermer</button>
+      </div>
+    </div>
+  </div>
+}
+
 
 @if (tab() === 'simulation') {
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-  @for (side of sides(); track side.id) {
-    <ng-container [ngTemplateOutlet]="sideCard" [ngTemplateOutletContext]="{ $implicit: side }" />
-  }
+  <app-army-card
+    title="Assaillant"
+    [form]="attacker()"
+    (formChange)="attacker.set($event)"
+    [playerName]="playerNames().attacker"
+    [loaded]="loaded().attacker"
+    (playerChange)="selectPlayer('attacker', $event)"
+  />
+  <app-army-card
+    title="Défenseur"
+    [defending]="true"
+    color="text-emerald-400"
+    [form]="defender()"
+    (formChange)="defender.set($event)"
+    [playerName]="playerNames().defender"
+    [loaded]="loaded().defender"
+    (playerChange)="selectPlayer('defender', $event)"
+  />
 </div>
 
 <app-card class="p-6 space-y-6">
@@ -204,7 +208,7 @@
       Formules provisoires, déduites de quelques rapports. Puissance de base 10 / 40 / 60, bonus additionnés
       (Camp d'entraînement + centre du type de troupe, + Mur en défense), puis ×1,2 avec le ticket attaque / défense. L'assaillant perd {{ lossFactorPct }} % ×
       (défense / attaque) de chaque type et le défenseur {{ defenderRangePct }} quand l'assaillant est plus fort ; quand la défense est
-      plus forte, l'assaillant perd {{ defenseWins.attacker }} % × (défense / attaque) et le défenseur {{ defenseWins.defender }} % ×
+      plus forte, l'assaillant perd {{ defenseWins.attacker }} % × (défense / attaque)² et le défenseur {{ defenseWins.defender }} % ×
       (attaque / défense).
       Points : 1 / 5 / 10 par Genin / Chuunin / Jounin tué. L'hôpital soigne ensuite une part des tués de son camp
       (10 % au niveau 1, +1 % par niveau, 30 % au niveau 20 ; +{{ ticketBonus }} % avec le ticket).
@@ -215,6 +219,7 @@
     Tout remettre à zéro
   </button>
 </app-card>
+
 } @else {
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
   <app-card class="p-6 space-y-5">
@@ -229,7 +234,7 @@
       @for (field of myLevelFields; track field.key) {
         <div>
           <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ field.label }}</label>
-          <app-number-input [value]="me().levels[field.key]" (valueChange)="setMyLevel(field.key, $event)" [min]="0" [max]="levelMax" placeholder="0" />
+          <app-level-input [value]="me().levels[field.key]" (valueChange)="setMyLevel(field.key, $event)" [min]="0" [max]="levelMax" placeholder="0" />
         </div>
       }
       <label class="col-span-2 flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
@@ -256,11 +261,16 @@
     </div>
   </app-card>
 
-  @for (side of sides(); track side.id) {
-    @if (side.id === 'defender') {
-      <ng-container [ngTemplateOutlet]="sideCard" [ngTemplateOutletContext]="{ $implicit: side }" />
-    }
-  }
+  <app-army-card
+    title="Défenseur"
+    [defending]="true"
+    color="text-emerald-400"
+    [form]="defender()"
+    (formChange)="defender.set($event)"
+    [playerName]="playerNames().defender"
+    [loaded]="loaded().defender"
+    (playerChange)="selectPlayer('defender', $event)"
+  />
 </div>
 
 <app-card class="p-6 space-y-4">

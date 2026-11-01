@@ -143,7 +143,11 @@
             @for (field of statFields; track field.key) {
               <div>
                 <label class="block text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1">{{ field.label }}</label>
-                <app-number-input [value]="d.stats[field.key]" (valueChange)="setStat(field.key, $event)" [min]="0" [max]="field.max ?? undefined" />
+                @if (field.max) {
+                  <app-level-input [value]="d.stats[field.key]" (valueChange)="setStat(field.key, $event)" [min]="0" [max]="field.max" />
+                } @else {
+                  <app-number-input [value]="d.stats[field.key]" (valueChange)="setStat(field.key, $event)" [min]="0" />
+                }
               </div>
             }
             <p class="col-span-2 sm:col-span-4 text-[11px] text-stone-500">Seuls les champs remplis sont enregistrés : armée si des ninjas sont saisis, puis chaque info renseignée.</p>
@@ -192,6 +196,9 @@
   }
   @if (manageError(); as error) {
     <p class="text-xs text-amber-300">{{ error }}</p>
+  }
+  @if (evolutionMonths(); as months) {
+    <p class="text-[11px] text-stone-500">Sous les points et habitants : évolution sur le mois ({{ months }}).</p>
   }
 </app-card>
 
@@ -263,6 +270,11 @@
                 @for (field of statFields; track field.key) {
                   <td class="py-2.5 px-3 text-right" [class]="row.stats[field.key] !== null ? (field.max ? 'text-cyan-300' : 'text-stone-200') : 'text-stone-600'">
                     {{ row.stats[field.key] !== null ? formatNumber(row.stats[field.key]!) : '—' }}
+                    @if (monthDelta(row.player, field.key); as delta) {
+                      <span class="block text-[10px]" [class]="delta > 0 ? 'text-emerald-300' : 'text-rose-300'" [title]="'Sur le mois : ' + evolutionMonths()">{{ signed(delta) }}</span>
+                    } @else if (monthDelta(row.player, field.key) === 0) {
+                      <span class="block text-[10px] text-stone-500" [title]="'Sur le mois : ' + evolutionMonths()">±0</span>
+                    }
                   </td>
                 }
                 @for (t of troops; track t.key) {

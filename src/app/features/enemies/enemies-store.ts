@@ -5,16 +5,14 @@ import {
   doc,
   Firestore,
   getDoc,
-  initializeFirestore,
   onSnapshot,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   setDoc,
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { firebaseApp, isFirebaseConfigured } from '../../core/firebase';
+import { firestoreDb, isFirebaseConfigured } from '../../core/firebase';
 import { MapVillage } from '../../core/game-data/map-villages';
+import { MonthlySnapshot, SnapshotSlot } from '../players-update/monthly-snapshot';
 import { OWN_CLAN, Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
 import { EnemyRecord, playerKey } from './enemies.model';
 
@@ -32,6 +30,7 @@ const ENEMIES = 'enemies';
 const PLAYERS = 'players';
 const CLANS = 'clans';
 const VILLAGES = 'villages';
+const SNAPSHOTS = 'snapshots';
 /** Une écriture groupée Firestore accepte 500 opérations : on reste en dessous. */
 const BATCH_SIZE = 450;
 /** Document témoin : la liste initiale n'est copiée qu'une fois. */
@@ -54,6 +53,8 @@ export class EnemiesStore {
   readonly clanNames = signal<readonly string[]>(SEED_CLANS);
   /** Carte du jeu (coordonnées, points, habitants, clans), importée depuis MAJ joueurs. */
   readonly villages = signal<readonly MapVillage[]>([]);
+  /** Relevés mensuels des points et habitants : mois en cours et mois précédent. */
+  readonly snapshots = signal<Record<SnapshotSlot, MonthlySnapshot | null>>({ current: null, previous: null });
   readonly status = signal<StoreStatus>(isFirebaseConfigured() ? 'loading' : 'unconfigured');
   readonly error = signal<string | null>(null);
 
@@ -61,10 +62,7 @@ export class EnemiesStore {
 
   constructor() {
     if (this.status() === 'unconfigured') return;
-    // Copie locale (IndexedDB) : affichage immédiat et écritures possibles hors ligne.
-    const db = (this.db = initializeFirestore(firebaseApp(), {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
-    }));
+    const db = (this.db = firestoreDb());
     const readError = () => this.error.set('Lecture des infos impossible : vérifiez la base Firestore et ses règles.');
 
     onSnapshot(
@@ -91,6 +89,14 @@ export class EnemiesStore {
       collection(db, CLANS),
       (snapshot) => {
         if (!snapshot.empty) this.clanNames.set(snapshot.docs.map((d) => (d.data() as { name: string }).name));
+      },
+      readError,
+    );
+    onSnapshot(
+      collection(db, SNAPSHOTS),
+      (snapshot) => {
+        const byId = Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data() as MonthlySnapshot]));
+        this.snapshots.set({ current: byId['current'] ?? null, previous: byId['previous'] ?? null });
       },
       readError,
     );
@@ -163,8 +169,9 @@ export class EnemiesStore {
 
     const keep = new Set(villages.map((v) => docId(v.name)));
     for (const v of villages) ops.push((b) => b.set(doc(db, VILLAGES, docId(v.name)), v));
+    // Les villages neutres absents de l'export restent : ils ont leur propre mise à jour.
     for (const old of this.villages()) {
-      if (!keep.has(docId(old.name))) ops.push((b) => b.delete(doc(db, VILLAGES, docId(old.name))));
+      if (!old.neutral && !keep.has(docId(old.name))) ops.push((b) => b.delete(doc(db, VILLAGES, docId(old.name))));
     }
 
     const knownClans = new Set(this.clanNames().map(playerKey));
@@ -197,12 +204,44 @@ export class EnemiesStore {
       }
     }
 
+    await this.commitAll(db, ops);
+    return summary;
+  }
+
+  /** Remplace les villages neutres de la carte (les villages de joueurs ne sont pas touchés). Retourne leur nombre. */
+  async importNeutralVillages(villages: readonly MapVillage[]): Promise<number> {
+    const db = this.db;
+    if (!db) throw new Error('Base partagée non configurée.');
+    const ops: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
+    const keep = new Set(villages.map((v) => docId(v.name)));
+    for (const v of villages) ops.push((b) => b.set(doc(db, VILLAGES, docId(v.name)), v));
+    for (const old of this.villages()) {
+      if (old.neutral && !keep.has(docId(old.name))) ops.push((b) => b.delete(doc(db, VILLAGES, docId(old.name))));
+    }
+    await this.commitAll(db, ops);
+    return villages.length;
+  }
+
+  private async commitAll(db: Firestore, ops: readonly ((batch: ReturnType<typeof writeBatch>) => void)[]): Promise<void> {
     for (let i = 0; i < ops.length; i += BATCH_SIZE) {
       const batch = writeBatch(db);
       for (const op of ops.slice(i, i + BATCH_SIZE)) op(batch);
       await batch.commit();
     }
-    return summary;
+  }
+
+  /**
+   * Nouveau relevé du mois : l'ancien « mois en cours » devient « mois précédent »
+   * (le précédent d'avant est écrasé), le nouveau relevé devient « mois en cours ».
+   */
+  async rotateSnapshot(snapshot: MonthlySnapshot): Promise<void> {
+    const db = this.db;
+    if (!db) throw new Error('Base partagée non configurée.');
+    const batch = writeBatch(db);
+    const current = this.snapshots().current;
+    if (current) batch.set(doc(db, SNAPSHOTS, 'previous'), current);
+    batch.set(doc(db, SNAPSHOTS, 'current'), snapshot);
+    await batch.commit();
   }
 
   private run(label: string, operation: (db: Firestore) => Promise<void>): void {

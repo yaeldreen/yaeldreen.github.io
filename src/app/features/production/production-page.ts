@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { RESOURCES, ResourceKey } from '../../core/game-data/resources';
 import { Card } from '../../shared/ui/card';
+import { DateTimeSecondsInput } from '../../shared/ui/datetime-seconds-input';
+import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
 import { formatDateTime, formatDuration, formatNumber, toLocalIsoSeconds } from '../../shared/utils/format';
 import { readStored, writeStored } from '../../shared/utils/storage';
@@ -28,7 +30,7 @@ function storedLevels(): FieldLevels {
 
 @Component({
   selector: 'app-production-page',
-  imports: [FormsModule, Card, NumberInput],
+  imports: [FormsModule, Card, NumberInput, LevelInput, DateTimeSecondsInput],
   templateUrl: './production-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

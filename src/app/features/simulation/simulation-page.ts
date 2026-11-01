@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/c
 import { FormsModule } from '@angular/forms';
 import { RESOURCES } from '../../core/game-data/resources';
 import { Card } from '../../shared/ui/card';
-import { NumberInput } from '../../shared/ui/number-input';
+import { LevelInput } from '../../shared/ui/level-input';
 import { formatDuration, formatNumber } from '../../shared/utils/format';
 import { BUILDING_GUIDES, BuildingId } from '../buildings/buildings.guides';
 import { simulateUpgrades } from './simulation.logic';
@@ -15,7 +15,7 @@ const clamp = (value: number | null, min: number, max: number): number =>
 
 @Component({
   selector: 'app-simulation-page',
-  imports: [Card, NumberInput, FormsModule],
+  imports: [Card, FormsModule, LevelInput],
   templateUrl: './simulation-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

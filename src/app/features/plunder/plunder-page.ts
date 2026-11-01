@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
-import { RESOURCES } from '../../core/game-data/resources';
 import { Card } from '../../shared/ui/card';
+import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
 import { formatNumber } from '../../shared/utils/format';
 import { TROOP_TYPES, TroopId } from './plunder.data';
@@ -15,12 +15,11 @@ const clamp = (value: number | null, min: number, max: number): number =>
 
 @Component({
   selector: 'app-plunder-page',
-  imports: [Card, NumberInput],
+  imports: [Card, NumberInput, LevelInput],
   templateUrl: './plunder-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PlunderPage {
-  protected readonly resources = RESOURCES;
   protected readonly troopTypes = TROOP_TYPES;
   protected readonly formatNumber = formatNumber;
   protected readonly depotMax = DEPOT_MAX;
@@ -45,12 +44,6 @@ export class PlunderPage {
 
   protected readonly armyCapacity = computed(() => plunderCapacity(this.army()));
   protected readonly plan = computed(() => planPlunder(this.army(), this.storage().target));
-  protected readonly leftoverCapacity = computed(() => plunderCapacity(this.plan().leftover));
-
-  /** Capacité du dépôt d'une ressource : Dépôt de nourriture pour la nourriture, de ressources sinon. */
-  protected depotFor(key: string): number {
-    return key === 'food' ? this.storage().food : this.storage().resources;
-  }
 
   protected setCount(id: TroopId, value: number | null): void {
     const sanitized = value !== null && value < 0 ? 0 : value;

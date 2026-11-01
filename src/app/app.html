@@ -1,3 +1,5 @@
+@switch (access.status()) {
+  @case ('unlocked') {
 <div class="bg-stone-950 text-stone-100 min-h-screen font-sans antialiased selection:bg-red-800 selection:text-white flex flex-col justify-between">
   <header class="border-b border-stone-800 bg-stone-900/60 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
@@ -49,3 +51,38 @@
     <p>Tsukuyomi HUB</p>
   </footer>
 </div>
+  }
+  @case ('checking') {
+    <div class="bg-stone-950 min-h-screen flex items-center justify-center text-sm text-stone-400">Chargement…</div>
+  }
+  @default {
+    <div class="bg-stone-950 text-stone-100 min-h-screen font-sans antialiased flex items-center justify-center p-4">
+      <form (submit)="$event.preventDefault(); unlock()" class="w-full max-w-sm bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <img src="Rinne_Sharingan.webp" alt="" class="w-10 h-10 rounded-xl shadow-lg shadow-red-700/30" />
+          <h1 class="font-bold text-lg tracking-tight">Tsukuyomi HUB</h1>
+        </div>
+        <label class="block">
+          <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Mot de passe</span>
+          <input
+            type="password"
+            autocomplete="current-password"
+            [value]="password()"
+            (input)="password.set($any($event.target).value)"
+            class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+          />
+        </label>
+        @if (access.error(); as e) {
+          <p class="text-xs text-rose-300">{{ e }}</p>
+        }
+        <button
+          type="submit"
+          [disabled]="!password() || unlocking()"
+          class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Entrer
+        </button>
+      </form>
+    </div>
+  }
+}

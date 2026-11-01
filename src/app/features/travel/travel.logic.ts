@@ -14,6 +14,7 @@ export interface Coordinate {
 export interface ReturnRow {
   level: number;
   speedPerKm: string;
+  /** Temps par km avec le ticket vitesse ("41,5 s / km"). */ ticketSpeedPerKm: string;
   arrival: FormattedDateTime;
   ticketArrival: FormattedDateTime;
   /** true si nos troupes, parties à `counter.nowMs`, arrivent avant le retour de l'ennemi (sans ticket). */
@@ -46,8 +47,10 @@ export function clanVillages(players: readonly Player[], villages: readonly MapV
     .sort((a, b) => a.kage.localeCompare(b.kage, 'fr'));
 }
 
-/** Le ticket divise le temps de trajet par deux. */
-const TICKET_TIME_FACTOR = 0.5;
+/** Secondes par km sans Centre d'entraînement ; chaque niveau de CE retire 5 % (CE 11 : 208 × 0,45). */
+const BASE_SECONDS_PER_KM = 208;
+/** Le CE 20 ne suit pas la règle (il donnerait 0) : 5 s par km dans le jeu. */
+const LEVEL_20_SECONDS_PER_KM = 5;
 
 const num = (value: number | null): number => Number(value) || 0;
 
@@ -63,25 +66,47 @@ export function computeDistance(
   return Math.round(raw * 2) / 2;
 }
 
-/** Durée du trajet en ms pour un niveau de CE (1 à 20). */
-export const travelMs = (distanceKm: number, level: number): number =>
-  distanceKm * TRAVEL_SPEEDS[Math.min(20, Math.max(1, level)) - 1].centisecondsPerKm * 10;
+/** Temps par km du jeu, sans arrondi : 208 s moins le bonus du CE (CE 11 : −55 %, soit 208 × 0,45 = 93,6 s). */
+export function secondsPerKm(level: number): number {
+  const ce = Math.min(20, Math.max(1, level));
+  return ce === 20 ? LEVEL_20_SECONDS_PER_KM : (BASE_SECONDS_PER_KM * (20 - ce)) / 20;
+}
 
-/** Arrivée de nos troupes au village ennemi si elles partent à `nowMs`. */
+/**
+ * Temps par km avec le ticket vitesse : temps par km du jeu (tableau du CE) arrondi à la seconde, divisé par deux.
+ * CE 12 : 83,29 → 83 → 41,5 s ; CE 13 : 72,88 → 73 → 36,5 s ; CE 4 : 166,59 → 167 → 83,5 s.
+ */
+export const ticketSecondsPerKm = (level: number): number =>
+  Math.round(TRAVEL_SPEEDS[Math.min(20, Math.max(1, level)) - 1].centisecondsPerKm / 100) / 2;
+
+/**
+ * Durée du trajet en ms pour un niveau de CE (1 à 20).
+ * Sans ticket : temps par km × distance, arrondi à la seconde (CE 11 sur 38,5 km : 93,6 × 38,5 → 3 604 s).
+ * Avec ticket : temps par km avec ticket × distance, arrondi à la seconde supérieure
+ * (CE 4 sur 7,5 km : 83,5 × 7,5 = 626,25 → 627 s = 10:27 ; CE 11 sur 38,5 km : 47 × 38,5 → 1 810 s = 30:10).
+ */
+export function travelMs(distanceKm: number, level: number, ticket = false): number {
+  const seconds = ticket
+    ? Math.ceil(ticketSecondsPerKm(level) * distanceKm - 1e-9)
+    : Math.round(secondsPerKm(level) * distanceKm);
+  return seconds * 1000;
+}
+
 export const counterArrivalMs = ({ level, distanceKm, nowMs }: CounterAttack): number => nowMs + travelMs(distanceKm, level);
 
 export function computeReturnRows(distanceKm: number, departureMs: number, counter: CounterAttack): ReturnRow[] {
   const ourArrival = counterArrivalMs(counter);
-  return TRAVEL_SPEEDS.map(({ level, centisecondsPerKm }) => {
+  return TRAVEL_SPEEDS.map(({ level }) => {
     const returnAt = departureMs + travelMs(distanceKm, level);
-    const ticketReturnAt = departureMs + travelMs(distanceKm, level) * TICKET_TIME_FACTOR;
+    const ticketReturnAt = departureMs + travelMs(distanceKm, level, true);
     return {
       feasible: ourArrival < returnAt,
       marginMs: returnAt - ourArrival,
       ticketFeasible: ourArrival < ticketReturnAt,
       ticketMarginMs: ticketReturnAt - ourArrival,
       level,
-      speedPerKm: formatSpeed(centisecondsPerKm),
+      speedPerKm: formatSpeed(secondsPerKm(level) * 100),
+      ticketSpeedPerKm: `${String(ticketSecondsPerKm(level)).replace('.', ',')} s / km`,
       arrival: formatDateTime(returnAt),
       ticketArrival: formatDateTime(ticketReturnAt),
     };

@@ -1,0 +1,236 @@
+@if (report(); as rep) {
+  @let plan = rep.plan;
+  <app-card class="p-6 space-y-5">
+    <div class="border-b border-stone-800 pb-3 flex flex-wrap justify-between items-center gap-3">
+      <h2 class="font-semibold text-stone-200">Rapport de raz · {{ rep.defenderName }}</h2>
+      <button
+        type="button"
+        (click)="backToArmies()"
+        class="bg-stone-800 hover:bg-stone-700 text-stone-200 px-4 py-2 rounded-xl text-xs font-medium border border-stone-700 cursor-pointer"
+      >
+        ← Revenir aux armées
+      </button>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-3">
+        <span class="text-[11px] text-stone-400 block uppercase tracking-wider">Passent</span>
+        <span class="text-xl font-bold font-mono text-red-300">{{ plan.wins }}</span>
+      </div>
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-3">
+        <span class="text-[11px] text-stone-400 block uppercase tracking-wider">Crashs</span>
+        <span class="text-xl font-bold font-mono text-amber-300">{{ plan.crashes }}</span>
+      </div>
+      <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-3">
+        <span class="text-[11px] text-stone-400 block uppercase tracking-wider">Défense restante</span>
+        <span class="text-sm font-bold font-mono text-emerald-300">{{ troopsOf(plan.defenderRemaining) }}</span>
+      </div>
+    </div>
+
+    <ol class="space-y-2">
+      @for (pass of plan.passes; track pass.attacker; let n = $index) {
+        @let r = pass.result;
+        <li class="bg-stone-950/60 border rounded-xl text-xs" [class]="pass.crash ? 'border-amber-700/40' : 'border-stone-800'">
+          <button
+            type="button"
+            (click)="togglePass(n)"
+            [attr.aria-expanded]="openPass() === n"
+            class="w-full p-3 flex flex-wrap items-center gap-2 text-left cursor-pointer"
+          >
+            <span class="w-6 h-6 rounded-full bg-stone-800 text-stone-200 flex items-center justify-center font-bold">{{ n + 1 }}</span>
+            <span class="font-semibold text-red-300">{{ rep.names[pass.attacker] }}</span>
+            <span class="px-2 py-0.5 rounded-lg font-bold border" [class]="pass.crash ? 'bg-amber-700/10 text-amber-300 border-amber-700/30' : 'bg-red-700/10 text-red-300 border-red-700/30'">
+              {{ pass.crash ? 'Crash' : 'Passe' }}
+            </span>
+            <span class="text-stone-400">Pertes <span class="font-mono text-red-300">{{ percent(r.attackerLossRate) }}</span></span>
+            <span class="text-stone-500 ml-auto">D/A <span class="font-mono text-stone-300">{{ r.ratio!.toFixed(2).replace('.', ',') }}</span></span>
+            <span class="text-stone-500">{{ openPass() === n ? '▾' : '▸' }}</span>
+          </button>
+
+          @if (openPass() === n) {
+            <div class="px-3 pb-3 space-y-3 border-t border-stone-800 pt-3">
+              <div class="grid grid-cols-2 gap-2 text-stone-400">
+                <span>Force assaillant <span class="font-mono text-red-300">{{ power(r.attack.strength) }}</span></span>
+                <span>Force défense <span class="font-mono text-emerald-300">{{ power(r.defense.strength) }}</span></span>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="text-[11px] text-stone-400 uppercase tracking-wider border-b border-stone-800">
+                      <th class="text-left py-1.5 pr-3 font-medium"></th>
+                      @for (t of troopTypes; track t.key) {
+                        <th class="text-right py-1.5 px-2 font-medium">{{ t.label }}</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody class="font-mono">
+                    <tr class="text-red-300 font-sans font-semibold"><td class="pt-2 pr-3" colspan="4">Assaillant · {{ rep.names[pass.attacker] }}</td></tr>
+                    <tr>
+                      <td class="py-1 pr-3 font-sans text-stone-400">Ninjas</td>
+                      @for (t of troopTypes; track t.key) {
+                        <td class="text-right py-1 px-2 text-stone-200">{{ formatNumber(rep.sent[pass.attacker][t.key]) }}</td>
+                      }
+                    </tr>
+                    <tr>
+                      <td class="py-1 pr-3 font-sans text-stone-400">Tués ({{ percent(r.attackerLossRate) }})</td>
+                      @for (t of troopTypes; track t.key) {
+                        <td class="text-right py-1 px-2 text-red-300">{{ formatNumber(r.attackerLosses[t.key]) }}</td>
+                      }
+                    </tr>
+                    <tr>
+                      <td class="py-1 pr-3 font-sans text-stone-400">Soignés ({{ r.attackerRecoveryRate }} %)</td>
+                      @for (t of troopTypes; track t.key) {
+                        <td class="text-right py-1 px-2 text-emerald-300">+{{ formatNumber(r.attackerRecovered[t.key]) }}</td>
+                      }
+                    </tr>
+
+                    <tr class="text-emerald-300 font-sans font-semibold"><td class="pt-3 pr-3" colspan="4">Défenseur · {{ rep.defenderName }}</td></tr>
+                    <tr>
+                      <td class="py-1 pr-3 font-sans text-stone-400">Ninjas</td>
+                      @for (t of troopTypes; track t.key) {
+                        <td class="text-right py-1 px-2 text-stone-200">{{ formatNumber(pass.defenderBefore[t.key]) }}</td>
+                      }
+                    </tr>
+                    <tr>
+                      <td class="py-1 pr-3 font-sans text-stone-400">Tués ({{ percent(r.defenderLossRate!.min) }})</td>
+                      @for (t of troopTypes; track t.key) {
+                        <td class="text-right py-1 px-2 text-red-300">{{ formatNumber(pass.defenderKilled[t.key]) }}</td>
+                      }
+                    </tr>
+                    <tr>
+                      <td class="py-1 pr-3 font-sans text-stone-400">Après le passage</td>
+                      @for (t of troopTypes; track t.key) {
+                        <td class="text-right py-1 px-2 text-stone-100 font-bold">{{ formatNumber(pass.defenderAfter[t.key]) }}</td>
+                      }
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="text-stone-400">
+                Points gagnés : assaillant <span class="font-mono text-red-300">+{{ formatNumber(r.attackerPoints!.min) }}</span>,
+                défenseur <span class="font-mono text-emerald-300">+{{ formatNumber(r.defenderPoints) }}</span>
+                · ratio pertes / tués <span class="font-mono text-stone-200">{{ pass.lossRatio.toFixed(2).replace('.', ',') }}</span>
+              </p>
+            </div>
+          }
+        </li>
+      }
+    </ol>
+
+    @if (plan.unused.length) {
+      <p class="text-xs text-stone-400">Inutiles, la défense est déjà vide : {{ namesOf(rep, plan.unused) }}.</p>
+    }
+    @if (plan.empty.length) {
+      <p class="text-xs text-stone-500">Sans troupes, ignorés : {{ namesOf(rep, plan.empty) }}.</p>
+    }
+
+    <p class="text-[11px] text-stone-500">
+      Tant qu'un attaquant peut gagner, le plus fort passe en premier : chaque victoire retire au moins 50 % de la défense et coûte
+      à peu près la même puissance quel que soit l'attaquant, les plus faibles passent donc sur une défense déjà réduite. Si personne
+      ne peut gagner, un attaquant crashe : celui qui permet ensuite le plus de passages, puis le meilleur ratio pertes / ennemis tués.
+      Pertes du défenseur prises au bas de la fourchette{{ healedReturn() ? ', soignés du défenseur revenus avant chaque passage' : '' }}.
+    </p>
+
+    <button
+      type="button"
+      (click)="backToArmies()"
+      class="w-full bg-stone-800 hover:bg-stone-700 text-stone-200 py-2.5 rounded-xl text-sm font-medium border border-stone-700 cursor-pointer"
+    >
+      ← Revenir aux armées
+    </button>
+  </app-card>
+} @else {
+  @if (history().length) {
+    <app-card class="p-4 space-y-2">
+      <h2 class="text-xs font-medium text-stone-400 uppercase tracking-wider">Derniers raz</h2>
+      @for (entry of history(); track entry.at) {
+        <button
+          type="button"
+          (click)="loadFromHistory(entry)"
+          class="w-full text-left text-xs bg-stone-950/60 border border-stone-800 hover:border-stone-600 rounded-xl px-3 py-2.5 flex justify-between gap-3 cursor-pointer"
+        >
+          <span class="text-stone-300 truncate">{{ historyLabel(entry) }}</span>
+          <span class="text-red-300 shrink-0">Revoir ▸</span>
+        </button>
+      }
+    </app-card>
+  }
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+    @let d = defender();
+    <app-army-card
+      title="Défenseur"
+      [defending]="true"
+      color="text-emerald-400"
+      [form]="d.form"
+      (formChange)="setDefenderForm($event)"
+      [playerName]="d.player"
+      [loaded]="d.loaded"
+      (playerChange)="selectDefender($event)"
+    />
+
+    <div class="space-y-3">
+      @for (a of attackers(); track a.id; let i = $index) {
+        @let s = summaries()[i];
+        @if (openId() === a.id) {
+          <app-army-card
+            [title]="'Attaquant ' + (i + 1)"
+            [form]="a.form"
+            (formChange)="setAttackerForm(a.id, $event)"
+            [playerName]="a.player"
+            [loaded]="a.loaded"
+            (playerChange)="selectAttacker(a.id, $event)"
+            [removable]="attackers().length > 1"
+            (remove)="removeAttacker(a.id)"
+            [collapsible]="true"
+            (collapse)="toggle(a.id)"
+          />
+        } @else {
+          <button
+            type="button"
+            (click)="toggle(a.id)"
+            aria-expanded="false"
+            class="w-full text-left bg-stone-900 border border-stone-800 hover:border-stone-600 rounded-2xl px-5 py-3.5 flex items-center gap-3 cursor-pointer"
+          >
+            <span class="text-stone-500">▸</span>
+            <span class="min-w-0 flex-1">
+              <span class="block text-sm font-semibold text-stone-200 truncate">
+                Attaquant {{ i + 1 }}@if (a.player) { <span class="text-red-300"> · {{ a.player }}</span> }
+              </span>
+              <span class="block text-xs font-mono text-stone-400">{{ troopsOf(s.troops) }}</span>
+            </span>
+            <span class="text-xs text-stone-400 shrink-0">Force <span class="font-mono font-bold text-red-400">{{ power(s.strength) }}</span></span>
+          </button>
+        }
+      }
+      <button
+        type="button"
+        (click)="addAttacker()"
+        class="w-full bg-stone-800 hover:bg-stone-700 text-stone-200 py-2.5 rounded-xl text-sm font-medium border border-dashed border-stone-600 cursor-pointer"
+      >
+        + Ajouter un attaquant
+      </button>
+    </div>
+  </div>
+
+  <app-card class="p-6 space-y-4">
+    <label class="flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
+      <input type="checkbox" [checked]="healedReturn()" (change)="healedReturn.set($any($event.target).checked)" class="accent-red-700 w-4 h-4 cursor-pointer" />
+      Les soignés du défenseur reviennent entre deux passages
+    </label>
+    <button
+      type="button"
+      (click)="simulate()"
+      [disabled]="!canSimulate()"
+      class="w-full bg-red-800 hover:bg-red-700 text-white py-3 rounded-xl text-sm font-semibold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      Simuler le raz
+    </button>
+    @if (!canSimulate()) {
+      <p class="text-xs text-stone-500 text-center">Renseignez la défense et au moins un attaquant.</p>
+    }
+    <button type="button" (click)="reset()" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">
+      Tout remettre à zéro
+    </button>
+  </app-card>
+}

@@ -44,6 +44,39 @@ export function parseMapExport(text: string): MapVillage[] {
   });
 }
 
+/**
+ * Lit l'export compact des villages (objets à clés numérotées, éventuellement sans guillemets) :
+ * 0 id, 1 nom, 2 kage, 3 élément, 4 x, 5 y, 6 points, 7 habitants, 8 clan, 9 village neutre.
+ * Ne garde que les villages neutres (9 = true).
+ */
+export function parseNeutralExport(text: string): MapVillage[] {
+  let raw: unknown;
+  try {
+    // `{ 0: 70, … }` n'est pas du JSON : on met les clés numériques entre guillemets.
+    raw = JSON.parse(text.replace(/([{,]\s*)(\d+)\s*:/g, '$1"$2":').replace(/,(\s*[}\]])/g, '$1'));
+  } catch {
+    throw new Error("Le texte collé n'est pas lisible (export coupé ?).");
+  }
+  if (!Array.isArray(raw)) throw new Error("L'export doit être une liste de villages ([ … ]).");
+  return raw
+    .filter((v) => v?.[9] === true)
+    .map((v, i) => {
+      if (typeof v[1] !== 'string' || typeof v[2] !== 'string' || !Number.isInteger(v[4]) || !Number.isInteger(v[5])) {
+        throw new Error(`Village neutre n°${i + 1} illisible (nom, kage ou coordonnées manquants).`);
+      }
+      return {
+        name: v[1].trim(),
+        kage: v[2].trim(),
+        x: v[4],
+        y: v[5],
+        clan: null,
+        points: Math.max(0, Math.floor(Number(v[6]) || 0)),
+        inhabitants: Math.max(0, Math.floor(Number(v[7]) || 0)),
+        neutral: true,
+      };
+    });
+}
+
 const normName = (s: string): string =>
   s
     .normalize('NFD')

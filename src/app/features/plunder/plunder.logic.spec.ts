@@ -8,35 +8,36 @@ describe('storageCapacity', () => {
 });
 
 describe('planPlunder', () => {
-  it('remplit exactement quand c’est possible, sans dépasser', () => {
+  const sum = (plan: ReturnType<typeof planPlunder>, id: 'genin' | 'chunin' | 'jounin') =>
+    plan.groups.reduce((n, g) => n + g.team[id] * g.count, 0);
+
+  it('remplit exactement quand c’est possible', () => {
     const plan = planPlunder({ genin: 1000, chunin: 0, jounin: 0 }, 1300);
-    expect(plan.team).toEqual({ genin: 100, chunin: 0, jounin: 0 });
-    expect(plan.capacity).toBe(1300);
+    expect(plan.groups).toEqual([{ team: { genin: 100, chunin: 0, jounin: 0 }, capacity: 1300, count: 10 }]);
     expect(plan.teams).toBe(10);
-    expect(plan.leftover).toEqual({ genin: 0, chunin: 0, jounin: 0 });
   });
 
-  it('ne dépasse jamais la cible', () => {
+  it('utilise toute l’armée, sans dépasser la cible, avec le moins d’équipes possible', () => {
     const army = { genin: 693, chunin: 414, jounin: 53 };
-    for (const target of [100, 999, 4098, 6283]) {
+    for (const target of [999, 4098, 6283]) {
       const plan = planPlunder(army, target);
-      expect(plan.capacity).toBeLessThanOrEqual(target);
-      expect(plunderCapacity(plan.team)).toBe(plan.capacity);
+      expect(sum(plan, 'genin')).toBe(693);
+      expect(sum(plan, 'chunin')).toBe(414);
+      expect(sum(plan, 'jounin')).toBe(53);
+      expect(plan.groups.every((g) => g.capacity <= target && plunderCapacity(g.team) === g.capacity)).toBe(true);
+      expect(plan.teams).toBeLessThanOrEqual(Math.ceil(plan.total / target) + 1);
     }
   });
 
-  it('prend toute l’armée quand elle ne suffit pas à remplir les dépôts', () => {
-    const plan = planPlunder({ genin: 10, chunin: 5, jounin: 1 }, 100_000);
-    expect(plan.team).toEqual({ genin: 10, chunin: 5, jounin: 1 });
-    expect(plan.capacity).toBe(10 * 13 + 5 * 26 + 53);
-    expect(plan.teams).toBe(1);
+  it('répartit en équipes équilibrées qui ne remplissent pas forcément les dépôts', () => {
+    // 1 050 Genin = 13 650 de pillage pour une cible de 6 283 : 3 équipes de 350 (4 550 chacune).
+    const plan = planPlunder({ genin: 1050, chunin: 0, jounin: 0 }, 6283);
+    expect(plan.groups).toEqual([{ team: { genin: 350, chunin: 0, jounin: 0 }, capacity: 4550, count: 3 }]);
   });
 
-  it('à pillage égal, privilégie la composition qui forme le plus d’équipes', () => {
-    // 26 de pillage : 2 Genin (5 équipes) ou 1 Chunin (1 équipe).
-    const plan = planPlunder({ genin: 10, chunin: 1, jounin: 0 }, 26);
-    expect(plan.team).toEqual({ genin: 2, chunin: 0, jounin: 0 });
-    expect(plan.teams).toBe(5);
+  it('envoie une seule équipe quand l’armée ne remplit pas les dépôts', () => {
+    const plan = planPlunder({ genin: 10, chunin: 5, jounin: 1 }, 100_000);
+    expect(plan.groups).toEqual([{ team: { genin: 10, chunin: 5, jounin: 1 }, capacity: 10 * 13 + 5 * 26 + 53, count: 1 }]);
   });
 
   it('ne forme aucune équipe sans troupes', () => {

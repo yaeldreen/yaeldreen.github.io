@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Card } from '../../shared/ui/card';
+import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatNumber } from '../../shared/utils/format';
 import { findVillage } from '../../core/game-data/map-villages';
 import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PLAYER_STATS, PlayerMatch, PlayerStatKey } from './clans.data';
+import { compareSnapshots, EvolutionRow, monthLabel } from '../players-update/monthly-snapshot';
 import { EnemiesStore } from './enemies-store';
 import { EnemyRecord, playerKey, ReportSide, survivors, TroopCounts, TROOPS, TroopKey } from './enemies.model';
 import { readClipboardImage } from '../../shared/utils/clipboard';
@@ -75,7 +77,7 @@ const toRow = (
 
 @Component({
   selector: 'app-enemies-page',
-  imports: [Card, NumberInput, FormsModule, SegmentedControl],
+  imports: [Card, NumberInput, FormsModule, SegmentedControl, LevelInput],
   templateUrl: './enemies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(window:paste)': 'onPaste($event)' },
@@ -136,6 +138,28 @@ export class EnemiesPage implements OnDestroy {
   protected readonly isOwnClan = computed(() => this.draftMatch()?.clan === OWN_CLAN);
 
   protected readonly clanFilter = signal(ALL);
+
+  /** Évolution des points et habitants depuis le mois précédent (relevés mensuels de MAJ joueurs), par joueur. */
+  private readonly evolution = computed(() => {
+    const { current, previous } = this.store.snapshots();
+    if (!current || !previous) return new Map<string, EvolutionRow>();
+    return new Map(compareSnapshots(previous, current).map((r) => [playerKey(r.name), r]));
+  });
+  protected readonly evolutionMonths = computed(() => {
+    const { current, previous } = this.store.snapshots();
+    return current && previous ? `${monthLabel(previous.month)} → ${monthLabel(current.month)}` : null;
+  });
+
+  /** Écart du mois pour « points » ou « habitants » (null : pas de relevé, ou autre info). */
+  protected monthDelta(player: string, key: StatKey): number | null {
+    const row = this.evolution().get(playerKey(player));
+    if (!row) return null;
+    return key === 'points' ? row.pointsDelta : key === 'inhabitants' ? row.inhabitantsDelta : null;
+  }
+
+  protected signed(n: number): string {
+    return `${n > 0 ? '+' : n < 0 ? '−' : '±'}${formatNumber(Math.abs(n))}`;
+  }
 
   protected readonly tables = computed(() => {
     const records = this.store.records();

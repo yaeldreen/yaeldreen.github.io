@@ -27,11 +27,11 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Niveau actuel</label>
-        <app-number-input [(value)]="currentLevel" [min]="0" [max]="maxLevel() - 1" />
+        <app-level-input [(value)]="currentLevel" [min]="0" [max]="maxLevel() - 1" />
       </div>
       <div>
         <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Niveau visé</label>
-        <app-number-input [(value)]="targetLevel" [min]="i.currentLevel + 1" [max]="maxLevel()" />
+        <app-level-input [(value)]="targetLevel" [min]="i.currentLevel + 1" [max]="maxLevel()" />
       </div>
     </div>
     <p class="text-[11px] text-stone-500 -mt-2">Calcul : niveau {{ i.currentLevel }} → {{ i.targetLevel }} (max {{ maxLevel() }}).</p>
@@ -44,7 +44,7 @@
         @if (isResourceDepot()) {
           <p class="text-xs text-stone-500 py-2.5">= niveau actuel</p>
         } @else {
-          <app-number-input [(value)]="resourceDepotLevel" [min]="1" [max]="depotMax" />
+          <app-level-input [(value)]="resourceDepotLevel" [min]="1" [max]="depotMax" />
         }
       </div>
       <div>
@@ -54,7 +54,7 @@
         @if (isFoodDepot()) {
           <p class="text-xs text-stone-500 py-2.5">= niveau actuel</p>
         } @else {
-          <app-number-input [(value)]="foodDepotLevel" [min]="1" [max]="depotMax" />
+          <app-level-input [(value)]="foodDepotLevel" [min]="1" [max]="depotMax" />
         }
       </div>
     </div>

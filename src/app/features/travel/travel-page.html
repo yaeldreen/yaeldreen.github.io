@@ -103,13 +103,7 @@
           Maintenant
         </button>
       </div>
-      <input
-        type="datetime-local"
-        step="1"
-        [ngModel]="departureTime()"
-        (ngModelChange)="departureTime.set($event)"
-        class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 focus:outline-none focus:border-red-700 font-mono text-sm"
-      />
+      <app-datetime-seconds-input [(value)]="departureTime" />
       <p class="text-xs text-stone-500 mt-3">* Vitesses officielles de déplacement par kilomètre (Niveaux 1 à 20).</p>
     </div>
 
@@ -133,7 +127,7 @@
         <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
           <i class="fa-solid fa-dumbbell text-red-400 mr-1.5"></i> Mon CE
         </label>
-        <app-number-input [value]="ourLevel()" (valueChange)="setOurLevel($event)" [min]="1" [max]="20" placeholder="11" />
+        <app-level-input [value]="ourLevel()" (valueChange)="setOurLevel($event)" [min]="1" [max]="20" placeholder="11" />
       </div>
       <div class="sm:col-span-2 bg-stone-900 px-4 py-3 rounded-xl border border-stone-800 text-xs text-stone-300">
         @if (counterFromMyVillage()) {
@@ -187,7 +181,7 @@
             </td>
             <td class="py-3 px-5 font-bold text-violet-400">
               {{ row.ticketArrival.time }}
-              <span class="block text-xs font-normal text-stone-500">{{ row.ticketArrival.date }}</span>
+              <span class="block text-xs font-normal text-stone-500">{{ row.ticketArrival.date }} · {{ row.ticketSpeedPerKm }}</span>
             </td>
             <td class="py-3 px-5 text-center">
               @if (row.feasible) {

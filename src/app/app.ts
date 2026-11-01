@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AccessGate } from './core/access';
 
 interface NavTab {
   path: string;
@@ -23,6 +24,7 @@ export class App {
     { path: '/batiments', label: 'BuildGuide', icon: 'fa-hammer' },
     { path: '/simulation', label: 'Simu constru', icon: 'fa-helmet-safety' },
     { path: '/combat', label: 'Simu combat', icon: 'fa-khanda' },
+    { path: '/raz', label: 'Simu raz', icon: 'fa-burst' },
     { path: '/secondes', label: 'Calcul seconde', icon: 'fa-stopwatch' },
     { path: '/proches', label: 'Qui est le plus proche', icon: 'fa-location-crosshairs' },
     { path: '/ennemis', label: 'infos enemis', icon: 'fa-user-secret' },
@@ -30,6 +32,18 @@ export class App {
   ];
 
   protected readonly menuOpen = signal(false);
+
+  protected readonly access = inject(AccessGate);
+  protected readonly password = signal('');
+  protected readonly unlocking = signal(false);
+
+  protected async unlock(): Promise<void> {
+    if (!this.password()) return;
+    this.unlocking.set(true);
+    const ok = await this.access.unlock(this.password());
+    this.unlocking.set(false);
+    if (ok) this.password.set('');
+  }
 
   private readonly url = toSignal(
     inject(Router).events.pipe(
