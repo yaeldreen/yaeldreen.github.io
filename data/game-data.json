@@ -1,0 +1,3156 @@
+{
+  "buildings": {
+    "hq": {
+      "name": "Quartier général",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "0:00:00:51",
+          "population": 2,
+          "stone": 120,
+          "wood": 100,
+          "iron": 70,
+          "food": 50
+        },
+        {
+          "level": 2,
+          "buildTime": "0:00:03:20",
+          "population": 2,
+          "stone": 540,
+          "wood": 510,
+          "iron": 510,
+          "food": 510
+        },
+        {
+          "level": 3,
+          "buildTime": "0:00:06:00",
+          "population": 2,
+          "stone": 959,
+          "wood": 910,
+          "iron": 910,
+          "food": 910
+        },
+        {
+          "level": 4,
+          "buildTime": "0:00:10:48",
+          "population": 2,
+          "stone": 1404,
+          "wood": 1310,
+          "iron": 1310,
+          "food": 1310
+        },
+        {
+          "level": 5,
+          "buildTime": "0:00:19:26",
+          "population": 2,
+          "stone": 1977,
+          "wood": 1830,
+          "iron": 1830,
+          "food": 1830
+        },
+        {
+          "level": 6,
+          "buildTime": "0:00:34:59",
+          "population": 2,
+          "stone": 2674,
+          "wood": 2470,
+          "iron": 2470,
+          "food": 2410
+        },
+        {
+          "level": 7,
+          "buildTime": "0:01:02:58",
+          "population": 3,
+          "stone": 3495,
+          "wood": 3210,
+          "iron": 3210,
+          "food": 3210
+        },
+        {
+          "level": 8,
+          "buildTime": "0:01:53:20",
+          "population": 3,
+          "stone": 4432,
+          "wood": 4100,
+          "iron": 4100,
+          "food": 4100
+        },
+        {
+          "level": 9,
+          "buildTime": "0:03:24:00",
+          "population": 3,
+          "stone": 5533,
+          "wood": 5020,
+          "iron": 5020,
+          "food": 5020
+        },
+        {
+          "level": 10,
+          "buildTime": "0:06:07:12",
+          "population": 3,
+          "stone": 6987,
+          "wood": 6290,
+          "iron": 6290,
+          "food": 6290
+        },
+        {
+          "level": 11,
+          "buildTime": "0:11:00:58",
+          "population": 3,
+          "stone": 8808,
+          "wood": 7864,
+          "iron": 7830,
+          "food": 7830
+        },
+        {
+          "level": 12,
+          "buildTime": "0:19:49:44",
+          "population": 3,
+          "stone": 11118,
+          "wood": 9927,
+          "iron": 9790,
+          "food": 9790
+        },
+        {
+          "level": 13,
+          "buildTime": "1:11:41:31",
+          "population": 4,
+          "stone": 14034,
+          "wood": 12530,
+          "iron": 12240,
+          "food": 12240
+        },
+        {
+          "level": 14,
+          "buildTime": "2:16:14:44",
+          "population": 4,
+          "stone": 17712,
+          "wood": 15814,
+          "iron": 15300,
+          "food": 15300
+        },
+        {
+          "level": 15,
+          "buildTime": "4:19:38:31",
+          "population": 4,
+          "stone": 23675,
+          "wood": 21138,
+          "iron": 19120,
+          "food": 19120
+        },
+        {
+          "level": 16,
+          "buildTime": "8:16:09:20",
+          "population": 4,
+          "stone": 30193,
+          "wood": 26958,
+          "iron": 25850,
+          "food": 25850
+        },
+        {
+          "level": 17,
+          "buildTime": "15:14:40:48",
+          "population": 4,
+          "stone": 46775,
+          "wood": 41763,
+          "iron": 35081,
+          "food": 33411
+        },
+        {
+          "level": 18,
+          "buildTime": "28:02:25:26",
+          "population": 4,
+          "stone": 69444,
+          "wood": 62004,
+          "iron": 52083,
+          "food": 49603
+        },
+        {
+          "level": 19,
+          "buildTime": "50:13:57:47",
+          "population": 4,
+          "stone": 99944,
+          "wood": 89236,
+          "iron": 74958,
+          "food": 71389
+        },
+        {
+          "level": 20,
+          "buildTime": "91:01:08:01",
+          "population": 4,
+          "stone": 140000,
+          "wood": 125000,
+          "iron": 105000,
+          "food": 100000
+        }
+      ]
+    },
+    "training": {
+      "name": "Camp d'entraînement",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "1min 47s",
+          "population": 2,
+          "stone": 582,
+          "wood": 582,
+          "iron": 480,
+          "food": 379,
+          "power": 2,
+          "walkSpeed": 5,
+          "centisecondsPerKm": 19782
+        },
+        {
+          "level": 2,
+          "buildTime": "9 min",
+          "population": 2,
+          "stone": 910,
+          "wood": 910,
+          "iron": 634,
+          "food": 510,
+          "power": 4,
+          "walkSpeed": 10,
+          "centisecondsPerKm": 18741
+        },
+        {
+          "level": 3,
+          "buildTime": "15 min",
+          "population": 2,
+          "stone": 1310,
+          "wood": 1310,
+          "iron": 910,
+          "food": 910,
+          "power": 6,
+          "walkSpeed": 15,
+          "centisecondsPerKm": 17700
+        },
+        {
+          "level": 4,
+          "buildTime": "26 min",
+          "population": 2,
+          "stone": 1830,
+          "wood": 1830,
+          "iron": 1310,
+          "food": 1310,
+          "power": 8,
+          "walkSpeed": 20,
+          "centisecondsPerKm": 16659
+        },
+        {
+          "level": 5,
+          "buildTime": "46 min",
+          "population": 3,
+          "stone": 2470,
+          "wood": 2470,
+          "iron": 1830,
+          "food": 1830,
+          "power": 10,
+          "walkSpeed": 25,
+          "centisecondsPerKm": 15618
+        },
+        {
+          "level": 6,
+          "buildTime": "1 h 19 min",
+          "population": 3,
+          "stone": 3210,
+          "wood": 3210,
+          "iron": 2470,
+          "food": 2410,
+          "power": 12,
+          "walkSpeed": 30,
+          "centisecondsPerKm": 14576
+        },
+        {
+          "level": 7,
+          "buildTime": "2 h 17 min",
+          "population": 3,
+          "stone": 4100,
+          "wood": 4100,
+          "iron": 3210,
+          "food": 3210,
+          "power": 14,
+          "walkSpeed": 35,
+          "centisecondsPerKm": 13535
+        },
+        {
+          "level": 8,
+          "buildTime": "3 h 59 min",
+          "population": 3,
+          "stone": 5212,
+          "wood": 5020,
+          "iron": 4100,
+          "food": 4100,
+          "power": 16,
+          "walkSpeed": 40,
+          "centisecondsPerKm": 12494
+        },
+        {
+          "level": 9,
+          "buildTime": "6 h 54 min",
+          "population": 3,
+          "stone": 6590,
+          "wood": 6290,
+          "iron": 5020,
+          "food": 5020,
+          "power": 18,
+          "walkSpeed": 45,
+          "centisecondsPerKm": 11453
+        },
+        {
+          "level": 10,
+          "buildTime": "12 h",
+          "population": 3,
+          "stone": 8014,
+          "wood": 7830,
+          "iron": 6290,
+          "food": 6290,
+          "power": 20,
+          "walkSpeed": 50,
+          "centisecondsPerKm": 10412
+        },
+        {
+          "level": 11,
+          "buildTime": "18 h 36 min",
+          "population": 3,
+          "stone": 1190,
+          "wood": 9790,
+          "iron": 7830,
+          "food": 7830,
+          "power": 22,
+          "walkSpeed": 55,
+          "centisecondsPerKm": 9371
+        },
+        {
+          "level": 12,
+          "buildTime": "1 j 4 h 50 min",
+          "population": 3,
+          "stone": 14332,
+          "wood": 12332,
+          "iron": 10185,
+          "food": 9790,
+          "power": 24,
+          "walkSpeed": 60,
+          "centisecondsPerKm": 8329
+        },
+        {
+          "level": 13,
+          "buildTime": "1 j 20 h 41 min",
+          "population": 4,
+          "stone": 19114,
+          "wood": 16279,
+          "iron": 13444,
+          "food": 12240,
+          "power": 26,
+          "walkSpeed": 65,
+          "centisecondsPerKm": 7288
+        },
+        {
+          "level": 14,
+          "buildTime": "2 j 21 h 15 min",
+          "population": 4,
+          "stone": 25843,
+          "wood": 21488,
+          "iron": 17746,
+          "food": 15300,
+          "power": 28,
+          "walkSpeed": 70,
+          "centisecondsPerKm": 6247
+        },
+        {
+          "level": 15,
+          "buildTime": "4 j 11 h 20 min",
+          "population": 4,
+          "stone": 31866,
+          "wood": 28364,
+          "iron": 23425,
+          "food": 19120,
+          "power": 30,
+          "walkSpeed": 75,
+          "centisecondsPerKm": 5206
+        },
+        {
+          "level": 16,
+          "buildTime": "6 j 22 h 21 min",
+          "population": 4,
+          "stone": 43905,
+          "wood": 37441,
+          "iron": 30921,
+          "food": 25850,
+          "power": 32,
+          "walkSpeed": 80,
+          "centisecondsPerKm": 4165
+        },
+        {
+          "level": 17,
+          "buildTime": "10 j 17 h 50 min",
+          "population": 4,
+          "stone": 57954,
+          "wood": 49422,
+          "iron": 40815,
+          "food": 32209,
+          "power": 34,
+          "walkSpeed": 85,
+          "centisecondsPerKm": 3124
+        },
+        {
+          "level": 18,
+          "buildTime": "16 j 15 h 38 min",
+          "population": 4,
+          "stone": 76499,
+          "wood": 65237,
+          "iron": 53876,
+          "food": 42516,
+          "power": 36,
+          "walkSpeed": 90,
+          "centisecondsPerKm": 2082
+        },
+        {
+          "level": 19,
+          "buildTime": "25 j 19 h 23 min",
+          "population": 4,
+          "stone": 100979,
+          "wood": 86112,
+          "iron": 71117,
+          "food": 56121,
+          "power": 38,
+          "walkSpeed": 95,
+          "centisecondsPerKm": 1041
+        },
+        {
+          "level": 20,
+          "buildTime": "40 j",
+          "population": 4,
+          "stone": 133293,
+          "wood": 113668,
+          "iron": 93874,
+          "food": 74080,
+          "power": 40,
+          "walkSpeed": 100,
+          "centisecondsPerKm": 500
+        }
+      ]
+    },
+    "academy": {
+      "name": "Académie",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "2 min",
+          "population": 3,
+          "stone": 220,
+          "wood": 160,
+          "iron": 175,
+          "food": 115,
+          "power": 0
+        },
+        {
+          "level": 2,
+          "buildTime": "7 min",
+          "population": 3,
+          "stone": 651,
+          "wood": 484,
+          "iron": 520,
+          "food": 341,
+          "power": 0
+        },
+        {
+          "level": 3,
+          "buildTime": "11 min",
+          "population": 3,
+          "stone": 910,
+          "wood": 638,
+          "iron": 910,
+          "food": 510,
+          "power": 0
+        },
+        {
+          "level": 4,
+          "buildTime": "18 min",
+          "population": 3,
+          "stone": 1310,
+          "wood": 910,
+          "iron": 1310,
+          "food": 910,
+          "power": 0
+        },
+        {
+          "level": 5,
+          "buildTime": "30 min",
+          "population": 3,
+          "stone": 1830,
+          "wood": 1310,
+          "iron": 1830,
+          "food": 1310,
+          "power": 0
+        },
+        {
+          "level": 6,
+          "buildTime": "49 min",
+          "population": 4,
+          "stone": 2470,
+          "wood": 1830,
+          "iron": 2470,
+          "food": 1830,
+          "power": 6
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 20 min",
+          "population": 4,
+          "stone": 3210,
+          "wood": 2470,
+          "iron": 3210,
+          "food": 2410,
+          "power": 12
+        },
+        {
+          "level": 8,
+          "buildTime": "2 h 12 min",
+          "population": 4,
+          "stone": 4100,
+          "wood": 3210,
+          "iron": 4100,
+          "food": 3210,
+          "power": 18
+        },
+        {
+          "level": 9,
+          "buildTime": "3 h 38 min",
+          "population": 4,
+          "stone": 5020,
+          "wood": 4100,
+          "iron": 5020,
+          "food": 4100,
+          "power": 24
+        },
+        {
+          "level": 10,
+          "buildTime": "6 h",
+          "population": 4,
+          "stone": 6290,
+          "wood": 5020,
+          "iron": 6290,
+          "food": 5020,
+          "power": 30
+        },
+        {
+          "level": 11,
+          "buildTime": "10 h 55 min",
+          "population": 4,
+          "stone": 7830,
+          "wood": 6290,
+          "iron": 7830,
+          "food": 6290,
+          "power": 36
+        },
+        {
+          "level": 12,
+          "buildTime": "19 h 53 min",
+          "population": 4,
+          "stone": 9790,
+          "wood": 7830,
+          "iron": 9790,
+          "food": 7830,
+          "power": 42
+        },
+        {
+          "level": 13,
+          "buildTime": "1 j 12 h 12 min",
+          "population": 5,
+          "stone": 12257,
+          "wood": 10270,
+          "iron": 12240,
+          "food": 9790,
+          "power": 48
+        },
+        {
+          "level": 14,
+          "buildTime": "2 j 17 h 55 min",
+          "population": 5,
+          "stone": 16005,
+          "wood": 13558,
+          "iron": 15300,
+          "food": 12240,
+          "power": 54
+        },
+        {
+          "level": 15,
+          "buildTime": "5 j",
+          "population": 5,
+          "stone": 20900,
+          "wood": 17900,
+          "iron": 19900,
+          "food": 16200,
+          "power": 60
+        },
+        {
+          "level": 16,
+          "buildTime": "6 j 14 h 20 min",
+          "population": 5,
+          "stone": 27336,
+          "wood": 23646,
+          "iron": 26350,
+          "food": 21831,
+          "power": 66
+        },
+        {
+          "level": 17,
+          "buildTime": "8 j 16 h 56 min",
+          "population": 5,
+          "stone": 35754,
+          "wood": 31235,
+          "iron": 34890,
+          "food": 29420,
+          "power": 72
+        },
+        {
+          "level": 18,
+          "buildTime": "11 j 11 h 41 min",
+          "population": 5,
+          "stone": 46764,
+          "wood": 41261,
+          "iron": 46199,
+          "food": 39647,
+          "power": 78
+        },
+        {
+          "level": 19,
+          "buildTime": "15 j 3 h 46 min",
+          "population": 5,
+          "stone": 61165,
+          "wood": 54505,
+          "iron": 61173,
+          "food": 53428,
+          "power": 84
+        },
+        {
+          "level": 20,
+          "buildTime": "20 j",
+          "population": 5,
+          "stone": 80000,
+          "wood": 72000,
+          "iron": 81000,
+          "food": 72000,
+          "power": 90
+        }
+      ]
+    },
+    "chunnin": {
+      "name": "Centre Chuunin",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "6 min",
+          "population": 3,
+          "stone": 1310,
+          "wood": 1310,
+          "iron": 1310,
+          "food": 910,
+          "power": 0
+        },
+        {
+          "level": 2,
+          "buildTime": "10 min",
+          "population": 3,
+          "stone": 1830,
+          "wood": 1830,
+          "iron": 1830,
+          "food": 1310,
+          "power": 0
+        },
+        {
+          "level": 3,
+          "buildTime": "16 min",
+          "population": 3,
+          "stone": 2470,
+          "wood": 2470,
+          "iron": 2470,
+          "food": 1830,
+          "power": 0
+        },
+        {
+          "level": 4,
+          "buildTime": "27 min",
+          "population": 3,
+          "stone": 3210,
+          "wood": 3210,
+          "iron": 3210,
+          "food": 2410,
+          "power": 0
+        },
+        {
+          "level": 5,
+          "buildTime": "44 min",
+          "population": 3,
+          "stone": 4100,
+          "wood": 4100,
+          "iron": 4100,
+          "food": 3210,
+          "power": 0
+        },
+        {
+          "level": 6,
+          "buildTime": "1 h 13 min",
+          "population": 4,
+          "stone": 5020,
+          "wood": 5020,
+          "iron": 5020,
+          "food": 4100,
+          "power": 6
+        },
+        {
+          "level": 7,
+          "buildTime": "2 h",
+          "population": 4,
+          "stone": 6290,
+          "wood": 6290,
+          "iron": 6290,
+          "food": 5020,
+          "power": 12
+        },
+        {
+          "level": 8,
+          "buildTime": "3 h 19 min",
+          "population": 4,
+          "stone": 7830,
+          "wood": 7830,
+          "iron": 7830,
+          "food": 6290,
+          "power": 18
+        },
+        {
+          "level": 9,
+          "buildTime": "5 h 28 min",
+          "population": 4,
+          "stone": 9790,
+          "wood": 9790,
+          "iron": 9790,
+          "food": 7830,
+          "power": 24
+        },
+        {
+          "level": 10,
+          "buildTime": "9 h",
+          "population": 4,
+          "stone": 12240,
+          "wood": 12240,
+          "iron": 12240,
+          "food": 9790,
+          "power": 30
+        },
+        {
+          "level": 11,
+          "buildTime": "16 h 23 min",
+          "population": 4,
+          "stone": 15399,
+          "wood": 15300,
+          "iron": 15300,
+          "food": 12240,
+          "power": 36
+        },
+        {
+          "level": 12,
+          "buildTime": "1 j 5 h 50 min",
+          "population": 4,
+          "stone": 21635,
+          "wood": 20996,
+          "iron": 21205,
+          "food": 15613,
+          "power": 42
+        },
+        {
+          "level": 13,
+          "buildTime": "2 j 6 h 18 min",
+          "population": 5,
+          "stone": 30397,
+          "wood": 29118,
+          "iron": 29655,
+          "food": 21969,
+          "power": 48
+        },
+        {
+          "level": 14,
+          "buildTime": "4 j 2 h 52 min",
+          "population": 5,
+          "stone": 42706,
+          "wood": 40381,
+          "iron": 41473,
+          "food": 30914,
+          "power": 54
+        },
+        {
+          "level": 15,
+          "buildTime": "7 j 12 h",
+          "population": 5,
+          "stone": 60000,
+          "wood": 56000,
+          "iron": 58000,
+          "food": 43500,
+          "power": 60
+        },
+        {
+          "level": 16,
+          "buildTime": "9 j 21 h 31 min",
+          "population": 5,
+          "stone": 74744,
+          "wood": 69926,
+          "iron": 72335,
+          "food": 55343,
+          "power": 66
+        },
+        {
+          "level": 17,
+          "buildTime": "13 j 1 h 24 min",
+          "population": 5,
+          "stone": 93111,
+          "wood": 87316,
+          "iron": 90214,
+          "food": 70411,
+          "power": 72
+        },
+        {
+          "level": 18,
+          "buildTime": "17 j 5 h 32 min",
+          "population": 5,
+          "stone": 115991,
+          "wood": 109030,
+          "iron": 112511,
+          "food": 89581,
+          "power": 78
+        },
+        {
+          "level": 19,
+          "buildTime": "22 j 17 h 39 min",
+          "population": 5,
+          "stone": 144493,
+          "wood": 136143,
+          "iron": 140319,
+          "food": 113970,
+          "power": 84
+        },
+        {
+          "level": 20,
+          "buildTime": "30 j",
+          "population": 5,
+          "stone": 180000,
+          "wood": 170000,
+          "iron": 175000,
+          "food": 145000,
+          "power": 90
+        }
+      ]
+    },
+    "jounin": {
+      "name": "Centre Jounin",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "10 min",
+          "population": 3,
+          "stone": 7000,
+          "wood": 6200,
+          "iron": 6800,
+          "food": 5200,
+          "power": 0
+        },
+        {
+          "level": 2,
+          "buildTime": "16 min",
+          "population": 3,
+          "stone": 8387,
+          "wood": 7456,
+          "iron": 8144,
+          "food": 6207,
+          "power": 0
+        },
+        {
+          "level": 3,
+          "buildTime": "27 min",
+          "population": 3,
+          "stone": 10050,
+          "wood": 8966,
+          "iron": 9755,
+          "food": 7409,
+          "power": 0
+        },
+        {
+          "level": 4,
+          "buildTime": "45 min",
+          "population": 3,
+          "stone": 12041,
+          "wood": 10782,
+          "iron": 11683,
+          "food": 8844,
+          "power": 0
+        },
+        {
+          "level": 5,
+          "buildTime": "1 h 14 min",
+          "population": 3,
+          "stone": 14428,
+          "wood": 12966,
+          "iron": 13993,
+          "food": 10557,
+          "power": 0
+        },
+        {
+          "level": 6,
+          "buildTime": "2 h 2 min",
+          "population": 4,
+          "stone": 17288,
+          "wood": 15592,
+          "iron": 16760,
+          "food": 12602,
+          "power": 6
+        },
+        {
+          "level": 7,
+          "buildTime": "3 h 21 min",
+          "population": 4,
+          "stone": 20714,
+          "wood": 18750,
+          "iron": 20073,
+          "food": 15042,
+          "power": 12
+        },
+        {
+          "level": 8,
+          "buildTime": "5 h 31 min",
+          "population": 4,
+          "stone": 24819,
+          "wood": 22548,
+          "iron": 24042,
+          "food": 17956,
+          "power": 18
+        },
+        {
+          "level": 9,
+          "buildTime": "9 h 6 min",
+          "population": 4,
+          "stone": 29738,
+          "wood": 27115,
+          "iron": 28795,
+          "food": 21433,
+          "power": 24
+        },
+        {
+          "level": 10,
+          "buildTime": "15 h",
+          "population": 4,
+          "stone": 35632,
+          "wood": 32607,
+          "iron": 34488,
+          "food": 25584,
+          "power": 30
+        },
+        {
+          "level": 11,
+          "buildTime": "1 j 3 h 19 min",
+          "population": 4,
+          "stone": 42695,
+          "wood": 39211,
+          "iron": 41306,
+          "food": 30539,
+          "power": 36
+        },
+        {
+          "level": 12,
+          "buildTime": "2 j 1 h 43 min",
+          "population": 4,
+          "stone": 51156,
+          "wood": 47153,
+          "iron": 49473,
+          "food": 36453,
+          "power": 42
+        },
+        {
+          "level": 13,
+          "buildTime": "3 j 18 h 31 min",
+          "population": 5,
+          "stone": 61295,
+          "wood": 56704,
+          "iron": 59254,
+          "food": 43513,
+          "power": 48
+        },
+        {
+          "level": 14,
+          "buildTime": "6 j 20 h 47 min",
+          "population": 5,
+          "stone": 73444,
+          "wood": 68189,
+          "iron": 70969,
+          "food": 51941,
+          "power": 54
+        },
+        {
+          "level": 15,
+          "buildTime": "12 j 12 h",
+          "population": 5,
+          "stone": 88000,
+          "wood": 82000,
+          "iron": 85000,
+          "food": 62000,
+          "power": 60
+        },
+        {
+          "level": 16,
+          "buildTime": "16 j 11 h 51 min",
+          "population": 5,
+          "stone": 103495,
+          "wood": 97007,
+          "iron": 100356,
+          "food": 76559,
+          "power": 66
+        },
+        {
+          "level": 17,
+          "buildTime": "21 j 18 h 20 min",
+          "population": 5,
+          "stone": 121718,
+          "wood": 114760,
+          "iron": 118485,
+          "food": 94537,
+          "power": 72
+        },
+        {
+          "level": 18,
+          "buildTime": "28 j 17 h 13 min",
+          "population": 5,
+          "stone": 143150,
+          "wood": 135762,
+          "iron": 139891,
+          "food": 116737,
+          "power": 78
+        },
+        {
+          "level": 19,
+          "buildTime": "37 j 21 h 26 min",
+          "population": 5,
+          "stone": 168356,
+          "wood": 160607,
+          "iron": 165163,
+          "food": 144150,
+          "power": 84
+        },
+        {
+          "level": 20,
+          "buildTime": "50 j",
+          "population": 5,
+          "stone": 198000,
+          "wood": 190000,
+          "iron": 195000,
+          "food": 178000,
+          "power": 90
+        }
+      ]
+    },
+    "watchtower": {
+      "name": "Tour de garde",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "4 min",
+          "population": 3,
+          "stone": 12000,
+          "wood": 10000,
+          "iron": 11000,
+          "food": 8000,
+          "comment": "1 armée en approche visible, aucune information"
+        },
+        {
+          "level": 2,
+          "buildTime": "8 min",
+          "population": 3,
+          "stone": 13638,
+          "wood": 11443,
+          "iron": 12555,
+          "food": 9144,
+          "comment": "2 armées en approche visibles"
+        },
+        {
+          "level": 3,
+          "buildTime": "12 min",
+          "population": 3,
+          "stone": 15501,
+          "wood": 13094,
+          "iron": 14329,
+          "food": 10453,
+          "comment": "2 armées visibles + nombre de Genins"
+        },
+        {
+          "level": 4,
+          "buildTime": "20 min",
+          "population": 3,
+          "stone": 17617,
+          "wood": 14984,
+          "iron": 16354,
+          "food": 11948,
+          "comment": "3 armées en approche visibles"
+        },
+        {
+          "level": 5,
+          "buildTime": "33 min",
+          "population": 3,
+          "stone": 20022,
+          "wood": 17146,
+          "iron": 18665,
+          "food": 13657,
+          "comment": "4 armées visibles + nombre de Chuunins + 1re armée en attente visible"
+        },
+        {
+          "level": 6,
+          "buildTime": "54 min",
+          "population": 4,
+          "stone": 22756,
+          "wood": 19620,
+          "iron": 21302,
+          "food": 15610,
+          "comment": "4 armées visibles + nombre de Jounins + Genins de la 1re armée en attente"
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 28 min",
+          "population": 4,
+          "stone": 25863,
+          "wood": 22451,
+          "iron": 24313,
+          "food": 17844,
+          "comment": "5 armées visibles + Chuunins de la 1re armée en attente"
+        },
+        {
+          "level": 8,
+          "buildTime": "2 h 25 min",
+          "population": 4,
+          "stone": 29394,
+          "wood": 25690,
+          "iron": 27749,
+          "food": 20396,
+          "comment": "5 armées visibles + temps restant et heure d'arrivée + Jounins de la 1re armée en attente"
+        },
+        {
+          "level": 9,
+          "buildTime": "4 h",
+          "population": 4,
+          "stone": 33407,
+          "wood": 29398,
+          "iron": 31670,
+          "food": 23314,
+          "comment": "6 armées visibles + 2e armée en attente visible"
+        },
+        {
+          "level": 10,
+          "buildTime": "6 h 36 min",
+          "population": 4,
+          "stone": 37968,
+          "wood": 33640,
+          "iron": 36146,
+          "food": 26649,
+          "comment": "7 armées visibles + type Attaque/Pillage + Genins de la 2e armée en attente"
+        },
+        {
+          "level": 11,
+          "buildTime": "12 h 1 min",
+          "population": 4,
+          "stone": 43152,
+          "wood": 38494,
+          "iron": 41254,
+          "food": 30461,
+          "comment": "8 armées visibles + Chuunins de la 2e armée en attente"
+        },
+        {
+          "level": 12,
+          "buildTime": "21 h 52 min",
+          "population": 4,
+          "stone": 49044,
+          "wood": 44048,
+          "iron": 47084,
+          "food": 34818,
+          "comment": "8 armées visibles + nom du joueur et village + Jounins de la 2e armée en attente"
+        },
+        {
+          "level": 13,
+          "buildTime": "1 j 15 h 49 min",
+          "population": 5,
+          "stone": 55740,
+          "wood": 50404,
+          "iron": 53738,
+          "food": 39799,
+          "comment": "9 armées visibles + 3e armée en attente visible"
+        },
+        {
+          "level": 14,
+          "buildTime": "3 j 31 min",
+          "population": 5,
+          "stone": 63351,
+          "wood": 57677,
+          "iron": 61332,
+          "food": 45492,
+          "comment": "10 armées visibles + Genins de la 3e armée en attente"
+        },
+        {
+          "level": 15,
+          "buildTime": "5 j 12 h",
+          "population": 5,
+          "stone": 72000,
+          "wood": 66000,
+          "iron": 70000,
+          "food": 52000,
+          "comment": "12 armées visibles + Chuunins de la 3e armée en attente"
+        },
+        {
+          "level": 16,
+          "buildTime": "7 j 6 h 10 min",
+          "population": 5,
+          "stone": 87421,
+          "wood": 80486,
+          "iron": 85018,
+          "food": 64272,
+          "comment": "14 armées visibles + Jounins de la 3e armée en attente"
+        },
+        {
+          "level": 17,
+          "buildTime": "9 j 13 h 50 min",
+          "population": 5,
+          "stone": 106145,
+          "wood": 98151,
+          "iron": 103259,
+          "food": 79440,
+          "comment": "16 armées visibles + 4e armée en attente visible"
+        },
+        {
+          "level": 18,
+          "buildTime": "12 j 15 h 15 min",
+          "population": 5,
+          "stone": 128880,
+          "wood": 119693,
+          "iron": 125413,
+          "food": 98187,
+          "comment": "18 armées visibles + Genins de la 4e armée en attente"
+        },
+        {
+          "level": 19,
+          "buildTime": "16 j 16 h 9 min",
+          "population": 5,
+          "stone": 156484,
+          "wood": 145964,
+          "iron": 152320,
+          "food": 121359,
+          "comment": "20 armées visibles + Chuunins de la 4e armée en attente"
+        },
+        {
+          "level": 20,
+          "buildTime": "22 j",
+          "population": 5,
+          "stone": 190000,
+          "wood": 178000,
+          "iron": 185000,
+          "food": 150000,
+          "comment": "Toutes les armées en approche visibles + Jounins de la 4e armée en attente"
+        }
+      ]
+    },
+    "wall": {
+      "name": "Mur d'enceinte",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "2 min",
+          "population": 2,
+          "stone": 120,
+          "wood": 85,
+          "iron": 45,
+          "food": 55,
+          "defense": 2.5
+        },
+        {
+          "level": 2,
+          "buildTime": "7 min",
+          "population": 2,
+          "stone": 540,
+          "wood": 510,
+          "iron": 251,
+          "food": 231,
+          "defense": 5
+        },
+        {
+          "level": 3,
+          "buildTime": "10 min",
+          "population": 2,
+          "stone": 959,
+          "wood": 910,
+          "iron": 510,
+          "food": 411,
+          "defense": 7.5
+        },
+        {
+          "level": 4,
+          "buildTime": "17 min",
+          "population": 2,
+          "stone": 1404,
+          "wood": 1310,
+          "iron": 910,
+          "food": 602,
+          "defense": 10
+        },
+        {
+          "level": 5,
+          "buildTime": "29 min",
+          "population": 2,
+          "stone": 1977,
+          "wood": 1830,
+          "iron": 1310,
+          "food": 910,
+          "defense": 12.5
+        },
+        {
+          "level": 6,
+          "buildTime": "47 min",
+          "population": 3,
+          "stone": 2674,
+          "wood": 2470,
+          "iron": 1830,
+          "food": 1310,
+          "defense": 15
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 16 min",
+          "population": 3,
+          "stone": 3495,
+          "wood": 3210,
+          "iron": 2470,
+          "food": 1830,
+          "defense": 17.5
+        },
+        {
+          "level": 8,
+          "buildTime": "2 h 5 min",
+          "population": 3,
+          "stone": 4432,
+          "wood": 4100,
+          "iron": 3210,
+          "food": 2410,
+          "defense": 20
+        },
+        {
+          "level": 9,
+          "buildTime": "3 h 27 min",
+          "population": 3,
+          "stone": 5533,
+          "wood": 5020,
+          "iron": 4100,
+          "food": 3210,
+          "defense": 22.5
+        },
+        {
+          "level": 10,
+          "buildTime": "5 h 42 min",
+          "population": 3,
+          "stone": 6987,
+          "wood": 6290,
+          "iron": 5020,
+          "food": 4100,
+          "defense": 25
+        },
+        {
+          "level": 11,
+          "buildTime": "10 h 22 min",
+          "population": 3,
+          "stone": 8808,
+          "wood": 7830,
+          "iron": 6290,
+          "food": 5020,
+          "defense": 27.5
+        },
+        {
+          "level": 12,
+          "buildTime": "18 h 53 min",
+          "population": 3,
+          "stone": 11118,
+          "wood": 9790,
+          "iron": 7830,
+          "food": 6290,
+          "defense": 30
+        },
+        {
+          "level": 13,
+          "buildTime": "1 j 10 h 23 min",
+          "population": 4,
+          "stone": 14034,
+          "wood": 12240,
+          "iron": 9790,
+          "food": 7830,
+          "defense": 32.5
+        },
+        {
+          "level": 14,
+          "buildTime": "2 j 14 h 37 min",
+          "population": 4,
+          "stone": 17712,
+          "wood": 15300,
+          "iron": 12240,
+          "food": 9790,
+          "defense": 35
+        },
+        {
+          "level": 15,
+          "buildTime": "4 j 18 h",
+          "population": 4,
+          "stone": 23675,
+          "wood": 19120,
+          "iron": 15300,
+          "food": 12240,
+          "defense": 37.5
+        },
+        {
+          "level": 16,
+          "buildTime": "6 j 6 h 25 min",
+          "population": 4,
+          "stone": 30193,
+          "wood": 25850,
+          "iron": 19120,
+          "food": 15300,
+          "defense": 40
+        },
+        {
+          "level": 17,
+          "buildTime": "8 j 6 h 29 min",
+          "population": 4,
+          "stone": 46775,
+          "wood": 33411,
+          "iron": 25850,
+          "food": 20046,
+          "defense": 42.5
+        },
+        {
+          "level": 18,
+          "buildTime": "10 j 21 h 54 min",
+          "population": 4,
+          "stone": 69444,
+          "wood": 49603,
+          "iron": 32242,
+          "food": 29762,
+          "defense": 45
+        },
+        {
+          "level": 19,
+          "buildTime": "14 j 9 h 35 min",
+          "population": 4,
+          "stone": 99944,
+          "wood": 71389,
+          "iron": 46403,
+          "food": 42833,
+          "defense": 47.5
+        },
+        {
+          "level": 20,
+          "buildTime": "19 j",
+          "population": 4,
+          "stone": 140000,
+          "wood": 100000,
+          "iron": 65000,
+          "food": 60000,
+          "defense": 50
+        }
+      ]
+    },
+    "hospital": {
+      "name": "Hôpital",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "4 min",
+          "population": 2,
+          "stone": 120,
+          "wood": 85,
+          "iron": 45,
+          "food": 55,
+          "troopRecovery": 10
+        },
+        {
+          "level": 2,
+          "buildTime": "7 min",
+          "population": 2,
+          "stone": 540,
+          "wood": 510,
+          "iron": 251,
+          "food": 231,
+          "troopRecovery": 11
+        },
+        {
+          "level": 3,
+          "buildTime": "10 min",
+          "population": 2,
+          "stone": 959,
+          "wood": 910,
+          "iron": 510,
+          "food": 411,
+          "troopRecovery": 12
+        },
+        {
+          "level": 4,
+          "buildTime": "17 min",
+          "population": 2,
+          "stone": 1404,
+          "wood": 1310,
+          "iron": 910,
+          "food": 602,
+          "troopRecovery": 13
+        },
+        {
+          "level": 5,
+          "buildTime": "29 min",
+          "population": 2,
+          "stone": 1977,
+          "wood": 1830,
+          "iron": 1310,
+          "food": 910,
+          "troopRecovery": 14
+        },
+        {
+          "level": 6,
+          "buildTime": "47 min",
+          "population": 3,
+          "stone": 2674,
+          "wood": 2470,
+          "iron": 1830,
+          "food": 1310,
+          "troopRecovery": 15
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 16 min",
+          "population": 3,
+          "stone": 3495,
+          "wood": 3210,
+          "iron": 2470,
+          "food": 1830,
+          "troopRecovery": 16
+        },
+        {
+          "level": 8,
+          "buildTime": "2 h 5 min",
+          "population": 3,
+          "stone": 4432,
+          "wood": 4100,
+          "iron": 3210,
+          "food": 2410,
+          "troopRecovery": 17
+        },
+        {
+          "level": 9,
+          "buildTime": "3 h 27 min",
+          "population": 3,
+          "stone": 5533,
+          "wood": 5020,
+          "iron": 4100,
+          "food": 3210,
+          "troopRecovery": 18
+        },
+        {
+          "level": 10,
+          "buildTime": "5 h 42 min",
+          "population": 3,
+          "stone": 6987,
+          "wood": 6290,
+          "iron": 5020,
+          "food": 4100,
+          "troopRecovery": 19
+        },
+        {
+          "level": 11,
+          "buildTime": "10 h 22 min",
+          "population": 3,
+          "stone": 8808,
+          "wood": 7830,
+          "iron": 6290,
+          "food": 5020,
+          "troopRecovery": 20
+        },
+        {
+          "level": 12,
+          "buildTime": "18 h 53 min",
+          "population": 3,
+          "stone": 11118,
+          "wood": 9790,
+          "iron": 7830,
+          "food": 6290,
+          "troopRecovery": 21
+        },
+        {
+          "level": 13,
+          "buildTime": "1 j 10 h 23 min",
+          "population": 4,
+          "stone": 14034,
+          "wood": 12240,
+          "iron": 9790,
+          "food": 7830,
+          "troopRecovery": 22
+        },
+        {
+          "level": 14,
+          "buildTime": "2 j 14 h 37 min",
+          "population": 4,
+          "stone": 17712,
+          "wood": 15300,
+          "iron": 12240,
+          "food": 9790,
+          "troopRecovery": 23
+        },
+        {
+          "level": 15,
+          "buildTime": "4 j 18 h",
+          "population": 4,
+          "stone": 23675,
+          "wood": 19120,
+          "iron": 15300,
+          "food": 12240,
+          "troopRecovery": 24
+        },
+        {
+          "level": 16,
+          "buildTime": "6 j 6 h 25 min",
+          "population": 4,
+          "stone": 30193,
+          "wood": 25850,
+          "iron": 19120,
+          "food": 15300,
+          "troopRecovery": 25
+        },
+        {
+          "level": 17,
+          "buildTime": "8 j 6 h 29 min",
+          "population": 4,
+          "stone": 46775,
+          "wood": 33411,
+          "iron": 25850,
+          "food": 20046,
+          "troopRecovery": 26
+        },
+        {
+          "level": 18,
+          "buildTime": "10 j 21 h 54 min",
+          "population": 4,
+          "stone": 69444,
+          "wood": 49603,
+          "iron": 32242,
+          "food": 29762,
+          "troopRecovery": 27
+        },
+        {
+          "level": 19,
+          "buildTime": "14 j 9 h 35 min",
+          "population": 4,
+          "stone": 99944,
+          "wood": 71389,
+          "iron": 46403,
+          "food": 42833,
+          "troopRecovery": 28
+        },
+        {
+          "level": 20,
+          "buildTime": "19 j",
+          "population": 4,
+          "stone": 140000,
+          "wood": 100000,
+          "iron": 65000,
+          "food": 60000,
+          "troopRecovery": 30
+        }
+      ]
+    },
+    "mine": {
+      "name": "Mines et champs",
+      "levels": [
+        {
+          "level": 0,
+          "buildTime": "0",
+          "population": 0,
+          "stone": 0,
+          "wood": 0,
+          "iron": 0,
+          "food": 0,
+          "productionPerHour": 4
+        },
+        {
+          "level": 1,
+          "buildTime": "18 secondes",
+          "population": 2,
+          "stone": 75,
+          "wood": 90,
+          "iron": 60,
+          "food": 45,
+          "productionPerHour": 25
+        },
+        {
+          "level": 2,
+          "buildTime": "6 min",
+          "population": 2,
+          "stone": 151,
+          "wood": 181,
+          "iron": 122,
+          "food": 92,
+          "productionPerHour": 42
+        },
+        {
+          "level": 3,
+          "buildTime": "11 min",
+          "population": 2,
+          "stone": 510,
+          "wood": 510,
+          "iron": 248,
+          "food": 186,
+          "productionPerHour": 57
+        },
+        {
+          "level": 4,
+          "buildTime": "20 min",
+          "population": 2,
+          "stone": 910,
+          "wood": 910,
+          "iron": 505,
+          "food": 510,
+          "productionPerHour": 73
+        },
+        {
+          "level": 5,
+          "buildTime": "41 min",
+          "population": 2,
+          "stone": 1310,
+          "wood": 1476,
+          "iron": 1027,
+          "food": 910,
+          "productionPerHour": 92
+        },
+        {
+          "level": 6,
+          "buildTime": "1 h 10 min",
+          "population": 2,
+          "stone": 1830,
+          "wood": 1845,
+          "iron": 1310,
+          "food": 1310,
+          "productionPerHour": 118
+        },
+        {
+          "level": 7,
+          "buildTime": "2 h 23 min",
+          "population": 3,
+          "stone": 2470,
+          "wood": 2470,
+          "iron": 1830,
+          "food": 1830,
+          "productionPerHour": 151
+        },
+        {
+          "level": 8,
+          "buildTime": "3 h 41 min",
+          "population": 3,
+          "stone": 3210,
+          "wood": 3210,
+          "iron": 2470,
+          "food": 2410,
+          "productionPerHour": 196
+        },
+        {
+          "level": 9,
+          "buildTime": "5 h 41 min",
+          "population": 3,
+          "stone": 4100,
+          "wood": 4100,
+          "iron": 3210,
+          "food": 3210,
+          "productionPerHour": 254
+        },
+        {
+          "level": 10,
+          "buildTime": "8 h 58 min",
+          "population": 3,
+          "stone": 5020,
+          "wood": 5020,
+          "iron": 4100,
+          "food": 4100,
+          "productionPerHour": 328
+        },
+        {
+          "level": 11,
+          "buildTime": "13 h 27 min",
+          "population": 3,
+          "stone": 6290,
+          "wood": 6290,
+          "iron": 5020,
+          "food": 5020,
+          "productionPerHour": 420
+        },
+        {
+          "level": 12,
+          "buildTime": "20 h 11 min",
+          "population": 3,
+          "stone": 7830,
+          "wood": 7830,
+          "iron": 6290,
+          "food": 6290,
+          "productionPerHour": 534
+        },
+        {
+          "level": 13,
+          "buildTime": "1 j 6 h 16 min",
+          "population": 3,
+          "stone": 9790,
+          "wood": 9790,
+          "iron": 7830,
+          "food": 7830,
+          "productionPerHour": 671
+        },
+        {
+          "level": 14,
+          "buildTime": "1 j 21 h 25 min",
+          "population": 3,
+          "stone": 12240,
+          "wood": 12240,
+          "iron": 9790,
+          "food": 9790,
+          "productionPerHour": 834
+        },
+        {
+          "level": 15,
+          "buildTime": "2 j 20 h 7 min",
+          "population": 3,
+          "stone": 15300,
+          "wood": 15300,
+          "iron": 12240,
+          "food": 12240,
+          "productionPerHour": 1025
+        },
+        {
+          "level": 16,
+          "buildTime": "4 j 6 h 11 min",
+          "population": 4,
+          "stone": 19120,
+          "wood": 21364,
+          "iron": 15300,
+          "food": 15300,
+          "productionPerHour": 1248
+        },
+        {
+          "level": 17,
+          "buildTime": "6 j 9 h 16 min",
+          "population": 4,
+          "stone": 25850,
+          "wood": 31137,
+          "iron": 21661,
+          "food": 19120,
+          "productionPerHour": 1504
+        },
+        {
+          "level": 18,
+          "buildTime": "9 j 13 h 54 min",
+          "population": 4,
+          "stone": 37489,
+          "wood": 45381,
+          "iron": 31570,
+          "food": 25850,
+          "productionPerHour": 1797
+        },
+        {
+          "level": 19,
+          "buildTime": "14 j 8 h 50 min",
+          "population": 4,
+          "stone": 54639,
+          "wood": 66142,
+          "iron": 46012,
+          "food": 34509,
+          "productionPerHour": 2128
+        },
+        {
+          "level": 20,
+          "buildTime": "21 j 13 h 16 min",
+          "population": 4,
+          "stone": 79635,
+          "wood": 96401,
+          "iron": 67061,
+          "food": 50296,
+          "productionPerHour": 2500
+        }
+      ]
+    },
+    "resourceDepot": {
+      "name": "Dépôt de ressources",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "55 sec",
+          "population": 2,
+          "stone": 75,
+          "wood": 80,
+          "iron": 45,
+          "food": 30,
+          "capacity": 900
+        },
+        {
+          "level": 2,
+          "buildTime": "4 min",
+          "population": 2,
+          "stone": 157,
+          "wood": 310,
+          "iron": 94,
+          "food": 63,
+          "capacity": 1305
+        },
+        {
+          "level": 3,
+          "buildTime": "10 min",
+          "population": 2,
+          "stone": 510,
+          "wood": 610,
+          "iron": 197,
+          "food": 134,
+          "capacity": 1827
+        },
+        {
+          "level": 4,
+          "buildTime": "22 min",
+          "population": 2,
+          "stone": 910,
+          "wood": 910,
+          "iron": 510,
+          "food": 284,
+          "capacity": 2468
+        },
+        {
+          "level": 5,
+          "buildTime": "41 min",
+          "population": 3,
+          "stone": 1431,
+          "wood": 1451,
+          "iron": 910,
+          "food": 600,
+          "capacity": 3208
+        },
+        {
+          "level": 6,
+          "buildTime": "1 h 9 min",
+          "population": 3,
+          "stone": 1830,
+          "wood": 2145,
+          "iron": 1310,
+          "food": 910,
+          "capacity": 4098
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 56 min",
+          "population": 3,
+          "stone": 2470,
+          "wood": 2845,
+          "iron": 1830,
+          "food": 1310,
+          "capacity": 5010
+        },
+        {
+          "level": 8,
+          "buildTime": "3 h 15 min",
+          "population": 3,
+          "stone": 3210,
+          "wood": 3914,
+          "iron": 2470,
+          "food": 1830,
+          "capacity": 6283
+        },
+        {
+          "level": 9,
+          "buildTime": "5 h 30 min",
+          "population": 3,
+          "stone": 4100,
+          "wood": 4914,
+          "iron": 3210,
+          "food": 2410,
+          "capacity": 7829
+        },
+        {
+          "level": 10,
+          "buildTime": "11 h",
+          "population": 3,
+          "stone": 5020,
+          "wood": 6145,
+          "iron": 4100,
+          "food": 3210,
+          "capacity": 9786
+        },
+        {
+          "level": 11,
+          "buildTime": "18 h 24 min",
+          "population": 3,
+          "stone": 6290,
+          "wood": 7830,
+          "iron": 5020,
+          "food": 4100,
+          "capacity": 12233
+        },
+        {
+          "level": 12,
+          "buildTime": "1 j 6 h 46 min",
+          "population": 3,
+          "stone": 7830,
+          "wood": 9790,
+          "iron": 6290,
+          "food": 5020,
+          "capacity": 15291
+        },
+        {
+          "level": 13,
+          "buildTime": "2 j 3 h 28 min",
+          "population": 4,
+          "stone": 9790,
+          "wood": 12240,
+          "iron": 7830,
+          "food": 6290,
+          "capacity": 19114
+        },
+        {
+          "level": 14,
+          "buildTime": "3 j 14 h 6 min",
+          "population": 4,
+          "stone": 12240,
+          "wood": 15300,
+          "iron": 9790,
+          "food": 7830,
+          "capacity": 25843
+        },
+        {
+          "level": 15,
+          "buildTime": "6 j",
+          "population": 4,
+          "stone": 15300,
+          "wood": 19120,
+          "iron": 12240,
+          "food": 9790,
+          "capacity": 31866
+        },
+        {
+          "level": 16,
+          "buildTime": "8 j 6 h 41 min",
+          "population": 4,
+          "stone": 21224,
+          "wood": 25850,
+          "iron": 15300,
+          "food": 12240,
+          "capacity": 51313
+        },
+        {
+          "level": 17,
+          "buildTime": "11 j 10 h 8 min",
+          "population": 4,
+          "stone": 30052,
+          "wood": 32125,
+          "iron": 19120,
+          "food": 15300,
+          "capacity": 73666
+        },
+        {
+          "level": 18,
+          "buildTime": "15 j 18 h 13 min",
+          "population": 4,
+          "stone": 42552,
+          "wood": 45487,
+          "iron": 25850,
+          "food": 19120,
+          "capacity": 109853
+        },
+        {
+          "level": 19,
+          "buildTime": "21 j 17 h 50 min",
+          "population": 4,
+          "stone": 60251,
+          "wood": 64406,
+          "iron": 36359,
+          "food": 25971,
+          "capacity": 159106
+        },
+        {
+          "level": 20,
+          "buildTime": "30 j",
+          "population": 4,
+          "stone": 85313,
+          "wood": 91196,
+          "iron": 51482,
+          "food": 36773,
+          "capacity": 209567
+        }
+      ]
+    },
+    "foodDepot": {
+      "name": "Dépôt de nourriture",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "55 sec",
+          "population": 2,
+          "stone": 60,
+          "wood": 75,
+          "iron": 40,
+          "food": 55,
+          "capacity": 900
+        },
+        {
+          "level": 2,
+          "buildTime": "4 min",
+          "population": 2,
+          "stone": 124,
+          "wood": 155,
+          "iron": 82,
+          "food": 114,
+          "capacity": 1305
+        },
+        {
+          "level": 3,
+          "buildTime": "10 min",
+          "population": 2,
+          "stone": 510,
+          "wood": 510,
+          "iron": 166,
+          "food": 235,
+          "capacity": 1827
+        },
+        {
+          "level": 4,
+          "buildTime": "22 min",
+          "population": 2,
+          "stone": 910,
+          "wood": 910,
+          "iron": 339,
+          "food": 510,
+          "capacity": 2400
+        },
+        {
+          "level": 5,
+          "buildTime": "41 min",
+          "population": 3,
+          "stone": 1310,
+          "wood": 1357,
+          "iron": 691,
+          "food": 1008,
+          "capacity": 3208
+        },
+        {
+          "level": 6,
+          "buildTime": "1 h 9 min",
+          "population": 3,
+          "stone": 1830,
+          "wood": 1830,
+          "iron": 910,
+          "food": 1310,
+          "capacity": 4098
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 56 min",
+          "population": 3,
+          "stone": 2470,
+          "wood": 2470,
+          "iron": 1310,
+          "food": 1830,
+          "capacity": 5010
+        },
+        {
+          "level": 8,
+          "buildTime": "3 h 15 min",
+          "population": 3,
+          "stone": 3210,
+          "wood": 3210,
+          "iron": 1830,
+          "food": 2410,
+          "capacity": 6283
+        },
+        {
+          "level": 9,
+          "buildTime": "5 h 30 min",
+          "population": 3,
+          "stone": 4100,
+          "wood": 4100,
+          "iron": 2470,
+          "food": 3210,
+          "capacity": 7829
+        },
+        {
+          "level": 10,
+          "buildTime": "11 h",
+          "population": 3,
+          "stone": 5020,
+          "wood": 5020,
+          "iron": 3210,
+          "food": 4100,
+          "capacity": 9786
+        },
+        {
+          "level": 11,
+          "buildTime": "18 h 24 min",
+          "population": 3,
+          "stone": 6290,
+          "wood": 6290,
+          "iron": 4100,
+          "food": 5020,
+          "capacity": 12233
+        },
+        {
+          "level": 12,
+          "buildTime": "1 j 6 h 46 min",
+          "population": 3,
+          "stone": 7830,
+          "wood": 7830,
+          "iron": 5020,
+          "food": 6290,
+          "capacity": 15291
+        },
+        {
+          "level": 13,
+          "buildTime": "2 j 3 h 28 min",
+          "population": 4,
+          "stone": 9790,
+          "wood": 9790,
+          "iron": 6290,
+          "food": 7830,
+          "capacity": 19114
+        },
+        {
+          "level": 14,
+          "buildTime": "3 j 14 h 6 min",
+          "population": 4,
+          "stone": 12240,
+          "wood": 12240,
+          "iron": 7830,
+          "food": 9790,
+          "capacity": 25843
+        },
+        {
+          "level": 15,
+          "buildTime": "6 j",
+          "population": 4,
+          "stone": 15300,
+          "wood": 15300,
+          "iron": 9790,
+          "food": 12240,
+          "capacity": 31866
+        },
+        {
+          "level": 16,
+          "buildTime": "8 j 6 h 41 min",
+          "population": 4,
+          "stone": 19120,
+          "wood": 20126,
+          "iron": 12240,
+          "food": 15369,
+          "capacity": 51313
+        },
+        {
+          "level": 17,
+          "buildTime": "11 j 10 h 8 min",
+          "population": 4,
+          "stone": 25850,
+          "wood": 28498,
+          "iron": 15300,
+          "food": 21761,
+          "capacity": 73666
+        },
+        {
+          "level": 18,
+          "buildTime": "15 j 18 h 13 min",
+          "population": 4,
+          "stone": 33014,
+          "wood": 40351,
+          "iron": 20542,
+          "food": 30813,
+          "capacity": 109853
+        },
+        {
+          "level": 19,
+          "buildTime": "21 j 17 h 50 min",
+          "population": 4,
+          "stone": 46746,
+          "wood": 57135,
+          "iron": 29086,
+          "food": 43630,
+          "capacity": 159106
+        },
+        {
+          "level": 20,
+          "buildTime": "30 j",
+          "population": 4,
+          "stone": 66191,
+          "wood": 80900,
+          "iron": 41185,
+          "food": 61778,
+          "capacity": 209567
+        }
+      ]
+    },
+    "reserve": {
+      "name": "Réserve",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "3 min",
+          "population": 2,
+          "stone": 70,
+          "wood": 80,
+          "iron": 45,
+          "food": 40,
+          "capacity": 201
+        },
+        {
+          "level": 2,
+          "buildTime": "4 min 31 s",
+          "population": 2,
+          "stone": 142,
+          "wood": 163,
+          "iron": 92,
+          "food": 81,
+          "capacity": 303
+        },
+        {
+          "level": 3,
+          "buildTime": "6 min 49 s",
+          "population": 2,
+          "stone": 288,
+          "wood": 510,
+          "iron": 190,
+          "food": 164,
+          "capacity": 435
+        },
+        {
+          "level": 4,
+          "buildTime": "10 min 16 s",
+          "population": 2,
+          "stone": 585,
+          "wood": 910,
+          "iron": 390,
+          "food": 333,
+          "capacity": 609
+        },
+        {
+          "level": 5,
+          "buildTime": "15 min 27 s",
+          "population": 3,
+          "stone": 1186,
+          "wood": 1371,
+          "iron": 802,
+          "food": 675,
+          "capacity": 822
+        },
+        {
+          "level": 6,
+          "buildTime": "23 min 17 s",
+          "population": 3,
+          "stone": 1511,
+          "wood": 1830,
+          "iron": 1025,
+          "food": 865,
+          "capacity": 1089
+        },
+        {
+          "level": 7,
+          "buildTime": "35 min 5 s",
+          "population": 3,
+          "stone": 1926,
+          "wood": 2470,
+          "iron": 1311,
+          "food": 1109,
+          "capacity": 1336
+        },
+        {
+          "level": 8,
+          "buildTime": "52 min 52 s",
+          "population": 3,
+          "stone": 2470,
+          "wood": 3210,
+          "iron": 1830,
+          "food": 1422,
+          "capacity": 1670
+        },
+        {
+          "level": 9,
+          "buildTime": "1 h 19 min",
+          "population": 3,
+          "stone": 3210,
+          "wood": 4100,
+          "iron": 2470,
+          "food": 1830,
+          "capacity": 2088
+        },
+        {
+          "level": 10,
+          "buildTime": "2 h",
+          "population": 3,
+          "stone": 4100,
+          "wood": 5020,
+          "iron": 3210,
+          "food": 2410,
+          "capacity": 2689
+        },
+        {
+          "level": 11,
+          "buildTime": "2 h 45 min",
+          "population": 3,
+          "stone": 5079,
+          "wood": 6290,
+          "iron": 4100,
+          "food": 3210,
+          "capacity": 3260
+        },
+        {
+          "level": 12,
+          "buildTime": "3 h 48 min",
+          "population": 3,
+          "stone": 6473,
+          "wood": 7830,
+          "iron": 5020,
+          "food": 4100,
+          "capacity": 4078
+        },
+        {
+          "level": 13,
+          "buildTime": "5 h 15 min",
+          "population": 4,
+          "stone": 8248,
+          "wood": 9790,
+          "iron": 6290,
+          "food": 5020,
+          "capacity": 5097
+        },
+        {
+          "level": 14,
+          "buildTime": "7 h 16 min",
+          "population": 4,
+          "stone": 10511,
+          "wood": 12240,
+          "iron": 7830,
+          "food": 6310,
+          "capacity": 6371
+        },
+        {
+          "level": 15,
+          "buildTime": "10 h 2 min",
+          "population": 4,
+          "stone": 13394,
+          "wood": 15477,
+          "iron": 9790,
+          "food": 8089,
+          "capacity": 7964
+        },
+        {
+          "level": 16,
+          "buildTime": "13 h 51 min",
+          "population": 4,
+          "stone": 17068,
+          "wood": 19722,
+          "iron": 12240,
+          "food": 10369,
+          "capacity": 9955
+        },
+        {
+          "level": 17,
+          "buildTime": "19 h 8 min",
+          "population": 4,
+          "stone": 21749,
+          "wood": 25850,
+          "iron": 15309,
+          "food": 13292,
+          "capacity": 12444
+        },
+        {
+          "level": 18,
+          "buildTime": "1 j 2 h 26 min",
+          "population": 4,
+          "stone": 27714,
+          "wood": 32024,
+          "iron": 19574,
+          "food": 17039,
+          "capacity": 15555
+        },
+        {
+          "level": 19,
+          "buildTime": "1 j 12 h 29 min",
+          "population": 4,
+          "stone": 35314,
+          "wood": 40808,
+          "iron": 25850,
+          "food": 21843,
+          "capacity": 19444
+        },
+        {
+          "level": 20,
+          "buildTime": "2 j 2 h 24 min",
+          "population": 4,
+          "stone": 45000,
+          "wood": 52000,
+          "iron": 32000,
+          "food": 28000,
+          "capacity": 24315
+        }
+      ]
+    },
+    "raptor": {
+      "name": "Élevage de rapaces",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "1 min 12 s",
+          "population": 2,
+          "stone": 140,
+          "wood": 160,
+          "iron": 155,
+          "food": 105
+        },
+        {
+          "level": 2,
+          "buildTime": "1 min 50 s",
+          "population": 3,
+          "stone": 241,
+          "wood": 275,
+          "iron": 268,
+          "food": 182
+        },
+        {
+          "level": 3,
+          "buildTime": "3 min",
+          "population": 3,
+          "stone": 416,
+          "wood": 510,
+          "iron": 510,
+          "food": 315
+        },
+        {
+          "level": 4,
+          "buildTime": "4 min 54 s",
+          "population": 4,
+          "stone": 717,
+          "wood": 910,
+          "iron": 910,
+          "food": 546
+        },
+        {
+          "level": 5,
+          "buildTime": "8 min",
+          "population": 4,
+          "stone": 1235,
+          "wood": 1397,
+          "iron": 1375,
+          "food": 945
+        }
+      ]
+    },
+    "commerce": {
+      "name": "Commerces",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "4 min",
+          "population": 2,
+          "stone": 120,
+          "wood": 85,
+          "iron": 45,
+          "food": 55
+        },
+        {
+          "level": 2,
+          "buildTime": "7 min",
+          "population": 2,
+          "stone": 540,
+          "wood": 510,
+          "iron": 251,
+          "food": 231
+        },
+        {
+          "level": 3,
+          "buildTime": "10 min",
+          "population": 2,
+          "stone": 959,
+          "wood": 910,
+          "iron": 510,
+          "food": 411
+        },
+        {
+          "level": 4,
+          "buildTime": "17 min",
+          "population": 2,
+          "stone": 1404,
+          "wood": 1310,
+          "iron": 910,
+          "food": 602
+        },
+        {
+          "level": 6,
+          "buildTime": "47 min",
+          "population": 3,
+          "stone": 2674,
+          "wood": 2470,
+          "iron": 1830,
+          "food": 1310
+        },
+        {
+          "level": 7,
+          "buildTime": "1 h 16 min",
+          "population": 3,
+          "stone": 3495,
+          "wood": 3210,
+          "iron": 2470,
+          "food": 1830
+        },
+        {
+          "level": 8,
+          "buildTime": "2 h 5 min",
+          "population": 3,
+          "stone": 4432,
+          "wood": 4100,
+          "iron": 3210,
+          "food": 2410
+        },
+        {
+          "level": 9,
+          "buildTime": "3 h 27 min",
+          "population": 3,
+          "stone": 5533,
+          "wood": 5020,
+          "iron": 4100,
+          "food": 3210
+        },
+        {
+          "level": 10,
+          "buildTime": "5 h 42 min",
+          "population": 3,
+          "stone": 6987,
+          "wood": 6290,
+          "iron": 5020,
+          "food": 4100
+        },
+        {
+          "level": 11,
+          "buildTime": "10 h 22 min",
+          "population": 3,
+          "stone": 8808,
+          "wood": 7830,
+          "iron": 6290,
+          "food": 5020
+        },
+        {
+          "level": 12,
+          "buildTime": "18 h 53 min",
+          "population": 3,
+          "stone": 11118,
+          "wood": 9790,
+          "iron": 7830,
+          "food": 6290
+        }
+      ]
+    },
+    "highCouncil": {
+      "name": "Haut Conseil",
+      "levels": [
+        {
+          "level": 1,
+          "buildTime": "1 min",
+          "population": 2,
+          "stone": 180,
+          "wood": 200,
+          "iron": 140,
+          "food": 110,
+          "members": 0
+        },
+        {
+          "level": 2,
+          "buildTime": "4 min 50 s",
+          "population": 2,
+          "stone": 900,
+          "wood": 900,
+          "iron": 510,
+          "food": 198,
+          "members": 0
+        },
+        {
+          "level": 3,
+          "buildTime": "8 min 54 s",
+          "population": 2,
+          "stone": 1305,
+          "wood": 1305,
+          "iron": 910,
+          "food": 510,
+          "members": 0
+        },
+        {
+          "level": 4,
+          "buildTime": "16 min 31 s",
+          "population": 2,
+          "stone": 1827,
+          "wood": 1827,
+          "iron": 1310,
+          "food": 910,
+          "members": 0
+        },
+        {
+          "level": 5,
+          "buildTime": "24 min 35 s",
+          "population": 3,
+          "stone": 2468,
+          "wood": 2468,
+          "iron": 1830,
+          "food": 1310,
+          "members": 10
+        },
+        {
+          "level": 6,
+          "buildTime": "36 min 37 s",
+          "population": 3,
+          "stone": 3208,
+          "wood": 3208,
+          "iron": 2470,
+          "food": 1830,
+          "members": 12
+        },
+        {
+          "level": 7,
+          "buildTime": "54 min 31 s",
+          "population": 3,
+          "stone": 4098,
+          "wood": 4098,
+          "iron": 3210,
+          "food": 2410,
+          "members": 14
+        },
+        {
+          "level": 8,
+          "buildTime": "1 h 21 min",
+          "population": 3,
+          "stone": 5010,
+          "wood": 5010,
+          "iron": 4100,
+          "food": 3210,
+          "members": 16
+        },
+        {
+          "level": 9,
+          "buildTime": "2 h",
+          "population": 3,
+          "stone": 6283,
+          "wood": 6283,
+          "iron": 5020,
+          "food": 4100,
+          "members": 18
+        },
+        {
+          "level": 10,
+          "buildTime": "3 h",
+          "population": 3,
+          "stone": 7829,
+          "wood": 7829,
+          "iron": 6290,
+          "food": 5020,
+          "members": 20
+        },
+        {
+          "level": 11,
+          "buildTime": "4 h 4 min",
+          "population": 3,
+          "stone": 9786,
+          "wood": 9786,
+          "iron": 7830,
+          "food": 6290,
+          "members": 22
+        },
+        {
+          "level": 12,
+          "buildTime": "5 h 32 min",
+          "population": 3,
+          "stone": 12233,
+          "wood": 12233,
+          "iron": 9790,
+          "food": 7830,
+          "members": 24
+        },
+        {
+          "level": 13,
+          "buildTime": "7 h 32 min",
+          "population": 4,
+          "stone": 15291,
+          "wood": 15291,
+          "iron": 12240,
+          "food": 9790,
+          "members": 26
+        },
+        {
+          "level": 14,
+          "buildTime": "10 h 15 min",
+          "population": 4,
+          "stone": 19114,
+          "wood": 19114,
+          "iron": 15412,
+          "food": 12610,
+          "members": 28
+        },
+        {
+          "level": 15,
+          "buildTime": "13 h 56 min",
+          "population": 4,
+          "stone": 25843,
+          "wood": 25843,
+          "iron": 20063,
+          "food": 16443,
+          "members": 30
+        },
+        {
+          "level": 16,
+          "buildTime": "18 h 57 min",
+          "population": 4,
+          "stone": 31866,
+          "wood": 31866,
+          "iron": 26117,
+          "food": 21442,
+          "members": 32
+        },
+        {
+          "level": 17,
+          "buildTime": "1 j 1 h 46 min",
+          "population": 4,
+          "stone": 43243,
+          "wood": 47811,
+          "iron": 33999,
+          "food": 27961,
+          "members": 34
+        },
+        {
+          "level": 18,
+          "buildTime": "1 j 11 h 2 min",
+          "population": 4,
+          "stone": 56215,
+          "wood": 62146,
+          "iron": 44258,
+          "food": 36461,
+          "members": 36
+        },
+        {
+          "level": 19,
+          "buildTime": "1 j 23 h 39 min",
+          "population": 4,
+          "stone": 73078,
+          "wood": 80780,
+          "iron": 57614,
+          "food": 47546,
+          "members": 38
+        },
+        {
+          "level": 20,
+          "buildTime": "2 j 16 h 48 min",
+          "population": 4,
+          "stone": 95000,
+          "wood": 105000,
+          "iron": 75000,
+          "food": 62000,
+          "members": 40
+        }
+      ]
+    }
+  },
+  "tree": {
+    "buildings": [
+      {
+        "name": "Quartier général",
+        "description": "Le Quartier général est le bâtiment principal de votre village. Vous y retrouvez vos messages, les rapports de combat et les informations sur vos ninjas et leurs déplacements. Son amélioration permet de débloquer de nouveaux bâtiments.",
+        "prerequisites": []
+      },
+      {
+        "name": "Académie",
+        "description": "L’Académie est le lieu où l’on entraîne les Genins. Augmenter son niveau permet d’accroître les capacités d’entraînement et la puissance de vos Genins.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 3
+          },
+          {
+            "building": "Camp d’entraînement",
+            "level": 1
+          }
+        ]
+      },
+      {
+        "name": "Élevage de rapaces",
+        "description": "Élevage limité à 5 niveaux : pigeon messager (11 s/km), pigeon voyageur (8 s/km), aigle (4 s/km), aigle royal (1 s/km), puis un second aigle royal au niveau 5. Les oiseaux dressés sont réutilisables après leur aller-retour. Un pigeon gratuit assure toujours les messages sans élevage.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 2
+          }
+        ]
+      },
+      {
+        "name": "Centre Chuunin",
+        "description": "Le Centre Chuunin est le lieu où l’on entraîne les Chuunins. Augmenter son niveau permet d’accroître les capacités d’entraînement et leur puissance.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 6
+          },
+          {
+            "building": "Académie",
+            "level": 5
+          }
+        ]
+      },
+      {
+        "name": "Centre Jounin",
+        "description": "Le Centre Jounin est le lieu où l’on entraîne les Jounins. Augmenter son niveau permet d’accroître les capacités d’entraînement et leur puissance.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 12
+          },
+          {
+            "building": "Centre Chuunin",
+            "level": 5
+          }
+        ]
+      },
+      {
+        "name": "Haut Conseil",
+        "description": "Le Haut Conseil accueille les sages du village. Il permet de rejoindre un clan ou d’en créer un et de développer les relations entre clans.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 3
+          }
+        ]
+      },
+      {
+        "name": "Dépôt de nourriture",
+        "description": "Le dépôt de nourriture augmente la capacité maximale de stockage de votre nourriture. Plus son niveau est élevé, plus vous pouvez en stocker.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 1
+          }
+        ]
+      },
+      {
+        "name": "Dépôt de ressources",
+        "description": "Le dépôt de ressources augmente la capacité maximale de stockage de vos ressources. Plus son niveau est élevé, plus vous pouvez en stocker.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 1
+          }
+        ]
+      },
+      {
+        "name": "Camp d’entraînement",
+        "description": "Le camp d’entraînement prépare vos ninjas. Augmenter son niveau améliore leur vitesse de déplacement.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 3
+          }
+        ]
+      },
+      {
+        "name": "Mur d’enceinte",
+        "description": "Le mur d’enceinte renforce la défense de votre village. Son amélioration augmente son efficacité défensive.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 1
+          }
+        ]
+      },
+      {
+        "name": "Commerces",
+        "description": "Organisez des expéditions marchandes escortées par vos ninjas et échangez des ressources avec les joueurs. Les niveaux supérieurs débloquent de meilleures routes et davantage de caravanes.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 5
+          }
+        ]
+      },
+      {
+        "name": "Réserve",
+        "description": "La réserve protège une partie de vos ressources en cas de pillage. Plus son niveau est élevé, plus elle permet de protéger de ressources.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 1
+          }
+        ]
+      },
+      {
+        "name": "Tour de garde",
+        "description": "La tour de garde permet de surveiller les alentours du village et d’obtenir des informations sur les troupes qui approchent.",
+        "prerequisites": [
+          {
+            "building": "Quartier général",
+            "level": 15
+          },
+          {
+            "building": "Centre Jounin",
+            "level": 10
+          },
+          {
+            "building": "Mur d’enceinte",
+            "level": 8
+          }
+        ]
+      },
+      {
+        "name": "Hôpital",
+        "description": "Soigne une partie de vos pertes au combat pendant 24 heures.",
+        "prerequisites": [
+          {
+            "building": "Académie",
+            "level": 1
+          }
+        ]
+      }
+    ]
+  },
+  "travel": {
+    "note": "Temps par km du jeu (centièmes de seconde), par niveau de Camp d’entraînement.",
+    "baseSecondsPerKm": 208,
+    "levels": [
+      {
+        "level": 1,
+        "centisecondsPerKm": 19782
+      },
+      {
+        "level": 2,
+        "centisecondsPerKm": 18741
+      },
+      {
+        "level": 3,
+        "centisecondsPerKm": 17700
+      },
+      {
+        "level": 4,
+        "centisecondsPerKm": 16659
+      },
+      {
+        "level": 5,
+        "centisecondsPerKm": 15618
+      },
+      {
+        "level": 6,
+        "centisecondsPerKm": 14576
+      },
+      {
+        "level": 7,
+        "centisecondsPerKm": 13535
+      },
+      {
+        "level": 8,
+        "centisecondsPerKm": 12494
+      },
+      {
+        "level": 9,
+        "centisecondsPerKm": 11453
+      },
+      {
+        "level": 10,
+        "centisecondsPerKm": 10412
+      },
+      {
+        "level": 11,
+        "centisecondsPerKm": 9371
+      },
+      {
+        "level": 12,
+        "centisecondsPerKm": 8329
+      },
+      {
+        "level": 13,
+        "centisecondsPerKm": 7288
+      },
+      {
+        "level": 14,
+        "centisecondsPerKm": 6247
+      },
+      {
+        "level": 15,
+        "centisecondsPerKm": 5206
+      },
+      {
+        "level": 16,
+        "centisecondsPerKm": 4165
+      },
+      {
+        "level": 17,
+        "centisecondsPerKm": 3124
+      },
+      {
+        "level": 18,
+        "centisecondsPerKm": 2082
+      },
+      {
+        "level": 19,
+        "centisecondsPerKm": 1041
+      },
+      {
+        "level": 20,
+        "centisecondsPerKm": 500
+      }
+    ]
+  },
+  "combat": {
+    "basePower": {
+      "genin": 10,
+      "chuunin": 40,
+      "jounin": 60
+    },
+    "productionMinutes": {
+      "genin": 20,
+      "chuunin": 30,
+      "jounin": 50
+    },
+    "killPoints": {
+      "genin": 1,
+      "chuunin": 5,
+      "jounin": 10
+    },
+    "attackerLossFactor": 0.211,
+    "defenderLossRange": {
+      "min": 0.5,
+      "max": 0.55
+    },
+    "defenseWins": {
+      "attackerFactor": 0.22,
+      "defenderFactor": {
+        "min": 0.23,
+        "max": 0.26
+      }
+    },
+    "combatTicketMultiplier": 1.2,
+    "hospitalTicketBonus": 20
+  },
+  "troops": {
+    "list": [
+      {
+        "id": "genin",
+        "label": "Genins",
+        "capacity": 13
+      },
+      {
+        "id": "chunin",
+        "label": "Chunins",
+        "capacity": 26
+      },
+      {
+        "id": "jounin",
+        "label": "Jounins",
+        "capacity": 53
+      }
+    ]
+  },
+  "production": {
+    "fieldCounts": {
+      "stone": 2,
+      "wood": 2,
+      "iron": 2,
+      "food": 3
+    }
+  }
+}

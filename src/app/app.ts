@@ -27,6 +27,7 @@ export class App {
     { path: '/raz', label: 'Simu raz', icon: 'fa-burst' },
     { path: '/secondes', label: 'Calcul seconde', icon: 'fa-stopwatch' },
     { path: '/proches', label: 'Qui est le plus proche', icon: 'fa-location-crosshairs' },
+    { path: '/tour', label: 'Tour de contrôle', icon: 'fa-tower-observation' },
     { path: '/ennemis', label: 'infos enemis', icon: 'fa-user-secret' },
     { path: '/joueurs', label: 'MAJ joueurs', icon: 'fa-people-group' },
   ];

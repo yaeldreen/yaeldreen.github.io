@@ -37,7 +37,8 @@ service cloud.firestore {
     function isValidPlayer(data) {
       return data.keys().hasOnly([
           'name', 'village', 'clan', 'points', 'inhabitants',
-          'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall'
+          'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall',
+          'comment', 'commentBy', 'commentAt'
         ])
         && isName(data.name)
         && data.village is string && data.village.size() <= 64
@@ -49,7 +50,9 @@ service cloud.firestore {
         && isOptionalLevel(data, 'chunninCenter')
         && isOptionalLevel(data, 'jouninCenter')
         && isOptionalLevel(data, 'hospital')
-        && isOptionalLevel(data, 'wall');
+        && isOptionalLevel(data, 'wall')
+        // Commentaire libre ajouté par le bot Discord (#infos-ennemis).
+        && (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
     }
 
     match /enemies/{player} {
@@ -84,9 +87,35 @@ service cloud.firestore {
       allow create, update: if isValidVillage(request.resource.data);
     }
 
+    // Données de jeu (bâtiments, vitesses, règles de combat…) : lecture seule pour l'appli.
+    // Seul le bot Discord les modifie, avec le compte de service (qui ignore ces règles), pour un rôle Discord précis.
+    match /gameData/{part} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Réglages des membres Discord (village, CE) : seul le bot y accède, avec le compte de service.
+    match /discordUsers/{user} {
+      allow read, write: if false;
+    }
+
     // Témoin de la copie initiale des joueurs : créé une seule fois, jamais modifié.
     match /meta/seed {
       allow read, create: if true;
+    }
+
+    // Tour de contrôle : lignes du journal d'attaques du clan, enregistrées par la fenêtre relais de l'appli.
+    // Création seulement (une ligne déjà vue n'est pas réécrite) ; suppression possible pour faire le ménage.
+    match /watchtower/{line} {
+      allow read, delete: if true;
+      allow create: if request.resource.data.keys().hasOnly(['minute', 'text', 'from', 'to', 'precise', 'exact', 'direction'])
+        && request.resource.data.minute is string && request.resource.data.minute.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}$')
+        && request.resource.data.text is string && request.resource.data.text.size() > 0 && request.resource.data.text.size() <= 200
+        && request.resource.data.from is int && request.resource.data.to is int
+        && request.resource.data.from <= request.resource.data.to
+        && request.resource.data.precise is bool
+        && request.resource.data.exact is bool
+        && request.resource.data.direction is string && request.resource.data.direction.size() <= 20;
     }
 
     // Relevés mensuels des points et habitants (« current » = mois en cours, « previous » = mois précédent).

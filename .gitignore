@@ -42,3 +42,10 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Bot Discord : dépendances et secrets
+/bot/node_modules
+/bot/.env
+/bot/service-account*.json
+*service-account*.json
+/bot/.tesseract-cache
