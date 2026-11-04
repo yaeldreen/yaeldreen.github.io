@@ -7,6 +7,8 @@ export interface VillageArmy {
 
 /** Infos saisies à la main sur le joueur du village : les imports les conservent. */
 export interface VillageNotes {
+  /** Identifiant du village dans le jeu (négatif pour un village neutre) : il survit aux renommages. */
+  gameId?: number;
   army?: VillageArmy;
   ce?: number | null;
   academy?: number | null;
@@ -19,7 +21,7 @@ export interface VillageNotes {
   commentAt?: string;
 }
 
-const NOTE_KEYS: readonly (keyof VillageNotes)[] = ['army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall', 'comment', 'commentBy', 'commentAt'];
+const NOTE_KEYS: readonly (keyof VillageNotes)[] = ['gameId', 'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall', 'comment', 'commentBy', 'commentAt'];
 
 export const notesOf = (village: VillageNotes | undefined): VillageNotes =>
   Object.fromEntries(NOTE_KEYS.flatMap((k) => (village?.[k] !== undefined ? [[k, village[k]]] : [])));
@@ -35,6 +37,9 @@ export interface MapVillage extends VillageNotes {
   inhabitants: number;
   /** Village neutre (sans joueur), pillable mais absent des listes de joueurs. */ neutral: boolean;
 }
+
+/** Champ à ajouter si l'export donne un identifiant : Firestore refuse les valeurs `undefined`. */
+const gameIdOf = (id: unknown): { gameId?: number } => (Number.isInteger(id) ? { gameId: id as number } : {});
 
 /** Document de `villages` : un joueur ajouté à la main, absent de la carte, n'a pas de coordonnées. */
 export type VillageDoc = Omit<MapVillage, 'x' | 'y'> & { x?: number; y?: number };
@@ -63,6 +68,7 @@ export function parseMapExport(text: string): MapVillage[] {
       (v.clan === null || typeof v.clan?.name === 'string');
     if (!ok) throw new Error(`Village n°${i + 1} illisible (nom, joueur, coordonnées ou clan manquant).`);
     return {
+      ...gameIdOf(v.id),
       name: v.name.trim(),
       kage: v.kage.trim(),
       x: v.x,
@@ -95,6 +101,7 @@ export function parseRankingExport(text: string): RankingEntry[] | null {
       throw new Error(`Joueur n°${i + 1} illisible (village, joueur ou clan manquant).`);
     }
     return {
+      ...gameIdOf(v.id),
       name: v.name.trim(),
       kage: v.kage.trim(),
       clan: v.clan?.name ?? null,
@@ -137,6 +144,7 @@ export function parseCompactExport(text: string): { neutral: MapVillage[]; playe
       throw new Error(`Village n°${i + 1} illisible (nom, kage ou coordonnées manquants).`);
     }
     return {
+      ...gameIdOf(v[0]),
       name: v[1].trim(),
       kage: v[2].trim(),
       x: v[4],
@@ -157,7 +165,7 @@ export function parseCompactExport(text: string): { neutral: MapVillage[]; playe
 export function applyCoordinates(villages: readonly VillageDoc[], fromMap: readonly MapVillage[]): MapVillage[] {
   return fromMap.map((v) => {
     const village = findPlayerVillage(villages, v);
-    return village ? { ...village, name: v.name, kage: v.kage, x: v.x, y: v.y } : v;
+    return village ? { ...village, ...gameIdOf(v.gameId), name: v.name, kage: v.kage, x: v.x, y: v.y } : v;
   });
 }
 
@@ -178,12 +186,13 @@ export function playersMissingFromCarte<T extends { name: string; village?: stri
 }
 
 /**
- * Village de joueur correspondant à une ligne d'export : le nom exact d'abord (« Sparta » et « SPÄRTÄ » sont deux villages),
- * puis le joueur, puis les mêmes sans accents ni casse. Un village renommé est retrouvé par son joueur.
+ * Village de joueur correspondant à une ligne d'export : l'identifiant du jeu d'abord, puis le nom exact (« Sparta » et
+ * « SPÄRTÄ » sont deux villages), puis le joueur, puis les mêmes sans accents ni casse.
  */
-function findPlayerVillage(villages: readonly VillageDoc[], { name, kage }: { name: string; kage: string }): VillageDoc | undefined {
+function findPlayerVillage(villages: readonly VillageDoc[], { gameId, name, kage }: { gameId?: number; name: string; kage: string }): VillageDoc | undefined {
   const players = villages.filter((v) => !v.neutral);
   return (
+    (gameId !== undefined ? players.find((v) => v.gameId === gameId) : undefined) ??
     players.find((v) => v.name === name) ??
     players.find((v) => v.kage === kage) ??
     players.find((v) => normName(v.name) === normName(name)) ??

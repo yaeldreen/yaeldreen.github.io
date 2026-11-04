@@ -8,8 +8,8 @@ const EXPORT = JSON.stringify([
 describe('parseMapExport', () => {
   it('lit les villages de l’export du jeu', () => {
     expect(parseMapExport(EXPORT)).toEqual([
-      { name: 'Yuuno', kage: 'Hinata Yuuno', x: 8124, y: -1, clan: null, points: 0, inhabitants: 0, neutral: true },
-      { name: 'Tard', kage: 'Serpent', x: 8199, y: -11, clan: 'Tsukuyomi', points: 2361, inhabitants: 410, neutral: false },
+      { gameId: -75, name: 'Yuuno', kage: 'Hinata Yuuno', x: 8124, y: -1, clan: null, points: 0, inhabitants: 0, neutral: true },
+      { gameId: 80, name: 'Tard', kage: 'Serpent', x: 8199, y: -11, clan: 'Tsukuyomi', points: 2361, inhabitants: 410, neutral: false },
     ]);
   });
 
@@ -37,7 +37,7 @@ describe('classement sans coordonnées', () => {
   ]);
 
   it('lit le classement', () => {
-    expect(parseRankingExport(RANKING)?.[1]).toEqual({ name: 'Lymbes', kage: 'Hadès', clan: null, points: 3969, inhabitants: 256 });
+    expect(parseRankingExport(RANKING)?.[1]).toEqual({ gameId: 142, name: 'Lymbes', kage: 'Hadès', clan: null, points: 3969, inhabitants: 256 });
   });
 
   it('laisse l’export de la carte à son propre import', () => {
@@ -51,7 +51,7 @@ describe('classement sans coordonnées', () => {
 
   it('garde les coordonnées et signale les joueurs absents de la carte', () => {
     const { villages, unknown } = mergeRanking(parseMapExport(EXPORT), parseRankingExport(RANKING)!);
-    expect(villages).toEqual([{ name: 'Tard', kage: 'Serpent', x: 8199, y: -11, clan: 'Tsukuyomi', points: 9059, inhabitants: 430, neutral: false }]);
+    expect(villages).toEqual([{ gameId: 80, name: 'Tard', kage: 'Serpent', x: 8199, y: -11, clan: 'Tsukuyomi', points: 9059, inhabitants: 430, neutral: false }]);
     expect(unknown).toEqual(['Hadès']);
   });
 
@@ -77,8 +77,8 @@ describe('parseCompactExport', () => {
 
   it('sépare les villages neutres des joueurs, 6 = habitants et 7 = points', () => {
     expect(parseCompactExport(COMPACT)).toEqual({
-      neutral: [{ name: 'Hisatsuki', kage: 'Yui Hisatsuki', x: 8126, y: 5, clan: null, points: 12, inhabitants: 0, neutral: true }],
-      players: [{ name: 'Memen', kage: 'Maaminou', x: 8216, y: 10, clan: null, points: 7502, inhabitants: 429, neutral: false }],
+      neutral: [{ gameId: -71, name: 'Hisatsuki', kage: 'Yui Hisatsuki', x: 8126, y: 5, clan: null, points: 12, inhabitants: 0, neutral: true }],
+      players: [{ gameId: 70, name: 'Memen', kage: 'Maaminou', x: 8216, y: 10, clan: null, points: 7502, inhabitants: 429, neutral: false }],
     });
   });
 
@@ -88,8 +88,8 @@ describe('parseCompactExport', () => {
       [-75, 'Yuuno', 'Hinata Yuuno', 'feu', 8204, -10, 0, 0, null, true],
     ];
     expect(parseCompactExport(JSON.stringify(rows, null, 2))).toEqual({
-      neutral: [{ name: 'Yuuno', kage: 'Hinata Yuuno', x: 8204, y: -10, clan: null, points: 0, inhabitants: 0, neutral: true }],
-      players: [{ name: 'Memen', kage: 'Maaminou', x: 8216, y: 10, clan: 'Shi no Kitzu', points: 7695, inhabitants: 429, neutral: false }],
+      neutral: [{ gameId: -75, name: 'Yuuno', kage: 'Hinata Yuuno', x: 8204, y: -10, clan: null, points: 0, inhabitants: 0, neutral: true }],
+      players: [{ gameId: 70, name: 'Memen', kage: 'Maaminou', x: 8216, y: 10, clan: 'Shi no Kitzu', points: 7695, inhabitants: 429, neutral: false }],
     });
   });
 
@@ -104,8 +104,18 @@ describe('parseCompactExport', () => {
 });
 
 describe('applyCoordinates', () => {
-  const map = parseMapExport(EXPORT);
+  const map = parseMapExport(EXPORT).map(({ gameId: _gameId, ...v }) => v);
   const entry = { name: 'Tard', kage: 'Serpent', x: 1, y: 2, clan: null, points: 5, inhabitants: 6, neutral: false };
+
+  it('reconnaît par son identifiant un joueur qui a changé de nom et de village', () => {
+    const known = [{ ...entry, gameId: 80, ce: 12 }];
+    const renamed = { ...entry, gameId: 80, name: 'Nouveau', kage: 'Autre', x: 9 };
+    expect(applyCoordinates(known, [renamed])).toEqual([{ ...renamed, ce: 12 }]);
+  });
+
+  it('ajoute l’identifiant à un village connu qui n’en avait pas', () => {
+    expect(applyCoordinates(map, [{ ...entry, gameId: 80 }])[0].gameId).toBe(80);
+  });
 
   it('ne change que les coordonnées d’un village connu, et garde ses notes', () => {
     const known = map.map((v) => (v.kage === 'Serpent' ? { ...v, ce: 12 } : v));

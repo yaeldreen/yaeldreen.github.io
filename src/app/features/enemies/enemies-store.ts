@@ -202,17 +202,18 @@ export class EnemiesStore {
 
     const keep = new Set(villages.map((v) => docId(v.name)));
     const known = this.villageRecords().filter((v) => !v.neutral);
+    const sameId = (v: MapVillage) => (v.gameId !== undefined ? known.find((k) => k.gameId === v.gameId) : undefined);
     const sameKage = (v: MapVillage) => known.find((k) => playerKey(k.kage) === playerKey(v.kage));
     const sameVillage = (v: MapVillage) => known.find((k) => playerKey(k.name) === playerKey(v.name));
     for (const v of villages) {
-      const record = v.neutral ? v : importedVillage(v, sameKage(v) ?? sameVillage(v));
+      const record = v.neutral ? v : importedVillage(v, sameId(v) ?? sameKage(v) ?? sameVillage(v));
       ops.push((b) => b.set(doc(db, VILLAGES, docId(v.name)), record));
     }
     // Les villages neutres absents de l'export restent : ils ont leur propre mise à jour.
     for (const { id, data } of this.villageDocs) {
       if (data.neutral === true || keep.has(id)) continue;
       // Import partiel : seul l'ancien document d'un village renommé ou en double disparaît.
-      if (!partial || villages.some((v) => playerKey(v.kage) === playerKey(data.kage))) ops.push((b) => b.delete(doc(db, VILLAGES, id)));
+      if (!partial || villages.some((v) => playerKey(v.kage) === playerKey(data.kage) || (v.gameId !== undefined && v.gameId === data.gameId))) ops.push((b) => b.delete(doc(db, VILLAGES, id)));
     }
 
     const knownClans = new Set(this.clanNames().map(playerKey));
@@ -223,7 +224,7 @@ export class EnemiesStore {
     }
 
     for (const v of villages.filter((v) => !v.neutral)) {
-      if (sameKage(v) || sameVillage(v)) summary.playersUpdated++;
+      if (sameId(v) || sameKage(v) || sameVillage(v)) summary.playersUpdated++;
       else summary.playersAdded++;
     }
 

@@ -31,7 +31,7 @@ const norm = (s: string): string =>
         [value]="value()"
         [placeholder]="placeholder()"
         (input)="onInput($any($event.target).value)"
-        (focus)="open.set(true)"
+        (focus)="onFocus($any($event.target))"
         (blur)="closeSoon()"
         (keydown)="onKey($event)"
         class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
@@ -66,18 +66,27 @@ export class Combobox implements OnDestroy {
 
   protected readonly open = signal(false);
   protected readonly active = signal(-1);
+  /** Le texte déjà présent ne filtre pas : à l'ouverture du champ, on voit les autres possibilités. */
+  private readonly typing = signal(false);
   private closeTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** Options contenant le texte saisi (dans la valeur ou l'indication), accents et casse ignorés. */
   protected readonly matches = computed(() => {
-    const query = norm(this.value());
+    const query = this.typing() ? norm(this.value()) : '';
     const found = query
       ? this.options().filter((o) => norm(o.value).includes(query) || norm(o.hint ?? '').includes(query))
       : this.options();
     return found.slice(0, MAX_SHOWN);
   });
 
+  protected onFocus(field: HTMLInputElement): void {
+    this.typing.set(false);
+    this.open.set(true);
+    field.select();
+  }
+
   protected onInput(text: string): void {
+    this.typing.set(true);
     this.value.set(text);
     this.open.set(true);
     this.active.set(-1);

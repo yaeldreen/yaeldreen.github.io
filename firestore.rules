@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Règles de sécurité Firestore de Tsukuyomi HUB (infos ennemis, clans, carte).
+// Règles de sécurité Firestore de Tsukuyomi HUB (carte et joueurs, clans).
 // À coller dans la console Firebase : Firestore Database → Règles → Publier.
 //
 // Lecture et écriture ouvertes à tous (choix assumé : données non sensibles).
@@ -11,61 +11,13 @@ service cloud.firestore {
       return value is int && value >= 0;
     }
 
-    function isValidRecord(data) {
-      return data.keys().hasOnly(['player', 'troops', 'side', 'updatedAt'])
-        && data.player is string && data.player.size() > 0 && data.player.size() <= 64
-        && isTroopCount(data.troops.genin)
-        && isTroopCount(data.troops.chuunin)
-        && isTroopCount(data.troops.jounin)
-        && (data.side == null || data.side in ['Assaillant', 'Défenseur'])
-        && data.updatedAt is string;
-    }
-
     function isName(value) {
       return value is string && value.size() > 0 && value.size() <= 64;
-    }
-
-    function isOptionalCount(data, field) {
-      return !(field in data) || data[field] == null || isTroopCount(data[field]);
     }
 
     // Niveau de bâtiment saisi à la main : absent, vide ou entre 0 et 20.
     function isOptionalLevel(data, field) {
       return !(field in data) || data[field] == null || (data[field] is int && data[field] >= 0 && data[field] <= 20);
-    }
-
-    function isValidPlayer(data) {
-      return data.keys().hasOnly([
-          'name', 'village', 'clan', 'points', 'inhabitants',
-          'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall',
-          'comment', 'commentBy', 'commentAt'
-        ])
-        && isName(data.name)
-        // Village et clan : seulement pour un joueur absent de la carte, sinon ils viennent de `villages`.
-        && (!('village' in data) || (data.village is string && data.village.size() <= 64))
-        && (!('clan' in data) || data.clan == null || isName(data.clan))
-        && isOptionalCount(data, 'points')
-        && isOptionalCount(data, 'inhabitants')
-        && isOptionalLevel(data, 'ce')
-        && isOptionalLevel(data, 'academy')
-        && isOptionalLevel(data, 'chunninCenter')
-        && isOptionalLevel(data, 'jouninCenter')
-        && isOptionalLevel(data, 'hospital')
-        && isOptionalLevel(data, 'wall')
-        // Commentaire libre ajouté par le bot Discord (#infos-ennemis).
-        && (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
-    }
-
-    // Ancienne collection, remplacée par `villages` : à retirer une fois scripts/migrate-to-villages.ts exécuté.
-    match /enemies/{player} {
-      allow read, delete: if true;
-      allow create, update: if isValidRecord(request.resource.data);
-    }
-
-    // Ancienne collection, remplacée par `villages` : à retirer une fois scripts/migrate-to-villages.ts exécuté.
-    match /players/{player} {
-      allow read, delete: if true;
-      allow create, update: if isValidPlayer(request.resource.data);
     }
 
     match /clans/{clan} {
@@ -86,11 +38,12 @@ service cloud.firestore {
     function isValidVillage(data) {
       return data.keys().hasOnly([
           'name', 'kage', 'x', 'y', 'clan', 'points', 'inhabitants', 'neutral',
-          'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall',
+          'gameId', 'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall',
           'comment', 'commentBy', 'commentAt'
         ])
         && isName(data.name)
         && isName(data.kage)
+        && (!('gameId' in data) || data.gameId is int)
         && (!('army' in data) || isValidArmy(data.army))
         // Sans coordonnées : joueur ajouté à la main, absent de la carte.
         && (!('x' in data) || data.x is int)

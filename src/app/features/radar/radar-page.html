@@ -1,0 +1,179 @@
+<app-card class="p-4 sm:p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200"><span class="mr-2" aria-hidden="true">📡</span>Radar du jeu</h2>
+    <p class="text-xs text-stone-400 mt-1">Choisissez le village au centre et ce qui apparaît sur la carte.</p>
+  </div>
+
+  @if (!store.villages().length) {
+    <p class="text-xs text-amber-300">Carte vide : importez la carte dans « MAJ joueurs ».</p>
+  }
+
+  <div>
+    <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Village au centre</label>
+    <app-combobox [value]="originText()" (valueChange)="typeOrigin($event)" [options]="villageOptions()" placeholder="Nom du village ou du joueur" />
+    @if (originUnknown()) {
+      <p class="text-[11px] text-amber-300 mt-1">Village introuvable dans la carte.</p>
+    } @else if (origin(); as o) {
+      <p class="text-[11px] text-stone-400 mt-1">
+        {{ o.kage }}{{ o.clan ? ' · ' + o.clan : '' }} : <span class="font-mono text-stone-200">{{ o.x }} / {{ o.y }}</span>
+      </p>
+    }
+  </div>
+
+  <details class="border border-stone-800 rounded-xl" open>
+    <summary class="px-3 py-2.5 text-sm font-medium text-stone-200 cursor-pointer select-none">
+      Affichage · {{ shownCount() }} / {{ groups().length }} groupes
+    </summary>
+    <div class="px-3 pb-3 space-y-3">
+      <div class="flex gap-2">
+        <button type="button" (click)="setAllShown(true)" class="flex-1 bg-stone-800 hover:bg-stone-700 text-stone-200 py-2 rounded-lg text-xs font-medium cursor-pointer">Tout cocher</button>
+        <button type="button" (click)="setAllShown(false)" class="flex-1 bg-stone-800 hover:bg-stone-700 text-stone-200 py-2 rounded-lg text-xs font-medium cursor-pointer">Tout décocher</button>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        @for (group of groups(); track group.name) {
+          <label class="flex items-center gap-2 bg-stone-950/60 border border-stone-800 rounded-lg px-3 py-2 text-xs cursor-pointer select-none" [class.opacity-50]="!isShown(group.name)">
+            <input type="checkbox" [checked]="isShown(group.name)" (change)="setShown(group.name, $any($event.target).checked)" class="accent-red-700 w-4 h-4 cursor-pointer shrink-0" />
+            <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background]="group.color"></span>
+            <span class="text-stone-200 truncate">{{ group.name }}</span>
+            <span class="ml-auto font-mono text-stone-500">{{ group.count }}</span>
+          </label>
+        }
+      </div>
+    </div>
+  </details>
+</app-card>
+
+@if (origin(); as o) {
+  <app-card class="p-3 sm:p-4 space-y-3">
+    <div class="flex items-center justify-end gap-2">
+      <button type="button" (click)="zoomBy(1 / 1.45)" aria-label="Dézoomer" class="w-10 h-9 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-lg cursor-pointer">−</button>
+      <span class="font-mono text-xs text-stone-400 w-12 text-center">{{ zoomPercent() }} %</span>
+      <button type="button" (click)="zoomBy(1.45)" aria-label="Zoomer" class="w-10 h-9 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-lg cursor-pointer">+</button>
+      <button type="button" (click)="resetView()" class="h-9 px-3 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs cursor-pointer">Recentrer</button>
+    </div>
+
+    <div #mapShell class="relative rounded-xl overflow-hidden border border-stone-800 bg-stone-950">
+      <svg
+        #map
+        [attr.viewBox]="viewBox()"
+        role="img"
+        [attr.aria-label]="'Carte des villages autour de ' + o.name"
+        class="block w-full h-auto cursor-grab touch-none select-none"
+        (wheel)="onWheel($event)"
+        (pointerdown)="onPointerDown($event)"
+        (pointermove)="onPointerMove($event)"
+        (pointerup)="onPointerUp($event)"
+        (pointercancel)="onPointerUp($event)"
+        (pointerleave)="onPointerUp($event)"
+      >
+        <line x1="0" y1="300" [attr.x2]="mapSize" y2="300" stroke="#292524" />
+        <line x1="300" y1="0" x2="300" [attr.y2]="mapSize" stroke="#292524" />
+        @for (ring of rings(); track ring.km) {
+          <circle cx="300" cy="300" [attr.r]="ring.r" fill="none" stroke="#44403c" stroke-dasharray="4 7" [attr.stroke-width]="unit()" />
+          <text [attr.x]="300 + ring.r + 3 * unit()" [attr.y]="296" fill="#78716c" [attr.font-size]="10 * unit()">{{ ring.km }}</text>
+        }
+        <circle cx="300" cy="300" [attr.r]="radiusRing()" fill="rgba(153, 27, 27, 0.08)" stroke="#b91c1c" [attr.stroke-width]="1.5 * unit()" stroke-dasharray="7 5" />
+
+        @for (point of points(); track point.village.name) {
+          <circle
+            [attr.cx]="point.x"
+            [attr.cy]="point.y"
+            [attr.r]="(point.neutral ? 3.5 : 5.5) * unit()"
+            [attr.fill]="point.color"
+            [attr.stroke]="selected()?.name === point.village.name ? '#ffffff' : '#0c0a09'"
+            [attr.stroke-width]="(selected()?.name === point.village.name ? 2 : 1) * unit()"
+          />
+          @if (showLabels() || selected()?.name === point.village.name) {
+            <text
+              [attr.x]="point.x + 7 * unit()"
+              [attr.y]="point.y - 7 * unit()"
+              fill="#f5f5f4"
+              stroke="#0c0a09"
+              [attr.stroke-width]="3 * unit()"
+              paint-order="stroke"
+              class="pointer-events-none"
+              [attr.font-size]="11 * unit()"
+            >
+              {{ point.village.name }}
+            </text>
+          }
+          <circle
+            [attr.cx]="point.x"
+            [attr.cy]="point.y"
+            [attr.r]="13 * unit()"
+            fill="transparent"
+            class="cursor-pointer"
+            role="button"
+            [attr.aria-label]="point.village.name + ', voir la fiche'"
+            (click)="tapVillage(point.village)"
+          />
+        }
+
+        <circle cx="300" cy="300" [attr.r]="9 * unit()" fill="#ef4444" stroke="#ffffff" [attr.stroke-width]="2 * unit()" />
+        <text x="300" [attr.y]="300 + 22 * unit()" fill="#f5f5f4" stroke="#0c0a09" [attr.stroke-width]="3 * unit()" paint-order="stroke" text-anchor="middle" font-weight="600" class="pointer-events-none" [attr.font-size]="12 * unit()">
+          {{ o.name }}
+        </text>
+      </svg>
+
+      @if (selected(); as s) {
+        <div class="absolute left-2 right-2 bottom-2 sm:right-auto sm:w-80 bg-stone-900/95 border border-stone-700 rounded-xl p-3 space-y-2 shadow-xl" role="dialog" aria-label="Fiche du village">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <p class="font-semibold text-sm text-stone-100 truncate">{{ s.name }}</p>
+              <p class="text-xs text-stone-400 truncate">
+                <span class="inline-block w-2 h-2 rounded-full mr-1" [style.background]="groupColor(s)"></span>{{ groupName(s) }}
+              </p>
+            </div>
+            <button type="button" (click)="selected.set(null)" aria-label="Fermer la fiche" class="shrink-0 w-8 h-8 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg text-xs cursor-pointer">✕</button>
+          </div>
+          <div class="font-mono text-xs text-stone-300 flex flex-wrap gap-x-3 gap-y-0.5">
+            @if (!s.neutral) {
+              <span class="font-sans font-semibold text-red-300">{{ s.kage }}</span>
+              <span>⭐ {{ formatNumber(s.points) }}</span>
+              <span>👥 {{ formatNumber(s.inhabitants) }}</span>
+            }
+            <span>📍 {{ s.x }} / {{ s.y }}</span>
+            <span class="font-bold text-emerald-400">{{ selectedDistance() }} km</span>
+          </div>
+          <button type="button" (click)="center(s)" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-200 py-2 rounded-lg text-xs font-medium cursor-pointer">Centrer ici</button>
+        </div>
+      }
+    </div>
+    <p class="text-[11px] text-stone-500">Touchez un point pour sa fiche. Déplacez la carte au doigt, zoomez en pinçant ou à la molette. Les noms apparaissent à partir de 300 %. Le cercle rouge suit le rayon choisi ci-dessous.</p>
+  </app-card>
+
+  <app-card class="p-4 sm:p-6 space-y-3">
+    <div class="flex flex-wrap items-baseline justify-between gap-2">
+      <h2 class="font-semibold text-stone-200">Villages proches</h2>
+      <span class="text-xs text-stone-400">{{ nearby().length }} dans le rayon</span>
+    </div>
+    <app-segmented-control class="block" [options]="radiusOptions" [value]="radiusId()" (valueChange)="radiusId.set($event)" />
+    @if (nearby().length) {
+      <ol class="space-y-2">
+        @for (entry of nearby(); track entry.village.name) {
+          <li>
+            <button
+              type="button"
+              (click)="selected.set(entry.village); mapShell.scrollIntoView({ block: 'center' })"
+              class="w-full text-left bg-stone-950/60 border border-stone-800 hover:border-stone-600 rounded-xl px-3 py-2.5 flex items-center gap-3 cursor-pointer"
+            >
+              <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background]="groupColor(entry.village)"></span>
+              <span class="min-w-0 flex-1">
+                <span class="block font-bold text-red-300 text-sm truncate">{{ entry.village.name }}</span>
+                <span class="block text-xs text-stone-400 truncate">
+                  @if (!entry.village.neutral) {
+                    {{ entry.village.kage }} ·
+                  }
+                  {{ groupName(entry.village) }} · <span class="font-mono">{{ entry.village.x }} / {{ entry.village.y }}</span>
+                </span>
+              </span>
+              <span class="shrink-0 font-mono font-bold text-emerald-400 text-sm">{{ entry.distance }} km</span>
+            </button>
+          </li>
+        }
+      </ol>
+    } @else {
+      <p class="text-xs text-stone-400">Aucun village affiché dans ce rayon.</p>
+    }
+  </app-card>
+}

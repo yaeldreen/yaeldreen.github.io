@@ -43,6 +43,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/nearest/nearest-page').then((m) => m.NearestPage),
   },
   {
+    path: 'radar',
+    title: 'Radar du jeu',
+    loadComponent: () => import('./features/radar/radar-page').then((m) => m.RadarPage),
+  },
+  {
     path: 'ennemis',
     title: 'Infos Ennemis',
     loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),
