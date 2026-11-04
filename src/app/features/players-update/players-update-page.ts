@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { applyCoordinates, MapVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, RankingEntry } from '../../core/game-data/map-villages';
-import { AccessGate } from '../../core/access';
 import { Card } from '../../shared/ui/card';
 import { EnemiesStore, MapImportSummary } from '../enemies/enemies-store';
 import { buildSnapshot, compareSnapshots, EvolutionRow, isSnapshotDue, monthLabel } from './monthly-snapshot';
@@ -37,7 +36,7 @@ export class PlayersUpdatePage {
       return;
     }
     if (ranking) {
-      const merged = mergeRanking(this.store.villages(), ranking);
+      const merged = mergeRanking(this.store.villageRecords(), ranking);
       villages = merged.villages;
       this.rankingUnknown.set(merged.unknown);
       if (!villages.length) {
@@ -122,7 +121,7 @@ export class PlayersUpdatePage {
     }
     this.carteImporting.set(true);
     try {
-      const villages = applyCoordinates(this.store.villages(), this.store.players(), carte.players);
+      const villages = applyCoordinates(this.store.villageRecords(), carte.players);
       const summary = await this.store.importCarte(carte.neutral, villages);
       this.carteResult.set({ neutral: carte.neutral.length, updated: summary.playersUpdated, added: summary.playersAdded, removed: summary.removed });
       this.carteText.set('');
@@ -132,22 +131,6 @@ export class PlayersUpdatePage {
       this.carteError.set(`Import refusé : ${(e as Error).message}. Vérifiez que les règles Firestore sont publiées.`);
     } finally {
       this.carteImporting.set(false);
-    }
-  }
-
-  // --- Mot de passe d'accès ---
-
-  private readonly access = inject(AccessGate);
-  protected readonly currentPassword = signal('');
-  protected readonly newPassword = signal('');
-  protected readonly passwordMessage = signal<{ ok: boolean; text: string } | null>(null);
-
-  protected async changePassword(): Promise<void> {
-    const error = await this.access.change(this.currentPassword(), this.newPassword());
-    this.passwordMessage.set(error ? { ok: false, text: error } : { ok: true, text: 'Mot de passe changé pour tout le clan.' });
-    if (!error) {
-      this.currentPassword.set('');
-      this.newPassword.set('');
     }
   }
 }

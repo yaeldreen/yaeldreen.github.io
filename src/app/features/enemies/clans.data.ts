@@ -1,3 +1,5 @@
+import { VillageDoc } from '../../core/game-data/map-villages';
+
 /** Infos saisies à la main sur un joueur (infos enemis), reprises par Simu combat. */
 export const PLAYER_STATS = [
   { key: 'points', label: 'Points', short: 'Points', max: null },
@@ -16,6 +18,17 @@ export interface Player extends Partial<Record<PlayerStatKey, number | null>> {
   name: string;
   village: string;
   /** `null` = sans clan */ clan: string | null;
+}
+
+const playerKeyOf = (name: string): string => name.trim().toLocaleLowerCase('fr');
+
+/** Joueurs de l'appli : un par village de joueur (`villages` contient aussi ce qui est saisi à la main). */
+export function joinPlayers(villages: readonly VillageDoc[]): Player[] {
+  const players = new Map<string, Player>();
+  for (const { name, kage, clan, neutral, x: _x, y: _y, army: _army, ...rest } of villages) {
+    if (!neutral && !players.has(playerKeyOf(kage))) players.set(playerKeyOf(kage), { ...rest, name: kage, village: name, clan });
+  }
+  return [...players.values()];
 }
 
 export interface Clan {
@@ -233,9 +246,11 @@ const normalize = (s: string): string =>
 export function findPlayer(players: readonly Player[], name: string): PlayerMatch | null {
   const target = normalize(name);
   if (!target) return null;
-  for (const field of ['village', 'name'] as const) {
-    const player = players.find((p) => normalize(p[field]) === target);
-    if (player) return { player, clan: player.clan ?? NO_CLAN };
-  }
-  return null;
+  // Le nom exact d'abord : « Sparta » et « SPÄRTÄ » sont deux villages.
+  const player =
+    players.find((p) => p.village === name.trim()) ??
+    players.find((p) => p.name === name.trim()) ??
+    players.find((p) => normalize(p.village) === target) ??
+    players.find((p) => normalize(p.name) === target);
+  return player ? { player, clan: player.clan ?? NO_CLAN } : null;
 }

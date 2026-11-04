@@ -71,7 +71,7 @@
     <p class="text-xs text-stone-400 mt-1">
       Collez la liste compacte de la carte. « 9: true » : les villages neutres sont intégrés entièrement et remplacent ceux de la carte.
       « 9: false » : les coordonnées du joueur sont mises à jour, et son village est ajouté s'il n'est pas encore sur la carte.
-      Un joueur absent de la liste est supprimé, avec sa fiche et son armée, et les villages en double sont retirés. Villages neutres actuels : {{ neutralCount() }}.
+      Un joueur absent de la liste est supprimé, avec son armée, et les villages en double sont retirés. Villages neutres actuels : {{ neutralCount() }}.
     </p>
   </div>
   <textarea
@@ -99,32 +99,6 @@
         , supprimés : {{ r.removed.join(', ') }}
       }.
     </p>
-  }
-</app-card>
-
-<app-card class="p-4 sm:p-6 space-y-4">
-  <div class="border-b border-stone-800 pb-3">
-    <h2 class="font-semibold text-stone-200">Mot de passe d'accès</h2>
-    <p class="text-xs text-stone-400 mt-1">Change le mot de passe demandé à l'ouverture du site, pour tout le clan.</p>
-  </div>
-  <form (submit)="$event.preventDefault(); changePassword()" class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
-    <label class="block">
-      <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Mot de passe actuel</span>
-      <input type="password" autocomplete="current-password" [value]="currentPassword()" (input)="currentPassword.set($any($event.target).value)"
-        class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700" />
-    </label>
-    <label class="block">
-      <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Nouveau mot de passe</span>
-      <input type="password" autocomplete="new-password" [value]="newPassword()" (input)="newPassword.set($any($event.target).value)"
-        class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700" />
-    </label>
-    <button type="submit" [disabled]="!currentPassword() || !newPassword()"
-      class="bg-red-800 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
-      Changer
-    </button>
-  </form>
-  @if (passwordMessage(); as m) {
-    <p class="text-xs" [class]="m.ok ? 'text-emerald-300' : 'text-rose-300'">{{ m.text }}</p>
   }
 </app-card>
 

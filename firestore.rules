@@ -41,8 +41,9 @@ service cloud.firestore {
           'comment', 'commentBy', 'commentAt'
         ])
         && isName(data.name)
-        && data.village is string && data.village.size() <= 64
-        && (data.clan == null || isName(data.clan))
+        // Village et clan : seulement pour un joueur absent de la carte, sinon ils viennent de `villages`.
+        && (!('village' in data) || (data.village is string && data.village.size() <= 64))
+        && (!('clan' in data) || data.clan == null || isName(data.clan))
         && isOptionalCount(data, 'points')
         && isOptionalCount(data, 'inhabitants')
         && isOptionalLevel(data, 'ce')
@@ -55,11 +56,13 @@ service cloud.firestore {
         && (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
     }
 
+    // Ancienne collection, remplacée par `villages` : à retirer une fois scripts/migrate-to-villages.ts exécuté.
     match /enemies/{player} {
       allow read, delete: if true;
       allow create, update: if isValidRecord(request.resource.data);
     }
 
+    // Ancienne collection, remplacée par `villages` : à retirer une fois scripts/migrate-to-villages.ts exécuté.
     match /players/{player} {
       allow read, delete: if true;
       allow create, update: if isValidPlayer(request.resource.data);
@@ -70,16 +73,39 @@ service cloud.firestore {
       allow create, update: if request.resource.data.keys().hasOnly(['name']) && isName(request.resource.data.name);
     }
 
-    // Carte du jeu, importée depuis « MAJ joueurs ».
+    function isValidArmy(army) {
+      return army.keys().hasOnly(['troops', 'side', 'updatedAt'])
+        && isTroopCount(army.troops.genin)
+        && isTroopCount(army.troops.chuunin)
+        && isTroopCount(army.troops.jounin)
+        && (army.side == null || army.side in ['Assaillant', 'Défenseur'])
+        && army.updatedAt is string;
+    }
+
+    // Carte du jeu, importée depuis « MAJ joueurs », avec l'armée et les infos saisies à la main sur chaque joueur.
     function isValidVillage(data) {
-      return data.keys().hasOnly(['name', 'kage', 'x', 'y', 'clan', 'points', 'inhabitants', 'neutral'])
+      return data.keys().hasOnly([
+          'name', 'kage', 'x', 'y', 'clan', 'points', 'inhabitants', 'neutral',
+          'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall',
+          'comment', 'commentBy', 'commentAt'
+        ])
         && isName(data.name)
         && isName(data.kage)
-        && data.x is int && data.y is int
+        && (!('army' in data) || isValidArmy(data.army))
+        // Sans coordonnées : joueur ajouté à la main, absent de la carte.
+        && (!('x' in data) || data.x is int)
+        && (!('y' in data) || data.y is int)
         && (data.clan == null || isName(data.clan))
         && isTroopCount(data.points)
         && isTroopCount(data.inhabitants)
-        && data.neutral is bool;
+        && data.neutral is bool
+        && isOptionalLevel(data, 'ce')
+        && isOptionalLevel(data, 'academy')
+        && isOptionalLevel(data, 'chunninCenter')
+        && isOptionalLevel(data, 'jouninCenter')
+        && isOptionalLevel(data, 'hospital')
+        && isOptionalLevel(data, 'wall')
+        && (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
     }
 
     match /villages/{village} {
@@ -87,8 +113,6 @@ service cloud.firestore {
       allow create, update: if isValidVillage(request.resource.data);
     }
 
-    // Données de jeu (bâtiments, vitesses, règles de combat…) : lecture seule pour l'appli.
-    // Seul le bot Discord les modifie, avec le compte de service (qui ignore ces règles), pour un rôle Discord précis.
     // Simu raz partagé : un seul raz en cours, modifiable par tout le monde.
     match /raz/{room} {
       allow read: if true;
@@ -96,6 +120,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['defender', 'attackers', 'simulated', 'updatedAt']);
     }
 
+    // Données de jeu (bâtiments, vitesses, règles de combat…) : le bot Discord les modifie avec le compte de service.
     // Seul le guide des bâtiments se modifie depuis l'appli : un bâtiment à la fois, sans jamais en retirer.
     match /gameData/{part} {
       allow read: if true;
@@ -139,7 +164,7 @@ service cloud.firestore {
         && request.resource.data.players is list && request.resource.data.players.size() <= 5000;
     }
 
-    // Mot de passe d'accès (empreinte SHA-256). Créé une fois ; pour le changer, il faut fournir l'empreinte actuelle.
+    // Mot de passe d'accès (empreinte SHA-256). Créé une fois ; il ne se change que depuis la console Firebase.
     function isHash(value) {
       return value is string && value.matches('^[0-9a-f]{64}$');
     }
@@ -147,9 +172,7 @@ service cloud.firestore {
     match /meta/access {
       allow read: if true;
       allow create: if request.resource.data.keys().hasOnly(['hash']) && isHash(request.resource.data.hash);
-      allow update: if request.resource.data.keys().hasOnly(['hash', 'previous'])
-        && isHash(request.resource.data.hash)
-        && request.resource.data.previous == resource.data.hash;
+      allow update, delete: if false;
     }
   }
 }

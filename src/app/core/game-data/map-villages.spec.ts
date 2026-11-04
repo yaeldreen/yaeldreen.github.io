@@ -17,6 +17,12 @@ describe('parseMapExport', () => {
     expect(() => parseMapExport(EXPORT.slice(0, 80))).toThrow(/JSON valide/);
   });
 
+  it('préfère le nom exact quand deux villages ne diffèrent que par les accents', () => {
+    const entries = [{ name: 'Sparta', kage: 'A' }, { name: 'SPÄRTÄ', kage: 'B' }].map((v) => ({ ...v, x: 0, y: 0, clan: null, points: 0, inhabitants: 0, neutral: false }));
+    expect(findVillage(entries, 'SPÄRTÄ')?.kage).toBe('B');
+    expect(findVillage(entries, 'sparta')?.kage).toBe('A');
+  });
+
   it('retrouve un village par son nom ou son joueur', () => {
     const villages = parseMapExport(EXPORT);
     expect(findVillage(villages, 'tard')?.kage).toBe('Serpent');
@@ -47,6 +53,11 @@ describe('classement sans coordonnées', () => {
     const { villages, unknown } = mergeRanking(parseMapExport(EXPORT), parseRankingExport(RANKING)!);
     expect(villages).toEqual([{ name: 'Tard', kage: 'Serpent', x: 8199, y: -11, clan: 'Tsukuyomi', points: 9059, inhabitants: 430, neutral: false }]);
     expect(unknown).toEqual(['Hadès']);
+  });
+
+  it('signale un joueur connu mais sans coordonnées', () => {
+    const offMap = [{ name: 'Tard', kage: 'Serpent', clan: null, points: 0, inhabitants: 0, neutral: false }];
+    expect(mergeRanking(offMap, parseRankingExport(RANKING)!).unknown).toContain('Serpent');
   });
 
   it('retrouve par le joueur un village renommé, jamais un village neutre', () => {
@@ -96,26 +107,29 @@ describe('applyCoordinates', () => {
   const map = parseMapExport(EXPORT);
   const entry = { name: 'Tard', kage: 'Serpent', x: 1, y: 2, clan: null, points: 5, inhabitants: 6, neutral: false };
 
-  it('ne change que les coordonnées d’un village connu', () => {
-    expect(applyCoordinates(map, [], [entry])).toEqual([{ ...entry, clan: 'Tsukuyomi', points: 2361, inhabitants: 410 }]);
+  it('ne change que les coordonnées d’un village connu, et garde ses notes', () => {
+    const known = map.map((v) => (v.kage === 'Serpent' ? { ...v, ce: 12 } : v));
+    expect(applyCoordinates(known, [entry])).toEqual([{ ...entry, clan: 'Tsukuyomi', points: 2361, inhabitants: 410, ce: 12 }]);
   });
 
   it('retrouve par le joueur un village renommé', () => {
-    expect(applyCoordinates(map, [], [{ ...entry, name: 'Nouveau' }])[0]).toMatchObject({ name: 'Nouveau', clan: 'Tsukuyomi', x: 1 });
+    expect(applyCoordinates(map, [{ ...entry, name: 'Nouveau' }])[0]).toMatchObject({ name: 'Nouveau', clan: 'Tsukuyomi', x: 1 });
+  });
+
+  it('place sur la carte un joueur ajouté à la main', () => {
+    const offMap = [{ name: 'Tard', kage: 'Serpent', clan: 'Palace', points: 1, inhabitants: 2, neutral: false, ce: 3 }];
+    expect(applyCoordinates(offMap, [entry])[0]).toMatchObject({ x: 1, y: 2, clan: 'Palace', ce: 3 });
+  });
+
+  it('ajoute un village inconnu avec le clan de l’export', () => {
+    const fresh = { ...entry, name: 'Neuf', kage: 'Bob', clan: 'Palace' };
+    expect(applyCoordinates(map, [fresh])).toEqual([fresh]);
   });
 
   it('ne confond pas deux villages qui ne diffèrent que par les accents', () => {
     const sparta = { ...entry, name: 'Sparta', kage: 'CafardTueur', x: 8165, y: -7, points: 0 };
     const accents = { ...entry, name: 'SPÄRTÄ', kage: 'CÄFÄRDTUEUR', x: 8191, y: -3, points: 47 };
-    const result = applyCoordinates([sparta, accents], [], [{ ...accents, x: 1, points: 64 }]);
-    expect(result[0]).toMatchObject({ name: 'SPÄRTÄ', x: 1, points: 47 });
-  });
-
-  it('ajoute un village inconnu avec le clan de l’export, sinon de la fiche du joueur', () => {
-    const fresh = { ...entry, name: 'Neuf', kage: 'Bob' };
-    expect(applyCoordinates(map, [{ name: 'bob', clan: 'Akatsuki' }], [{ ...fresh, clan: 'Palace' }])[0].clan).toBe('Palace');
-    expect(applyCoordinates(map, [{ name: 'bob', clan: 'Akatsuki' }], [fresh])).toEqual([{ ...fresh, clan: 'Akatsuki' }]);
-    expect(applyCoordinates(map, [], [fresh])[0].clan).toBeNull();
+    expect(applyCoordinates([sparta, accents], [{ ...accents, x: 1, points: 64 }])[0]).toMatchObject({ name: 'SPÄRTÄ', x: 1, points: 47 });
   });
 });
 

@@ -1,3 +1,5 @@
+import { VillageDoc } from '../../core/game-data/map-villages';
+import { joinPlayers } from './clans.data';
 import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, SEED_CLANS, SEED_PLAYERS } from './clans.data';
 
 describe('liste initiale', () => {
@@ -55,5 +57,35 @@ describe('findPlayer', () => {
 
   it('retourne null pour un inconnu', () => {
     expect(findPlayer(SEED_PLAYERS, 'Inconnu du bataillon')).toBeNull();
+  });
+});
+
+describe('joinPlayers', () => {
+  const village = (name: string, kage: string, clan: string | null, extra: Partial<VillageDoc> = {}): VillageDoc => ({
+    name,
+    kage,
+    clan,
+    x: 1,
+    y: 2,
+    points: 10,
+    inhabitants: 20,
+    neutral: false,
+    ...extra,
+  });
+
+  it('crée un joueur par village, avec ce qui est saisi à la main', () => {
+    expect(joinPlayers([village('Reggaeton', 'Jakojak', 'Yawata', { ce: 10, comment: 'À surveiller' })])).toEqual([
+      { name: 'Jakojak', village: 'Reggaeton', clan: 'Yawata', points: 10, inhabitants: 20, ce: 10, comment: 'À surveiller' },
+    ]);
+  });
+
+  it('ignore les villages neutres et les doublons du même joueur', () => {
+    const villages = [village('Yuuno', 'Hinata', null, { neutral: true }), village('A', 'Bob', null), village('B', 'bob', null)];
+    expect(joinPlayers(villages).map((p) => p.village)).toEqual(['A']);
+  });
+
+  it('garde un joueur ajouté à la main, sans coordonnées', () => {
+    const { x: _x, y: _y, ...offMap } = village('Loin', 'Inconnu', null);
+    expect(joinPlayers([offMap]).map((p) => p.name)).toEqual(['Inconnu']);
   });
 });

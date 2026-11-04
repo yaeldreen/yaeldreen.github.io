@@ -259,13 +259,14 @@ export class EnemiesPage implements OnDestroy {
     const troops = this.draftSurvivors();
     const current = this.store.records()[playerKey(player)];
     const unchanged = current && troops && TROOPS.every((t) => current.troops[t.key] === troops[t.key]);
-    if (troops && !unchanged) this.store.upsert({ player, troops, side: d.side, updatedAt: new Date().toISOString() });
-
+    const army = troops && !unchanged ? { troops, side: d.side, updatedAt: new Date().toISOString() } : null;
     const stats = this.draftStats();
-    if (Object.keys(stats).length) {
-      if (match) this.store.setPlayerStats(player, stats);
+    if (match) {
+      if (army) this.store.upsert({ player, ...army });
+      if (Object.keys(stats).length) this.store.setPlayerStats(player, stats);
+    } else if (army || Object.keys(stats).length) {
       // Joueur absent des listes : il faut une fiche pour garder ses infos, rangée dans « Sans Clans ».
-      else this.store.addPlayer({ name: player, village: d.village, clan: null, ...stats });
+      this.store.addPlayer({ name: player, village: d.village, clan: null, ...stats }, army ?? undefined);
     }
     this.cancel();
   }

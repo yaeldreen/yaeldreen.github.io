@@ -60,20 +60,4 @@ export class AccessGate {
     this.status.set('unlocked');
     return true;
   }
-
-  /** Change le mot de passe de tout le clan (le mot de passe actuel est demandé). */
-  async change(current: string, next: string): Promise<string | null> {
-    if ((await passwordHash(current)) !== this.expected) return 'Mot de passe actuel incorrect.';
-    if (next.trim().length < 4) return 'Le nouveau mot de passe doit faire au moins 4 caractères.';
-    const hash = await passwordHash(next.trim());
-    try {
-      const { ref, setDoc } = await accessDoc();
-      await setDoc(ref, { hash, previous: this.expected });
-    } catch {
-      return 'Changement refusé par la base : vérifiez que les règles Firestore sont publiées.';
-    }
-    this.expected = hash;
-    writeStored(STORED_KEY, hash);
-    return null;
-  }
 }

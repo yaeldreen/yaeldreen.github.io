@@ -1,10 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 import {
   collection,
-  deleteDoc,
+  deleteField,
   doc,
   Firestore,
-  getDoc,
   getDocs,
   onSnapshot,
   setDoc,
@@ -12,9 +11,9 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { firestoreDb, isFirebaseConfigured } from '../../core/firebase';
-import { MapVillage, playersMissingFromCarte } from '../../core/game-data/map-villages';
+import { hasCoordinates, MapVillage, notesOf, playersMissingFromCarte, VillageArmy, VillageDoc } from '../../core/game-data/map-villages';
 import { MonthlySnapshot, SnapshotSlot } from '../players-update/monthly-snapshot';
-import { OWN_CLAN, Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
+import { joinPlayers, OWN_CLAN, Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
 import { EnemyRecord, playerKey } from './enemies.model';
 
 /** `unconfigured` : configuration web Firebase absente (core/firebase.ts). */
@@ -27,33 +26,55 @@ export interface MapImportSummary {
   clansAdded: string[];
 }
 
-const ENEMIES = 'enemies';
-const PLAYERS = 'players';
 const CLANS = 'clans';
 const VILLAGES = 'villages';
 const SNAPSHOTS = 'snapshots';
 /** Une écriture groupée Firestore accepte 500 opérations : on reste en dessous. */
 const BATCH_SIZE = 450;
-/** Document témoin : la liste initiale n'est copiée qu'une fois. */
-const SEED_DOC = ['meta', 'seed'] as const;
-
 /** Identifiant de document Firestore : pas de « / » ni de forme réservée « __x__ ». */
 const docId = (name: string): string => encodeURIComponent(playerKey(name));
 
 /**
+ * Un village par nom : un doublon écrit sous un autre identifiant est écarté, celui mis à jour par les imports est gardé.
+ * Un ancien document sans le champ `neutral` compte comme un village de joueur.
+ */
+export function uniqueVillages(docs: readonly { id: string; data: VillageDoc }[]): VillageDoc[] {
+  const byName = new Map<string, VillageDoc>();
+  for (const { id, data } of docs) {
+    const key = playerKey(data.name);
+    if (!byName.has(key) || id === docId(data.name)) byName.set(key, { ...data, neutral: data.neutral === true });
+  }
+  return [...byName.values()];
+}
+
+/** Armées, indexées par nom de joueur normalisé (`playerKey`). */
+export function armyRecords(villages: readonly VillageDoc[]): Record<string, EnemyRecord> {
+  return Object.fromEntries(villages.flatMap((v) => (v.army && !v.neutral ? [[playerKey(v.kage), { player: v.kage, ...v.army }]] : [])));
+}
+
+/** Document écrit par un import : les notes et l'armée sont conservées, sauf l'armée de notre clan, jamais enregistrée. */
+export function importedVillage(village: MapVillage, previous: VillageDoc | undefined): MapVillage {
+  const { army, ...record } = { ...notesOf(previous), ...village };
+  return army && village.clan !== OWN_CLAN ? { ...record, army } : record;
+}
+
+/**
  * Infos ennemis partagées via Firestore, mises à jour en direct pour tout le monde :
- * armées (`enemies`), joueurs (`players`) et clans (`clans`).
+ * joueurs, armées et carte (`villages`) et clans (`clans`).
  * Accès ouvert à tous (choix assumé) ; seules les données mal formées sont refusées (firestore.rules).
  */
 @Injectable({ providedIn: 'root' })
 export class EnemiesStore {
-  /** Armées, indexées par nom de joueur normalisé (`playerKey`). */
-  readonly records = signal<Record<string, EnemyRecord>>({});
-  /** Liste initiale tant que la base n'a pas répondu (ou sans configuration). */
-  readonly players = signal<readonly Player[]>(SEED_PLAYERS);
   readonly clanNames = signal<readonly string[]>(SEED_CLANS);
-  /** Carte du jeu (coordonnées, points, habitants, clans), importée depuis MAJ joueurs. */
-  readonly villages = signal<readonly MapVillage[]>([]);
+  /** Tous les documents de `villages` : la référence pour les joueurs, y compris ce qui est saisi à la main. */
+  readonly villageRecords = signal<readonly VillageDoc[]>([]);
+  /** Carte du jeu : les villages qui ont des coordonnées. */
+  readonly villages = computed(() => this.villageRecords().filter(hasCoordinates));
+  /** Vrais identifiants des documents de villages, doublons compris. */
+  private villageDocs: readonly { id: string; data: VillageDoc }[] = [];
+  readonly records = computed(() => armyRecords(this.villageRecords()));
+  /** Liste initiale tant que la base n'a pas répondu (ou sans configuration). */
+  readonly players = computed((): readonly Player[] => (this.villageRecords().length ? joinPlayers(this.villageRecords()) : SEED_PLAYERS));
   /** Relevés mensuels des points et habitants : mois en cours et mois précédent. */
   readonly snapshots = signal<Record<SnapshotSlot, MonthlySnapshot | null>>({ current: null, previous: null });
   readonly status = signal<StoreStatus>(isFirebaseConfigured() ? 'loading' : 'unconfigured');
@@ -66,26 +87,6 @@ export class EnemiesStore {
     const db = (this.db = firestoreDb());
     const readError = () => this.error.set('Lecture des infos impossible : vérifiez la base Firestore et ses règles.');
 
-    onSnapshot(
-      collection(db, ENEMIES),
-      (snapshot) => {
-        const records: Record<string, EnemyRecord> = {};
-        for (const d of snapshot.docs) {
-          const record = d.data() as EnemyRecord;
-          records[playerKey(record.player)] = record;
-        }
-        this.records.set(records);
-        this.status.set('ready');
-      },
-      readError,
-    );
-    onSnapshot(
-      collection(db, PLAYERS),
-      (snapshot) => {
-        if (!snapshot.empty) this.players.set(snapshot.docs.map((d) => d.data() as Player));
-      },
-      readError,
-    );
     onSnapshot(
       collection(db, CLANS),
       (snapshot) => {
@@ -103,23 +104,46 @@ export class EnemiesStore {
     );
     onSnapshot(
       collection(db, VILLAGES),
-      (snapshot) => this.villages.set(snapshot.docs.map((d) => d.data() as MapVillage)),
+      (snapshot) => {
+        this.villageDocs = snapshot.docs.map((d) => ({ id: d.id, data: d.data() as VillageDoc }));
+        this.villageRecords.set(uniqueVillages(this.villageDocs));
+        this.status.set('ready');
+      },
       readError,
     );
-    void this.seedOnce(db);
   }
 
   /** Le plus récent remplace l'ancien. Non bloquant : la copie locale est à jour tout de suite. */
-  upsert(record: EnemyRecord): void {
-    this.run(`Enregistrement de ${record.player}`, (db) => setDoc(doc(db, ENEMIES, docId(record.player)), record));
+  upsert({ player, ...army }: EnemyRecord): void {
+    if (this.villageOf(player)) this.updateVillage(`Enregistrement de ${player}`, player, { army });
+    else this.addPlayer({ name: player, village: '', clan: null }, army);
   }
 
   remove(player: string): void {
-    this.run(`Suppression de l'armée de ${player}`, (db) => deleteDoc(doc(db, ENEMIES, docId(player))));
+    this.updateVillage(`Suppression de l'armée de ${player}`, player, { army: deleteField() });
   }
 
   addClan(name: string): void {
     this.run(`Création du clan ${name}`, (db) => setDoc(doc(db, CLANS, docId(name)), { name }));
+  }
+
+  private villageOf(player: string): VillageDoc | undefined {
+    return this.villageRecords().find((v) => !v.neutral && playerKey(v.kage) === playerKey(player));
+  }
+
+  /** Le document affiché pour ce village, même si son identifiant n'a pas la forme habituelle. */
+  private villageRef(db: Firestore, village: VillageDoc) {
+    const docs = this.villageDocs.filter((d) => playerKey(d.data.name) === playerKey(village.name));
+    return doc(db, VILLAGES, docs.find((d) => d.id === docId(village.name))?.id ?? docs[0]?.id ?? docId(village.name));
+  }
+
+  /**
+   * N'écrit que les champs fournis : plusieurs écritures peuvent partir d'affilée sur le même village (armée et niveaux).
+   * `neutral` est renvoyé car la règle l'exige et un ancien document peut ne pas l'avoir.
+   */
+  private updateVillage(label: string, player: string, changes: Record<string, unknown>): void {
+    const village = this.villageOf(player);
+    if (village) this.run(label, (db) => updateDoc(this.villageRef(db, village), { ...changes, neutral: false }));
   }
 
   /** Les joueurs du clan passent dans « Sans Clans ». */
@@ -127,40 +151,47 @@ export class EnemiesStore {
     this.run(`Suppression du clan ${name}`, (db) => {
       const batch = writeBatch(db);
       batch.delete(doc(db, CLANS, docId(name)));
-      for (const player of this.players().filter((p) => p.clan === name)) {
-        batch.update(doc(db, PLAYERS, docId(player.name)), { clan: null });
+      for (const village of this.villageRecords().filter((v) => !v.neutral && v.clan === name)) {
+        batch.update(this.villageRef(db, village), { clan: null, neutral: false });
       }
       return batch.commit();
     });
   }
 
-  addPlayer(player: Player): void {
-    this.run(`Ajout de ${player.name}`, (db) => setDoc(doc(db, PLAYERS, docId(player.name)), player));
+  /** Joueur absent de la carte : un document sans coordonnées, que l'import de la carte complétera ou retirera. */
+  addPlayer({ name, village, clan, points, inhabitants, ...notes }: Player, army?: VillageArmy): void {
+    const record: VillageDoc = { ...notes, ...(army ? { army } : {}), name: village || name, kage: name, clan, points: points ?? 0, inhabitants: inhabitants ?? 0, neutral: false };
+    this.run(`Ajout de ${name}`, (db) => setDoc(doc(db, VILLAGES, docId(record.name)), record, { merge: true }));
   }
 
   setPlayerClan(player: string, clan: string | null): void {
-    this.run(`Changement de clan de ${player}`, (db) => updateDoc(doc(db, PLAYERS, docId(player)), { clan }));
+    this.updateVillage(`Changement de clan de ${player}`, player, { clan });
   }
 
   /** Ne modifie que les infos fournies. */
   setPlayerStats(player: string, stats: Partial<Record<PlayerStatKey, number | null>>): void {
-    this.run(`Mise à jour de ${player}`, (db) => updateDoc(doc(db, PLAYERS, docId(player)), stats));
+    const { points, inhabitants, ...notes } = stats;
+    this.updateVillage(`Mise à jour de ${player}`, player, {
+      ...notes,
+      ...(points != null ? { points } : {}),
+      ...(inhabitants != null ? { inhabitants } : {}),
+    });
   }
 
-  /** Supprime le joueur et son armée. */
+  /** Supprime le joueur et son village, armée comprise. */
   removePlayer(player: string): void {
     this.run(`Suppression de ${player}`, (db) => {
       const batch = writeBatch(db);
-      batch.delete(doc(db, PLAYERS, docId(player)));
-      batch.delete(doc(db, ENEMIES, docId(player)));
+      for (const { id, data } of this.villageDocs) {
+        if (!data.neutral && playerKey(data.kage) === playerKey(player)) batch.delete(doc(db, VILLAGES, id));
+      }
       return batch.commit();
     });
   }
 
   /**
-   * Remplace la carte par l'export du jeu et synchronise les joueurs (clan, village, points, habitants)
-   * et les clans. Les villages neutres vont seulement dans la carte. Les infos saisies à la main
-   * (armées, CE, centres…) ne sont pas touchées, sauf pour notre clan dont on ne garde que village et kage.
+   * Remplace la carte par l'export du jeu et ajoute les nouveaux clans. Les infos saisies à la main (armées, CE, centres…)
+   * sont conservées et suivent un joueur renommé.
    */
   /** `partial` : la liste ne couvre qu'une partie de la carte (classement), les villages absents restent. */
   async importMap(villages: readonly MapVillage[], { partial = false } = {}): Promise<MapImportSummary> {
@@ -170,12 +201,18 @@ export class EnemiesStore {
     const summary: MapImportSummary = { villages: villages.length, playersUpdated: 0, playersAdded: 0, clansAdded: [] };
 
     const keep = new Set(villages.map((v) => docId(v.name)));
-    for (const v of villages) ops.push((b) => b.set(doc(db, VILLAGES, docId(v.name)), v));
+    const known = this.villageRecords().filter((v) => !v.neutral);
+    const sameKage = (v: MapVillage) => known.find((k) => playerKey(k.kage) === playerKey(v.kage));
+    const sameVillage = (v: MapVillage) => known.find((k) => playerKey(k.name) === playerKey(v.name));
+    for (const v of villages) {
+      const record = v.neutral ? v : importedVillage(v, sameKage(v) ?? sameVillage(v));
+      ops.push((b) => b.set(doc(db, VILLAGES, docId(v.name)), record));
+    }
     // Les villages neutres absents de l'export restent : ils ont leur propre mise à jour.
-    for (const old of this.villages()) {
-      if (old.neutral || keep.has(docId(old.name))) continue;
-      // Import partiel : seul l'ancien village d'un joueur qui a renommé le sien disparaît.
-      if (!partial || villages.some((v) => playerKey(v.kage) === playerKey(old.kage))) ops.push((b) => b.delete(doc(db, VILLAGES, docId(old.name))));
+    for (const { id, data } of this.villageDocs) {
+      if (data.neutral === true || keep.has(id)) continue;
+      // Import partiel : seul l'ancien document d'un village renommé ou en double disparaît.
+      if (!partial || villages.some((v) => playerKey(v.kage) === playerKey(data.kage))) ops.push((b) => b.delete(doc(db, VILLAGES, id)));
     }
 
     const knownClans = new Set(this.clanNames().map(playerKey));
@@ -185,27 +222,9 @@ export class EnemiesStore {
       ops.push((b) => b.set(doc(db, CLANS, docId(clan)), { name: clan }));
     }
 
-    const players = this.players();
     for (const v of villages.filter((v) => !v.neutral)) {
-      const existing =
-        players.find((p) => playerKey(p.name) === playerKey(v.kage)) ?? players.find((p) => playerKey(p.village) === playerKey(v.name));
-      // Notre clan : seulement le village et le kage (les coordonnées sont dans la carte), sans armée ni niveaux.
-      if (v.clan === OWN_CLAN) {
-        const name = existing?.name ?? v.kage;
-        if (existing) summary.playersUpdated++;
-        else summary.playersAdded++;
-        ops.push((b) => b.set(doc(db, PLAYERS, docId(name)), { name, village: v.name, clan: v.clan }));
-        if (this.records()[playerKey(name)]) ops.push((b) => b.delete(doc(db, ENEMIES, docId(name))));
-        continue;
-      }
-      const fromMap = { village: v.name, clan: v.clan, points: v.points, inhabitants: v.inhabitants };
-      if (existing) {
-        summary.playersUpdated++;
-        ops.push((b) => b.update(doc(db, PLAYERS, docId(existing.name)), fromMap));
-      } else {
-        summary.playersAdded++;
-        ops.push((b) => b.set(doc(db, PLAYERS, docId(v.kage)), { name: v.kage, ...fromMap }));
-      }
+      if (sameKage(v) || sameVillage(v)) summary.playersUpdated++;
+      else summary.playersAdded++;
     }
 
     await this.commitAll(db, ops);
@@ -215,7 +234,7 @@ export class EnemiesStore {
   /** Remplace les villages neutres de la carte (les villages de joueurs ne sont pas touchés). Retourne leur nombre. */
   /**
    * Applique l'export complet de la carte : villages neutres, puis joueurs. Les joueurs absents de la liste sont supprimés
-   * (village, fiche et armée), ainsi que tout village en double. On lit la base pour viser les vrais identifiants de documents.
+   * (village et armée), ainsi que tout village en double. On lit la base pour viser les vrais identifiants de documents.
    */
   async importCarte(neutral: readonly MapVillage[], players: readonly MapVillage[]): Promise<MapImportSummary & { removed: string[] }> {
     const db = this.db;
@@ -225,18 +244,14 @@ export class EnemiesStore {
 
     const ops: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
     const keep = new Set([...neutral, ...players].map((v) => docId(v.name)));
-    for (const d of (await getDocs(collection(db, VILLAGES))).docs) {
-      if (!(d.data() as MapVillage).neutral && !keep.has(d.id)) ops.push((b) => b.delete(d.ref));
-    }
-    const playerDocs = (await getDocs(collection(db, PLAYERS))).docs;
+    const docs = (await getDocs(collection(db, VILLAGES))).docs;
+    const records = docs.map((d) => d.data() as VillageDoc).filter((v) => !v.neutral);
     const gone = playersMissingFromCarte(
-      playerDocs.map((d) => d.data() as Player),
+      records.map((v) => ({ name: v.kage, village: v.name })),
       players,
     );
-    const goneKeys = new Set(gone.map((p) => playerKey(p.name)));
-    for (const d of playerDocs) if (goneKeys.has(playerKey((d.data() as Player).name))) ops.push((b) => b.delete(d.ref));
-    for (const d of (await getDocs(collection(db, ENEMIES))).docs) {
-      if (goneKeys.has(playerKey((d.data() as EnemyRecord).player))) ops.push((b) => b.delete(d.ref));
+    for (const d of docs) {
+      if (!(d.data() as VillageDoc).neutral && !keep.has(d.id)) ops.push((b) => b.delete(d.ref));
     }
     await this.commitAll(db, ops);
     return { ...summary, removed: gone.map((p) => p.name) };
@@ -286,16 +301,4 @@ export class EnemiesStore {
   }
 
   /** Copie la liste initiale (148 joueurs, leurs clans) si la base ne l'a jamais reçue. */
-  private async seedOnce(db: Firestore): Promise<void> {
-    try {
-      if ((await getDoc(doc(db, ...SEED_DOC))).exists()) return;
-      const batch = writeBatch(db);
-      for (const name of SEED_CLANS) batch.set(doc(db, CLANS, docId(name)), { name });
-      for (const player of SEED_PLAYERS) batch.set(doc(db, PLAYERS, docId(player.name)), player);
-      batch.set(doc(db, ...SEED_DOC), { at: new Date().toISOString() });
-      await batch.commit();
-    } catch {
-      // Hors ligne ou refusé : la liste initiale reste affichée, nouvel essai au prochain chargement.
-    }
-  }
 }
