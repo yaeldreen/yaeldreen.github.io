@@ -1,4 +1,4 @@
-import { applyCoordinates, findVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, playersMissingFromCarte } from './map-villages';
+import { applyCarte, findVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, playersMissingFromCarte } from './map-villages';
 
 const EXPORT = JSON.stringify([
   { id: -75, name: 'Yuuno', kage: 'Hinata Yuuno', x: 8124, y: -1, neutral: true, clan: null, points: 0, inhabitants: 0 },
@@ -103,43 +103,49 @@ describe('parseCompactExport', () => {
   });
 });
 
-describe('applyCoordinates', () => {
+describe('applyCarte', () => {
   const map = parseMapExport(EXPORT).map(({ gameId: _gameId, ...v }) => v);
-  const entry = { name: 'Tard', kage: 'Serpent', x: 1, y: 2, clan: null, points: 5, inhabitants: 6, neutral: false };
+  const entry = { name: 'Tard', kage: 'Serpent', x: 1, y: 2, clan: 'Palace', points: 5, inhabitants: 6, neutral: false };
+
+  it('reprend coordonnées, clan, points et habitants, et garde les notes et l’armée', () => {
+    const army = { troops: { genin: 1, chuunin: 2, jounin: 3 }, side: null, updatedAt: '2026-11-04' };
+    const known = map.map((v) => (v.kage === 'Serpent' ? { ...v, ce: 12, army } : v));
+    expect(applyCarte(known, [entry])).toEqual([{ ...entry, ce: 12, army }]);
+  });
+
+  it('passe en « sans clan » un joueur qui a quitté son clan', () => {
+    expect(applyCarte(map, [{ ...entry, clan: null }])[0].clan).toBeNull();
+  });
 
   it('reconnaît par son identifiant un joueur qui a changé de nom et de village', () => {
     const known = [{ ...entry, gameId: 80, ce: 12 }];
     const renamed = { ...entry, gameId: 80, name: 'Nouveau', kage: 'Autre', x: 9 };
-    expect(applyCoordinates(known, [renamed])).toEqual([{ ...renamed, ce: 12 }]);
+    expect(applyCarte(known, [renamed])).toEqual([{ ...renamed, ce: 12 }]);
   });
 
-  it('ajoute l’identifiant à un village connu qui n’en avait pas', () => {
-    expect(applyCoordinates(map, [{ ...entry, gameId: 80 }])[0].gameId).toBe(80);
-  });
-
-  it('ne change que les coordonnées d’un village connu, et garde ses notes', () => {
-    const known = map.map((v) => (v.kage === 'Serpent' ? { ...v, ce: 12 } : v));
-    expect(applyCoordinates(known, [entry])).toEqual([{ ...entry, clan: 'Tsukuyomi', points: 2361, inhabitants: 410, ce: 12 }]);
+  it('ajoute l’identifiant à un village connu qui n’en avait pas, et le garde si la ligne n’en a pas', () => {
+    expect(applyCarte(map, [{ ...entry, gameId: 80 }])[0].gameId).toBe(80);
+    expect(applyCarte([{ ...entry, gameId: 80 }], [entry])[0].gameId).toBe(80);
   });
 
   it('retrouve par le joueur un village renommé', () => {
-    expect(applyCoordinates(map, [{ ...entry, name: 'Nouveau' }])[0]).toMatchObject({ name: 'Nouveau', clan: 'Tsukuyomi', x: 1 });
+    expect(applyCarte(map, [{ ...entry, name: 'Nouveau' }])[0]).toMatchObject({ name: 'Nouveau', clan: 'Palace', x: 1 });
   });
 
-  it('place sur la carte un joueur ajouté à la main', () => {
-    const offMap = [{ name: 'Tard', kage: 'Serpent', clan: 'Palace', points: 1, inhabitants: 2, neutral: false, ce: 3 }];
-    expect(applyCoordinates(offMap, [entry])[0]).toMatchObject({ x: 1, y: 2, clan: 'Palace', ce: 3 });
+  it('place sur la carte un joueur ajouté à la main, avec ses notes', () => {
+    const offMap = [{ name: 'Tard', kage: 'Serpent', clan: null, points: 1, inhabitants: 2, neutral: false, ce: 3 }];
+    expect(applyCarte(offMap, [entry])[0]).toMatchObject({ x: 1, y: 2, clan: 'Palace', ce: 3 });
   });
 
-  it('ajoute un village inconnu avec le clan de l’export', () => {
-    const fresh = { ...entry, name: 'Neuf', kage: 'Bob', clan: 'Palace' };
-    expect(applyCoordinates(map, [fresh])).toEqual([fresh]);
+  it('ajoute un village inconnu tel quel', () => {
+    const fresh = { ...entry, name: 'Neuf', kage: 'Bob' };
+    expect(applyCarte(map, [fresh])).toEqual([fresh]);
   });
 
   it('ne confond pas deux villages qui ne diffèrent que par les accents', () => {
-    const sparta = { ...entry, name: 'Sparta', kage: 'CafardTueur', x: 8165, y: -7, points: 0 };
-    const accents = { ...entry, name: 'SPÄRTÄ', kage: 'CÄFÄRDTUEUR', x: 8191, y: -3, points: 47 };
-    expect(applyCoordinates([sparta, accents], [{ ...accents, x: 1, points: 64 }])[0]).toMatchObject({ name: 'SPÄRTÄ', x: 1, points: 47 });
+    const sparta = { ...entry, name: 'Sparta', kage: 'CafardTueur', ce: 1 };
+    const accents = { ...entry, name: 'SPÄRTÄ', kage: 'CÄFÄRDTUEUR', ce: 2 };
+    expect(applyCarte([sparta, accents], [{ ...entry, name: 'SPÄRTÄ', kage: 'CÄFÄRDTUEUR' }])[0].ce).toBe(2);
   });
 });
 

@@ -1,4 +1,4 @@
-import { computeReturnRows, secondsPerKm, ticketSecondsPerKm, travelMs } from './travel.logic';
+import { clanVillages, computeReturnRows, secondsPerKm, ticketSecondsPerKm, travelMs } from './travel.logic';
 
 describe('temps de trajet', () => {
   it('retire le bonus du CE aux 208 s de base, sans arrondi (CE 11 : 208 × 0,45 = 93,6 s)', () => {
@@ -32,5 +32,19 @@ describe('temps de trajet', () => {
     expect(row.marginMs).toBe(3_604_000);
     expect(row.ticketMarginMs).toBe(1_810_000);
     expect(row.ticketSpeedPerKm).toBe('47 s/km');
+  });
+});
+
+describe('clanVillages', () => {
+  const village = (name: string) => ({ name, kage: name, x: 1, y: 1, clan: null, points: 0, inhabitants: 0, neutral: false });
+  const players = [
+    { name: 'B', village: 'B', clan: 'Tsukuyomi' },
+    { name: 'A', village: 'A', clan: 'Tsukuyomi' },
+    { name: 'C', village: 'C', clan: 'Akatsuki' },
+    { name: 'Absent', village: 'Absent', clan: 'Tsukuyomi' },
+  ];
+
+  it('garde les membres de notre clan présents sur la carte, triés par joueur', () => {
+    expect(clanVillages(players, [village('A'), village('B'), village('C')]).map((v) => v.name)).toEqual(['A', 'B']);
   });
 });

@@ -1,4 +1,25 @@
-<app-card class="p-4 sm:p-6 space-y-4">
+<ng-template #links let-village>
+  @if (linksOf(village); as list) {
+    @if (list.length) {
+      <div class="flex gap-1 shrink-0">
+        @for (link of list; track link.label) {
+          <a
+            [href]="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-1.5 py-1 rounded-md text-[10px] font-medium"
+            [class]="link.primary ? 'bg-red-800 hover:bg-red-700 text-white' : 'bg-stone-800 hover:bg-stone-700 text-stone-200'"
+          >
+            {{ link.label }}
+          </a>
+        }
+      </div>
+    }
+  }
+</ng-template>
+
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6 items-start">
+<app-card class="lg:col-span-2 min-w-0 lg:max-h-[calc(100dvh-11.5rem)] lg:overflow-y-auto p-4 sm:p-6 space-y-4">
   <div class="border-b border-stone-800 pb-3">
     <h2 class="font-semibold text-stone-200"><span class="mr-2" aria-hidden="true">📡</span>Radar du jeu</h2>
     <p class="text-xs text-stone-400 mt-1">Choisissez le village au centre et ce qui apparaît sur la carte.</p>
@@ -29,7 +50,7 @@
         <button type="button" (click)="setAllShown(true)" class="flex-1 bg-stone-800 hover:bg-stone-700 text-stone-200 py-2 rounded-lg text-xs font-medium cursor-pointer">Tout cocher</button>
         <button type="button" (click)="setAllShown(false)" class="flex-1 bg-stone-800 hover:bg-stone-700 text-stone-200 py-2 rounded-lg text-xs font-medium cursor-pointer">Tout décocher</button>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
         @for (group of groups(); track group.name) {
           <label class="flex items-center gap-2 bg-stone-950/60 border border-stone-800 rounded-lg px-3 py-2 text-xs cursor-pointer select-none" [class.opacity-50]="!isShown(group.name)">
             <input type="checkbox" [checked]="isShown(group.name)" (change)="setShown(group.name, $any($event.target).checked)" class="accent-red-700 w-4 h-4 cursor-pointer shrink-0" />
@@ -41,14 +62,39 @@
       </div>
     </div>
   </details>
+
+  @if (prefillEnabled) {
+  <details class="border border-stone-800 rounded-xl">
+    <summary class="px-3 py-2.5 text-sm font-medium text-stone-200 cursor-pointer select-none">
+      Préremplir les attaques · <span class="font-mono text-xs text-stone-400">{{ plan().genin || 0 }} / {{ plan().chuunin || 0 }} / {{ plan().jounin || 0 }}</span> · {{ plan().mode === 'pillage' ? 'Pillage' : 'Combat' }}
+    </summary>
+    <div class="px-3 pb-3 space-y-3">
+      <div class="grid grid-cols-3 gap-2">
+        @for (troop of planTroops; track troop.key) {
+          <div>
+            <span class="block text-[11px] text-stone-400 mb-1">{{ troop.label }}</span>
+            <app-number-input [value]="plan()[troop.key]" (valueChange)="setTroop(troop.key, $event)" [min]="0" />
+          </div>
+        }
+      </div>
+      <app-segmented-control class="block" [options]="modeOptions" [value]="plan().mode" (valueChange)="setPlan({ mode: $event })" />
+      <p class="text-[11px] text-stone-500">
+        Retenu sur cet appareil. Pour que le jeu reprenne ces valeurs, installez une fois le
+        <a href="radar-preremplissage.user.js" target="_blank" rel="noopener" class="text-red-300 underline">script de préremplissage</a>
+        (Tampermonkey, ou Userscripts sur iPhone). Sans lui, le lien ouvre simplement la page d'attaque. <span class="text-amber-300">Avec lui, « Attaque » envoie les troupes après 5 à 10 secondes, sauf si vous annulez sur la page du jeu.</span>
+      </p>
+    </div>
+  </details>
+  }
 </app-card>
 
+<div class="lg:col-span-3 min-w-0 lg:h-[calc(100dvh-11.5rem)] lg:overflow-y-auto lg:pr-2 flex flex-col gap-4 sm:gap-6">
 @if (origin(); as o) {
   <app-card class="p-3 sm:p-4 space-y-3">
     <div class="flex items-center justify-end gap-2">
-      <button type="button" (click)="zoomBy(1 / 1.45)" aria-label="Dézoomer" class="w-10 h-9 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-lg cursor-pointer">−</button>
+      <button type="button" (click)="zoomStep(-0.25)" aria-label="Dézoomer" class="w-10 h-9 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-lg cursor-pointer">−</button>
       <span class="font-mono text-xs text-stone-400 w-12 text-center">{{ zoomPercent() }} %</span>
-      <button type="button" (click)="zoomBy(1.45)" aria-label="Zoomer" class="w-10 h-9 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-lg cursor-pointer">+</button>
+      <button type="button" (click)="zoomStep(0.25)" aria-label="Zoomer" class="w-10 h-9 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-lg cursor-pointer">+</button>
       <button type="button" (click)="resetView()" class="h-9 px-3 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg text-xs cursor-pointer">Recentrer</button>
     </div>
 
@@ -66,13 +112,13 @@
         (pointercancel)="onPointerUp($event)"
         (pointerleave)="onPointerUp($event)"
       >
-        <line x1="0" y1="300" [attr.x2]="mapSize" y2="300" stroke="#292524" />
-        <line x1="300" y1="0" x2="300" [attr.y2]="mapSize" stroke="#292524" />
+        <line x1="0" [attr.y1]="mapHeight / 2" [attr.x2]="mapWidth" [attr.y2]="mapHeight / 2" stroke="#292524" />
+        <line [attr.x1]="mapWidth / 2" y1="0" [attr.x2]="mapWidth / 2" [attr.y2]="mapHeight" stroke="#292524" />
         @for (ring of rings(); track ring.km) {
-          <circle cx="300" cy="300" [attr.r]="ring.r" fill="none" stroke="#44403c" stroke-dasharray="4 7" [attr.stroke-width]="unit()" />
-          <text [attr.x]="300 + ring.r + 3 * unit()" [attr.y]="296" fill="#78716c" [attr.font-size]="10 * unit()">{{ ring.km }}</text>
+          <circle [attr.cx]="mapWidth / 2" [attr.cy]="mapHeight / 2" [attr.r]="ring.r" fill="none" stroke="#44403c" stroke-dasharray="4 7" [attr.stroke-width]="unit()" />
+          <text [attr.x]="mapWidth / 2 + ring.r + 3 * unit()" [attr.y]="mapHeight / 2 - 4 * unit()" fill="#78716c" [attr.font-size]="10 * unit()">{{ ring.km }}</text>
         }
-        <circle cx="300" cy="300" [attr.r]="radiusRing()" fill="rgba(153, 27, 27, 0.08)" stroke="#b91c1c" [attr.stroke-width]="1.5 * unit()" stroke-dasharray="7 5" />
+        <circle [attr.cx]="mapWidth / 2" [attr.cy]="mapHeight / 2" [attr.r]="radiusRing()" fill="rgba(153, 27, 27, 0.08)" stroke="#b91c1c" [attr.stroke-width]="1.5 * unit()" stroke-dasharray="7 5" />
 
         @for (point of points(); track point.village.name) {
           <circle
@@ -83,7 +129,7 @@
             [attr.stroke]="selected()?.name === point.village.name ? '#ffffff' : '#0c0a09'"
             [attr.stroke-width]="(selected()?.name === point.village.name ? 2 : 1) * unit()"
           />
-          @if (showLabels() || selected()?.name === point.village.name) {
+          @if (selected()?.name === point.village.name) {
             <text
               [attr.x]="point.x + 7 * unit()"
               [attr.y]="point.y - 7 * unit()"
@@ -109,14 +155,14 @@
           />
         }
 
-        <circle cx="300" cy="300" [attr.r]="9 * unit()" fill="#ef4444" stroke="#ffffff" [attr.stroke-width]="2 * unit()" />
-        <text x="300" [attr.y]="300 + 22 * unit()" fill="#f5f5f4" stroke="#0c0a09" [attr.stroke-width]="3 * unit()" paint-order="stroke" text-anchor="middle" font-weight="600" class="pointer-events-none" [attr.font-size]="12 * unit()">
+        <circle [attr.cx]="mapWidth / 2" [attr.cy]="mapHeight / 2" [attr.r]="9 * unit()" fill="#ef4444" stroke="#ffffff" [attr.stroke-width]="2 * unit()" />
+        <text [attr.x]="mapWidth / 2" [attr.y]="mapHeight / 2 + 22 * unit()" fill="#f5f5f4" stroke="#0c0a09" [attr.stroke-width]="3 * unit()" paint-order="stroke" text-anchor="middle" font-weight="600" class="pointer-events-none" [attr.font-size]="12 * unit()">
           {{ o.name }}
         </text>
       </svg>
 
       @if (selected(); as s) {
-        <div class="absolute left-2 right-2 bottom-2 sm:right-auto sm:w-80 bg-stone-900/95 border border-stone-700 rounded-xl p-3 space-y-2 shadow-xl" role="dialog" aria-label="Fiche du village">
+        <div class="m-2 sm:m-0 sm:absolute sm:left-2 sm:bottom-2 sm:w-80 bg-stone-900/95 border border-stone-700 rounded-xl p-3 space-y-2 shadow-xl" role="dialog" aria-label="Fiche du village">
           <div class="flex items-start justify-between gap-2">
             <div class="min-w-0">
               <p class="font-semibold text-sm text-stone-100 truncate">{{ s.name }}</p>
@@ -135,11 +181,14 @@
             <span>📍 {{ s.x }} / {{ s.y }}</span>
             <span class="font-bold text-emerald-400">{{ selectedDistance() }} km</span>
           </div>
-          <button type="button" (click)="center(s)" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-200 py-2 rounded-lg text-xs font-medium cursor-pointer">Centrer ici</button>
+          <div class="flex flex-wrap items-center gap-1">
+            <ng-container [ngTemplateOutlet]="links" [ngTemplateOutletContext]="{ $implicit: s }" />
+            <button type="button" (click)="center(s)" class="bg-stone-800 hover:bg-stone-700 text-stone-200 px-1.5 py-1 rounded-md text-[10px] font-medium cursor-pointer">Centrer ici</button>
+          </div>
         </div>
       }
     </div>
-    <p class="text-[11px] text-stone-500">Touchez un point pour sa fiche. Déplacez la carte au doigt, zoomez en pinçant ou à la molette. Les noms apparaissent à partir de 300 %. Le cercle rouge suit le rayon choisi ci-dessous.</p>
+    <p class="text-[11px] text-stone-500">Touchez un point pour sa fiche. Déplacez la carte au doigt, zoomez en pinçant ou à la molette. Le cercle rouge suit le rayon choisi ci-dessous.</p>
   </app-card>
 
   <app-card class="p-4 sm:p-6 space-y-3">
@@ -151,14 +200,14 @@
     @if (nearby().length) {
       <ol class="space-y-2">
         @for (entry of nearby(); track entry.village.name) {
-          <li>
+          <li class="bg-stone-950/60 border border-stone-800 rounded-xl px-3 py-2 flex items-center gap-2">
             <button
               type="button"
               (click)="selected.set(entry.village); mapShell.scrollIntoView({ block: 'center' })"
-              class="w-full text-left bg-stone-950/60 border border-stone-800 hover:border-stone-600 rounded-xl px-3 py-2.5 flex items-center gap-3 cursor-pointer"
+              class="min-w-0 flex-1 text-left flex items-center gap-2 cursor-pointer"
             >
               <span class="w-2.5 h-2.5 rounded-full shrink-0" [style.background]="groupColor(entry.village)"></span>
-              <span class="min-w-0 flex-1">
+              <span class="min-w-0">
                 <span class="block font-bold text-red-300 text-sm truncate">{{ entry.village.name }}</span>
                 <span class="block text-xs text-stone-400 truncate">
                   @if (!entry.village.neutral) {
@@ -167,8 +216,9 @@
                   {{ groupName(entry.village) }} · <span class="font-mono">{{ entry.village.x }} / {{ entry.village.y }}</span>
                 </span>
               </span>
-              <span class="shrink-0 font-mono font-bold text-emerald-400 text-sm">{{ entry.distance }} km</span>
             </button>
+            <ng-container [ngTemplateOutlet]="links" [ngTemplateOutletContext]="{ $implicit: entry.village }" />
+            <span class="shrink-0 font-mono font-bold text-emerald-400 text-sm">{{ entry.distance }} km</span>
           </li>
         }
       </ol>
@@ -177,3 +227,5 @@
     }
   </app-card>
 }
+</div>
+</div>

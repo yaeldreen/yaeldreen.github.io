@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { applyCoordinates, MapVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, RankingEntry } from '../../core/game-data/map-villages';
+import { applyCarte, MapVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, RankingEntry } from '../../core/game-data/map-villages';
 import { Card } from '../../shared/ui/card';
 import { EnemiesStore, MapImportSummary } from '../enemies/enemies-store';
 import { buildSnapshot, compareSnapshots, EvolutionRow, isSnapshotDue, monthLabel } from './monthly-snapshot';
@@ -121,12 +121,12 @@ export class PlayersUpdatePage {
     }
     this.carteImporting.set(true);
     try {
-      const villages = applyCoordinates(this.store.villageRecords(), carte.players);
+      const villages = applyCarte(this.store.villageRecords(), carte.players);
       const summary = await this.store.importCarte(carte.neutral, villages);
       this.carteResult.set({ neutral: carte.neutral.length, updated: summary.playersUpdated, added: summary.playersAdded, removed: summary.removed });
       this.carteText.set('');
-      // Cet export couvre tous les joueurs : c'est lui qui déclenche le relevé mensuel, avec ses propres clans, points et habitants.
-      await this.snapshotIfDue(villages.map((v, i) => ({ ...v, clan: carte.players[i].clan, points: carte.players[i].points, inhabitants: carte.players[i].inhabitants })));
+      // Cet export couvre tous les joueurs : c'est lui qui déclenche le relevé mensuel.
+      await this.snapshotIfDue(villages);
     } catch (e) {
       this.carteError.set(`Import refusé : ${(e as Error).message}. Vérifiez que les règles Firestore sont publiées.`);
     } finally {

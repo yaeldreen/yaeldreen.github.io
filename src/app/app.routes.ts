@@ -38,11 +38,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/production/production-page').then((m) => m.ProductionPage),
   },
   {
-    path: 'proches',
-    title: 'Qui est le plus proche',
-    loadComponent: () => import('./features/nearest/nearest-page').then((m) => m.NearestPage),
-  },
-  {
     path: 'radar',
     title: 'Radar du jeu',
     loadComponent: () => import('./features/radar/radar-page').then((m) => m.RadarPage),

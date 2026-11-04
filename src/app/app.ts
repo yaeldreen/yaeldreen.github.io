@@ -26,7 +26,6 @@ export class App {
     { path: '/combat', label: 'Simu combat', icon: '⚔️' },
     { path: '/raz', label: 'Simu raz', icon: '💥' },
     { path: '/secondes', label: 'Calcul seconde', icon: '⏱️' },
-    { path: '/proches', label: 'Qui est le plus proche', icon: '📍' },
     { path: '/radar', label: 'Radar du jeu', icon: '📡' },
     { path: '/ennemis', label: 'infos enemis', icon: '🕵️' },
     { path: '/joueurs', label: 'MAJ joueurs', icon: '👥' },

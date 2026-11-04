@@ -159,14 +159,11 @@ export function parseCompactExport(text: string): { neutral: MapVillage[]; playe
 }
 
 /**
- * Reporte les coordonnées de la carte sur les villages de joueurs connus (par nom du village, sinon du joueur).
- * Un village encore inconnu est ajouté tel quel, avec le clan de l'export.
+ * Applique la carte sur les villages connus (par identifiant, nom du village, sinon du joueur) : coordonnées, clan, points
+ * et habitants viennent de l'export, l'armée et les notes saisies à la main sont conservées.
  */
-export function applyCoordinates(villages: readonly VillageDoc[], fromMap: readonly MapVillage[]): MapVillage[] {
-  return fromMap.map((v) => {
-    const village = findPlayerVillage(villages, v);
-    return village ? { ...village, ...gameIdOf(v.gameId), name: v.name, kage: v.kage, x: v.x, y: v.y } : v;
-  });
+export function applyCarte(villages: readonly VillageDoc[], fromMap: readonly MapVillage[]): MapVillage[] {
+  return fromMap.map((v) => ({ ...findPlayerVillage(villages, v), ...v }));
 }
 
 const normName = (s: string): string =>

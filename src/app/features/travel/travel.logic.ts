@@ -34,16 +34,12 @@ export interface CounterAttack {
 }
 
 /**
- * Villages des membres d'un clan, le nôtre par défaut, `null` = sans clan (liste partagée, mise à jour par « MAJ joueurs »), localisés sur la carte
+ * Villages des membres de notre clan (liste partagée, mise à jour par « MAJ joueurs »), localisés sur la carte
  * et triés par joueur. Un membre dont le village n'est pas sur la carte est ignoré.
  */
-export function clanVillages(players: readonly Player[], villages: readonly MapVillage[], clan: string | null = OWN_CLAN): MapVillage[] {
-  return playerVillages(players.filter((p) => p.clan === clan), villages);
-}
-
-/** Villages de ces joueurs sur la carte, triés par joueur. */
-export function playerVillages(players: readonly Player[], villages: readonly MapVillage[]): MapVillage[] {
+export function clanVillages(players: readonly Player[], villages: readonly MapVillage[]): MapVillage[] {
   return players
+    .filter((p) => p.clan === OWN_CLAN)
     .flatMap((p) => {
       const onMap = findVillage(villages, p.village) ?? findVillage(villages, p.name);
       return onMap ? [{ ...onMap, kage: p.name }] : [];
