@@ -12,16 +12,16 @@ export interface Resource {
 
 // Classes écrites en entier pour que Tailwind puisse les détecter.
 export const RESOURCES: readonly Resource[] = [
-  { key: 'stone', label: 'Pierre', icon: 'fa-mountain',
+  { key: 'stone', label: 'Pierre', icon: '🪨',
     iconBoxClass: 'bg-amber-500/10 border-amber-500/30 text-amber-400', valueClass: 'text-amber-300',
     headerClass: 'text-amber-300', cellClass: 'text-amber-300/90' },
-  { key: 'wood', label: 'Bois', icon: 'fa-tree',
+  { key: 'wood', label: 'Bois', icon: '🪵',
     iconBoxClass: 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400', valueClass: 'text-emerald-300',
     headerClass: 'text-emerald-300', cellClass: 'text-emerald-300/90' },
-  { key: 'iron', label: 'Fer', icon: 'fa-shield-halved',
+  { key: 'iron', label: 'Fer', icon: '⚙️',
     iconBoxClass: 'bg-stone-400/10 border-stone-400/30 text-stone-300', valueClass: 'text-stone-100',
     headerClass: 'text-stone-300', cellClass: 'text-stone-300/90' },
-  { key: 'food', label: 'Nourriture', icon: 'fa-bowl-food',
+  { key: 'food', label: 'Nourriture', icon: '🍖',
     iconBoxClass: 'bg-rose-500/10 border-rose-500/30 text-rose-400', valueClass: 'text-rose-300',
     headerClass: 'text-rose-300', cellClass: 'text-rose-300/90' },
 ];

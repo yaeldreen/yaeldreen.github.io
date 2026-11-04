@@ -20,6 +20,7 @@ export interface PlayerPick {
 /** Carte de saisie d'une armée (assaillant ou défenseur) : joueur, troupes, niveaux et tickets. */
 @Component({
   selector: 'app-army-card',
+  host: { class: 'block' },
   imports: [Card, Combobox, NumberInput, LevelInput],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -62,7 +63,7 @@ export interface PlayerPick {
         }
       </div>
 
-      <div class="grid grid-cols-2 gap-3 border-t border-stone-800 pt-5">
+      <div class="grid grid-cols-2 items-end gap-3 border-t border-stone-800 pt-5">
         @for (field of fields(); track field.key) {
           <div>
             <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ field.label }}</label>

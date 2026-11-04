@@ -89,9 +89,20 @@ service cloud.firestore {
 
     // Données de jeu (bâtiments, vitesses, règles de combat…) : lecture seule pour l'appli.
     // Seul le bot Discord les modifie, avec le compte de service (qui ignore ces règles), pour un rôle Discord précis.
+    // Simu raz partagé : un seul raz en cours, modifiable par tout le monde.
+    match /raz/{room} {
+      allow read: if true;
+      allow create, update: if room == 'current'
+        && request.resource.data.keys().hasOnly(['defender', 'attackers', 'simulated', 'updatedAt']);
+    }
+
+    // Seul le guide des bâtiments se modifie depuis l'appli : un bâtiment à la fois, sans jamais en retirer.
     match /gameData/{part} {
       allow read: if true;
-      allow write: if false;
+      allow update: if part == 'buildings'
+        && request.resource.data.keys().hasAll(resource.data.keys())
+        && request.resource.data.diff(resource.data).affectedKeys().size() <= 3;
+      allow create, delete: if false;
     }
 
     // Réglages des membres Discord (village, CE) : seul le bot y accède, avec le compte de service.

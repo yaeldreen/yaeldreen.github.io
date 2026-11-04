@@ -44,12 +44,55 @@ export function parseMapExport(text: string): MapVillage[] {
   });
 }
 
+/** Ligne de l'export du classement : un village de joueur, sans coordonnées. */
+export type RankingEntry = Omit<MapVillage, 'x' | 'y' | 'neutral'>;
+
 /**
- * Lit l'export compact des villages (objets à clés numérotées, éventuellement sans guillemets) :
- * 0 id, 1 nom, 2 kage, 3 élément, 4 x, 5 y, 6 points, 7 habitants, 8 clan, 9 village neutre.
- * Ne garde que les villages neutres (9 = true).
+ * Lit l'export du classement (villages sans « x » ni « y »).
+ * Retourne null si le texte n'est pas de cette forme : il sera alors lu comme un export de la carte.
  */
-export function parseNeutralExport(text: string): MapVillage[] {
+export function parseRankingExport(text: string): RankingEntry[] | null {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(raw) || !raw.length || raw.some((v) => v?.x !== undefined || v?.y !== undefined)) return null;
+  return raw.map((v, i) => {
+    if (!v || typeof v.name !== 'string' || typeof v.kage !== 'string' || (v.clan !== null && typeof v.clan?.name !== 'string')) {
+      throw new Error(`Joueur n°${i + 1} illisible (village, joueur ou clan manquant).`);
+    }
+    return {
+      name: v.name.trim(),
+      kage: v.kage.trim(),
+      clan: v.clan?.name ?? null,
+      points: Math.max(0, Math.floor(Number(v.points) || 0)),
+      inhabitants: Math.max(0, Math.floor(Number(v.inhabitants) || 0)),
+    };
+  });
+}
+
+/**
+ * Reporte le classement sur les villages connus (par nom du village, sinon du joueur) en gardant leurs coordonnées.
+ * Un joueur absent de la carte ne peut pas y être placé sans coordonnées : son nom est retourné dans `unknown`.
+ */
+export function mergeRanking(villages: readonly MapVillage[], ranking: readonly RankingEntry[]): { villages: MapVillage[]; unknown: string[] } {
+  const merged: MapVillage[] = [];
+  const unknown: string[] = [];
+  for (const entry of ranking) {
+    const known = findPlayerVillage(villages, entry);
+    if (known) merged.push({ ...known, ...entry });
+    else unknown.push(entry.kage);
+  }
+  return { villages: merged, unknown };
+}
+
+/**
+ * Lit l'export compact de la carte (lignes en tableaux, ou objets à clés numérotées éventuellement sans guillemets) :
+ * 0 id, 1 nom, 2 kage, 3 élément, 4 x, 5 y, 6 habitants, 7 points, 8 clan ({ name } ou null), 9 village neutre.
+ */
+export function parseCompactExport(text: string): { neutral: MapVillage[]; players: MapVillage[] } {
   let raw: unknown;
   try {
     // `{ 0: 70, … }` n'est pas du JSON : on met les clés numériques entre guillemets.
@@ -58,23 +101,38 @@ export function parseNeutralExport(text: string): MapVillage[] {
     throw new Error("Le texte collé n'est pas lisible (export coupé ?).");
   }
   if (!Array.isArray(raw)) throw new Error("L'export doit être une liste de villages ([ … ]).");
-  return raw
-    .filter((v) => v?.[9] === true)
-    .map((v, i) => {
-      if (typeof v[1] !== 'string' || typeof v[2] !== 'string' || !Number.isInteger(v[4]) || !Number.isInteger(v[5])) {
-        throw new Error(`Village neutre n°${i + 1} illisible (nom, kage ou coordonnées manquants).`);
-      }
-      return {
-        name: v[1].trim(),
-        kage: v[2].trim(),
-        x: v[4],
-        y: v[5],
-        clan: null,
-        points: Math.max(0, Math.floor(Number(v[6]) || 0)),
-        inhabitants: Math.max(0, Math.floor(Number(v[7]) || 0)),
-        neutral: true,
-      };
-    });
+  const villages = raw.map((v, i): MapVillage => {
+    if (typeof v?.[1] !== 'string' || typeof v[2] !== 'string' || !Number.isInteger(v[4]) || !Number.isInteger(v[5])) {
+      throw new Error(`Village n°${i + 1} illisible (nom, kage ou coordonnées manquants).`);
+    }
+    return {
+      name: v[1].trim(),
+      kage: v[2].trim(),
+      x: v[4],
+      y: v[5],
+      clan: typeof v[8]?.name === 'string' ? v[8].name.trim() : null,
+      points: Math.max(0, Math.floor(Number(v[7]) || 0)),
+      inhabitants: Math.max(0, Math.floor(Number(v[6]) || 0)),
+      neutral: v[9] === true,
+    };
+  });
+  return { neutral: villages.filter((v) => v.neutral), players: villages.filter((v) => !v.neutral) };
+}
+
+/**
+ * Reporte les coordonnées de la carte sur les villages de joueurs connus (par nom du village, sinon du joueur).
+ * Un village encore inconnu est ajouté, avec le clan de l'export, sinon celui de la fiche du joueur.
+ */
+export function applyCoordinates(
+  villages: readonly MapVillage[],
+  players: readonly { name: string; clan: string | null }[],
+  fromMap: readonly MapVillage[],
+): MapVillage[] {
+  return fromMap.map((v) => {
+    const village = findPlayerVillage(villages, v);
+    if (village) return { ...village, name: v.name, kage: v.kage, x: v.x, y: v.y };
+    return { ...v, clan: v.clan ?? players.find((p) => normName(p.name) === normName(v.kage))?.clan ?? null };
+  });
 }
 
 const normName = (s: string): string =>
@@ -84,6 +142,28 @@ const normName = (s: string): string =>
     .toLowerCase()
     .replace(/\s+/g, ' ')
     .trim();
+
+/** Fiches dont ni le joueur ni le village ne figurent dans la liste de la carte : ces joueurs n'existent plus. */
+export function playersMissingFromCarte<T extends { name: string; village: string }>(players: readonly T[], fromMap: readonly MapVillage[]): T[] {
+  const key = (s: string) => s.trim().toLocaleLowerCase('fr');
+  const kages = new Set(fromMap.map((v) => key(v.kage)));
+  const names = new Set(fromMap.map((v) => key(v.name)));
+  return players.filter((p) => !kages.has(key(p.name)) && !names.has(key(p.village)));
+}
+
+/**
+ * Village de joueur correspondant à une ligne d'export : le nom exact d'abord (« Sparta » et « SPÄRTÄ » sont deux villages),
+ * puis le joueur, puis les mêmes sans accents ni casse. Un village renommé est retrouvé par son joueur.
+ */
+function findPlayerVillage(villages: readonly MapVillage[], { name, kage }: { name: string; kage: string }): MapVillage | undefined {
+  const players = villages.filter((v) => !v.neutral);
+  return (
+    players.find((v) => v.name === name) ??
+    players.find((v) => v.kage === kage) ??
+    players.find((v) => normName(v.name) === normName(name)) ??
+    players.find((v) => normName(v.kage) === normName(kage))
+  );
+}
 
 /** Village dont le nom (ou le joueur) correspond, sans tenir compte des accents, de la casse ni des espaces. */
 export function findVillage(villages: readonly MapVillage[], name: string): MapVillage | null {

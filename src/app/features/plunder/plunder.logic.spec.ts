@@ -1,4 +1,4 @@
-import { planPlunder, plunderCapacity, storageCapacity } from './plunder.logic';
+import { planFullTeams, planPlunder, plunderCapacity, storageCapacity } from './plunder.logic';
 
 describe('storageCapacity', () => {
   it('vise le plus petit des deux dépôts', () => {
@@ -42,5 +42,40 @@ describe('planPlunder', () => {
 
   it('ne forme aucune équipe sans troupes', () => {
     expect(planPlunder({ genin: 0, chunin: 0, jounin: 0 }, 5000).teams).toBe(0);
+  });
+});
+
+describe('planFullTeams', () => {
+  it('remplit exactement quand c’est possible, sans reste', () => {
+    expect(planFullTeams({ genin: 1000, chunin: 0, jounin: 0 }, 1300)).toEqual({
+      team: { genin: 100, chunin: 0, jounin: 0 },
+      capacity: 1300,
+      teams: 10,
+      leftover: { genin: 0, chunin: 0, jounin: 0 },
+    });
+  });
+
+  it('ne dépasse jamais la cible, et le reste complète l’armée', () => {
+    const army = { genin: 693, chunin: 414, jounin: 53 };
+    for (const target of [100, 999, 4098, 6283]) {
+      const plan = planFullTeams(army, target);
+      expect(plan.capacity).toBeLessThanOrEqual(target);
+      expect(plunderCapacity(plan.team)).toBe(plan.capacity);
+      for (const id of ['genin', 'chunin', 'jounin'] as const) expect(plan.team[id] * plan.teams + plan.leftover[id]).toBe(army[id]);
+    }
+  });
+
+  it('prend toute l’armée quand elle ne suffit pas à remplir les dépôts', () => {
+    const plan = planFullTeams({ genin: 10, chunin: 5, jounin: 1 }, 100_000);
+    expect([plan.team, plan.teams]).toEqual([{ genin: 10, chunin: 5, jounin: 1 }, 1]);
+  });
+
+  it('à pillage égal, privilégie la composition qui forme le plus d’équipes', () => {
+    const plan = planFullTeams({ genin: 10, chunin: 1, jounin: 0 }, 26);
+    expect([plan.team, plan.teams]).toEqual([{ genin: 2, chunin: 0, jounin: 0 }, 5]);
+  });
+
+  it('ne forme aucune équipe sans troupes', () => {
+    expect(planFullTeams({ genin: 0, chunin: 0, jounin: 0 }, 5000).teams).toBe(0);
   });
 });

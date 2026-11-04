@@ -19,7 +19,7 @@ export interface SegmentOption<T extends string> {
           class="px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer flex items-center"
         >
           @if (option.icon) {
-            <i class="fa-solid {{ option.icon }} mr-1.5 text-red-400"></i>
+            <span class="mr-1.5" aria-hidden="true">{{ option.icon }}</span>
           }
           {{ option.label }}
         </button>

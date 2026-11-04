@@ -37,9 +37,25 @@ const CHANNEL_HANDLERS: Record<string, typeof handleBuildGuide> = {
 };
 
 client.on(Events.MessageCreate, async (message) => {
-  if (message.author.bot || !message.inGuild() || !message.content.startsWith('!')) return;
-  const handler = 'name' in message.channel ? CHANNEL_HANDLERS[message.channel.name] : undefined;
-  if (!handler) return;
+  // Diagnostic : chaque message reçu dans un salon du bot, avant tout filtre (texte vide = contenu non transmis par Discord).
+  if (!message.author.bot && 'name' in message.channel && CHANNEL_HANDLERS[message.channel.name]) {
+    const first = message.content.trimStart().codePointAt(0);
+    console.log(
+      `[${new Date().toISOString()}] reçu · #${message.channel.name} · ${message.author.tag} · ${message.content.length} caractère(s)` +
+        `${first !== undefined ? ` · commence par « ${String.fromCodePoint(first)} » (U+${first.toString(16).toUpperCase().padStart(4, '0')})` : ''}`,
+    );
+  }
+  if (message.author.bot || !message.content.startsWith('!')) return;
+  const channelName = 'name' in message.channel ? message.channel.name : '(message privé)';
+  const where = `${message.guild?.name ?? 'hors serveur'} #${channelName}`;
+  // Une ligne par commande reçue dans le journal : utile pour comprendre une commande « qui ne marche pas ».
+  console.log(`[${new Date().toISOString()}] ${where} · ${message.author.tag} · ${message.content.split(/\s+/)[0]}`);
+  if (!message.inGuild()) return;
+  const handler = CHANNEL_HANDLERS[channelName];
+  if (!handler) {
+    console.log(`  ↳ ignorée : #${channelName} n'est pas un salon du bot (${Object.keys(CHANNEL_HANDLERS).join(', ')})`);
+    return;
+  }
   // Les réponses vont dans le salon (pas « en réponse ») : la commande est supprimée une fois traitée.
   const command = detachedReplies(message);
   try {

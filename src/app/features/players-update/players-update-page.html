@@ -15,16 +15,15 @@
   </app-card>
 }
 
-<app-card class="p-6 space-y-4">
+<app-card class="p-4 sm:p-6 space-y-4">
   <div class="border-b border-stone-800 pb-3">
     <h2 class="font-semibold text-stone-200 flex items-center">
       Liste des joueurs (JSON)
     </h2>
     <p class="text-xs text-stone-400 mt-1">
-      Collez l'export JSON de la carte du jeu (la liste complète, de « [ » à « ] »). Les villages de joueurs de la carte partagée sont remplacés :
-      coordonnées, points, habitants et clan de chaque joueur sont mis à jour, les nouveaux joueurs et clans sont ajoutés.
-      Les armées et niveaux saisis à la main dans « infos enemis » ne sont pas touchés. Pour Tsukuyomi, seuls le village,
-      le kage et les coordonnées sont gardés.
+      Collez le classement du jeu (de « [ » à « ] »). Le nom du village, le clan, les points et les habitants des joueurs listés sont mis à jour,
+      les nouveaux clans sont ajoutés et les autres joueurs ne bougent pas. Un joueur absent de la carte est ignoré : passez d'abord par
+      « MAJ joueurs carte ». Les armées et niveaux saisis dans « infos enemis » ne sont pas touchés. Pour Tsukuyomi, seuls le village et le kage sont gardés.
       @if (store.villages().length) {
         Carte actuelle : {{ store.villages().length }} villages.
       } @else {
@@ -36,7 +35,7 @@
     [ngModel]="mapText()"
     (ngModelChange)="mapText.set($event)"
     rows="6"
-    placeholder='[ { "id": 70, "name": "Memen", "kage": "Maaminou", "x": 8208, "y": 10, … } ]'
+    placeholder='[ { "id": 70, "name": "Memen", "kage": "Maaminou", "points": 7695, "clan": { "id": 6, "name": "Shi no Kitzu" }, "rank": 11, "inhabitants": 429 } ]'
     class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
   ></textarea>
   <button
@@ -61,40 +60,49 @@
       }.
     </p>
   }
+  @if (rankingUnknown().length) {
+    <p class="text-xs text-amber-300">Pas sur la carte, donc ignorés (à ajouter avec « MAJ joueurs carte ») : {{ rankingUnknown().join(', ') }}.</p>
+  }
 </app-card>
 
-<app-card class="p-6 space-y-4">
+<app-card class="p-4 sm:p-6 space-y-4">
   <div class="border-b border-stone-800 pb-3">
-    <h2 class="font-semibold text-stone-200">MAJ villages neutres</h2>
+    <h2 class="font-semibold text-stone-200">MAJ joueurs carte</h2>
     <p class="text-xs text-stone-400 mt-1">
-      Collez la liste compacte (clés 0 à 9). Seuls les villages avec « 9: true » sont gardés et remplacent les villages
-      neutres de la carte ; les villages de joueurs ne sont pas touchés. Villages neutres actuels : {{ neutralCount() }}.
+      Collez la liste compacte de la carte. « 9: true » : les villages neutres sont intégrés entièrement et remplacent ceux de la carte.
+      « 9: false » : les coordonnées du joueur sont mises à jour, et son village est ajouté s'il n'est pas encore sur la carte.
+      Un joueur absent de la liste est supprimé, avec sa fiche et son armée, et les villages en double sont retirés. Villages neutres actuels : {{ neutralCount() }}.
     </p>
   </div>
   <textarea
-    [ngModel]="neutralText()"
-    (ngModelChange)="neutralText.set($event)"
+    [ngModel]="carteText()"
+    (ngModelChange)="carteText.set($event)"
     rows="6"
-    placeholder='[ { 0: -71, 1: "Hisatsuki", 2: "Yui Hisatsuki", 3: "feu", 4: 8126, 5: 5, 6: 0, 7: 0, 8: null, 9: true } ]'
+    placeholder='[ [70, "Memen", "Maaminou", "feu", 8216, 10, 429, 7695, { "id": 6, "name": "Shi no Kitzu" }, false] ]'
     class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
   ></textarea>
   <button
     type="button"
-    (click)="importNeutral()"
-    [disabled]="!neutralText().trim() || neutralImporting()"
+    (click)="importCarte()"
+    [disabled]="!carteText().trim() || carteImporting()"
     class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
   >
-    {{ neutralImporting() ? 'Import en cours…' : 'Mettre à jour les villages neutres' }}
+    {{ carteImporting() ? 'Import en cours…' : 'Mettre à jour la carte' }}
   </button>
-  @if (neutralError(); as e) {
+  @if (carteError(); as e) {
     <p class="text-xs text-rose-300">{{ e }}</p>
   }
-  @if (neutralResult(); as n) {
-    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">{{ n }} villages neutres importés.</p>
+  @if (carteResult(); as r) {
+    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">
+      Carte importée : {{ r.neutral }} villages neutres, {{ r.updated }} joueurs mis à jour, {{ r.added }} ajoutés
+      @if (r.removed.length) {
+        , supprimés : {{ r.removed.join(', ') }}
+      }.
+    </p>
   }
 </app-card>
 
-<app-card class="p-6 space-y-4">
+<app-card class="p-4 sm:p-6 space-y-4">
   <div class="border-b border-stone-800 pb-3">
     <h2 class="font-semibold text-stone-200">Mot de passe d'accès</h2>
     <p class="text-xs text-stone-400 mt-1">Change le mot de passe demandé à l'ouverture du site, pour tout le clan.</p>
@@ -164,31 +172,21 @@
     }
   </div>
   @if (snaps.current) {
-    <div class="overflow-x-auto max-h-[70vh] overflow-y-auto">
-      <table class="w-full text-left border-collapse text-xs font-mono">
-        <thead class="sticky top-0 bg-stone-900">
-          <tr class="border-b border-stone-800 text-stone-400 uppercase">
-            <th class="py-3 px-4 font-sans">Joueur</th>
-            <th class="py-3 px-3 font-sans">Clan</th>
-            <th class="py-3 px-3 text-right">Points</th>
-            <th class="py-3 px-3 text-right">Évol.</th>
-            <th class="py-3 px-3 text-right">Habitants</th>
-            <th class="py-3 px-3 text-right">Évol.</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-stone-800/60">
-          @for (r of evolution(); track r.name) {
-            <tr class="hover:bg-red-950/20">
-              <td class="py-2 px-4 font-sans font-semibold text-stone-200">{{ r.name }}</td>
-              <td class="py-2 px-3 font-sans text-stone-400">{{ r.clan ?? 'Sans clan' }}</td>
-              <td class="py-2 px-3 text-right text-stone-200" [title]="r.previousPoints !== null ? 'Mois précédent : ' + r.previousPoints : ''">{{ r.points.toLocaleString('fr-FR') }}</td>
-              <td class="py-2 px-3 text-right" [class]="r.pointsDelta === null ? 'text-stone-500' : r.pointsDelta > 0 ? 'text-emerald-300' : r.pointsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">{{ signed(r.pointsDelta) }}</td>
-              <td class="py-2 px-3 text-right text-stone-200" [title]="r.previousInhabitants !== null ? 'Mois précédent : ' + r.previousInhabitants : ''">{{ r.inhabitants.toLocaleString('fr-FR') }}</td>
-              <td class="py-2 px-3 text-right" [class]="r.inhabitantsDelta === null ? 'text-stone-500' : r.inhabitantsDelta > 0 ? 'text-emerald-300' : r.inhabitantsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">{{ signed(r.inhabitantsDelta) }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
+    <ul class="divide-y divide-stone-800/60 max-h-[70vh] overflow-y-auto text-xs">
+      @for (r of evolution(); track r.name) {
+        <li class="px-4 py-2.5">
+          <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+            <span class="font-semibold text-stone-200 text-sm">{{ r.name }}</span>
+            <span class="text-stone-500">{{ r.clan ?? 'Sans clan' }}</span>
+          </div>
+          <p class="font-mono text-stone-300">
+            ⭐ {{ r.points.toLocaleString('fr-FR') }}
+            <span [class]="r.pointsDelta === null ? 'text-stone-500' : r.pointsDelta > 0 ? 'text-emerald-300' : r.pointsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">({{ signed(r.pointsDelta) }})</span>
+            · 👥 {{ r.inhabitants.toLocaleString('fr-FR') }}
+            <span [class]="r.inhabitantsDelta === null ? 'text-stone-500' : r.inhabitantsDelta > 0 ? 'text-emerald-300' : r.inhabitantsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">({{ signed(r.inhabitantsDelta) }})</span>
+          </p>
+        </li>
+      }
+    </ul>
   }
 </app-card>

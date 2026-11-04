@@ -1,9 +1,9 @@
-<app-card class="p-6 space-y-4">
+<app-card class="p-4 sm:p-6 space-y-4">
   <div class="border-b border-stone-800 pb-3">
     <h2 class="font-semibold text-stone-200 flex items-center">
-      <i class="fa-solid fa-location-crosshairs text-red-400 mr-2"></i> Qui est le plus proche ?
+      <span class="mr-2" aria-hidden="true">📍</span> Qui est le plus proche ?
     </h2>
-    <p class="text-xs text-stone-400 mt-1">Choisissez un village : les membres de {{ clan }} sont classés du plus proche au plus éloigné.</p>
+    <p class="text-xs text-stone-400 mt-1">Choisissez un village et un clan : ses membres sont classés du plus proche au plus éloigné.</p>
   </div>
 
   @if (!store.villages().length) {
@@ -20,33 +20,34 @@
       <p class="text-[11px] text-amber-300 mt-1">Village introuvable dans la carte.</p>
     }
   </div>
+  <div>
+    <label for="nearest-clan" class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Clan comparé</label>
+    <select
+      id="nearest-clan"
+      [ngModel]="clan()"
+      (ngModelChange)="clan.set($event)"
+      class="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700 cursor-pointer"
+    >
+      @for (option of clanOptions(); track option) {
+        <option [value]="option">{{ option }}</option>
+      }
+    </select>
+  </div>
 </app-card>
 
 @if (ranking().length) {
-  <app-card class="overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse text-sm">
-        <thead>
-          <tr class="border-b border-stone-800 text-xs text-stone-400 uppercase tracking-wider bg-stone-950/40">
-            <th class="py-3 px-5 w-12">#</th>
-            <th class="py-3 px-5">Joueur</th>
-            <th class="py-3 px-5">Village</th>
-            <th class="py-3 px-5 text-right">Coordonnées</th>
-            <th class="py-3 px-5 text-right">Distance</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-stone-800/60">
-          @for (member of ranking(); track member.village.name; let i = $index) {
-            <tr class="hover:bg-red-950/20 transition">
-              <td class="py-3 px-5 font-mono text-stone-500">{{ i + 1 }}</td>
-              <td class="py-3 px-5 font-bold text-red-300">{{ member.village.kage }}</td>
-              <td class="py-3 px-5 text-stone-300">{{ member.village.name }}</td>
-              <td class="py-3 px-5 text-right font-mono text-stone-400">{{ member.village.x }} / {{ member.village.y }}</td>
-              <td class="py-3 px-5 text-right font-mono font-bold text-emerald-400">{{ member.distance }} km</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    </div>
-  </app-card>
+  <ol class="space-y-2">
+    @for (member of ranking(); track member.village.name; let i = $index) {
+      <li class="bg-stone-900/80 border border-stone-800 rounded-xl px-3 py-2.5 flex items-center gap-3">
+        <span class="w-6 h-6 shrink-0 rounded-full bg-stone-800 text-stone-300 text-xs font-bold flex items-center justify-center">{{ i + 1 }}</span>
+        <div class="min-w-0 flex-1">
+          <p class="font-bold text-red-300 text-sm truncate">{{ member.village.kage }}</p>
+          <p class="text-xs text-stone-400 truncate">{{ member.village.name }} · <span class="font-mono">{{ member.village.x }} / {{ member.village.y }}</span></p>
+        </div>
+        <span class="shrink-0 font-mono font-bold text-emerald-400 text-sm">{{ member.distance }} km</span>
+      </li>
+    }
+  </ol>
+} @else if (target()) {
+  <p class="text-xs text-stone-400 text-center">Aucun autre joueur à classer pour « {{ clan() }} ».</p>
 }

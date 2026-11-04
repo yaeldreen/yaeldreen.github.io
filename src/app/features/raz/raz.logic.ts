@@ -22,8 +22,6 @@ export interface RazPlan {
 
 const sub = (a: TroopCounts, b: TroopCounts): TroopCounts =>
   Object.fromEntries(TROOPS.map((t) => [t.key, Math.max(0, a[t.key] - b[t.key])])) as TroopCounts;
-const add = (a: TroopCounts, b: TroopCounts): TroopCounts =>
-  Object.fromEntries(TROOPS.map((t) => [t.key, a[t.key] + b[t.key]])) as TroopCounts;
 const powerOf = (troops: TroopCounts, unitPower: Record<keyof TroopCounts, number>): number =>
   TROOPS.reduce((sum, t) => sum + troops[t.key] * unitPower[t.key], 0);
 const isEmpty = (troops: TroopCounts): boolean => TROOPS.every((t) => troops[t.key] === 0);
@@ -35,18 +33,15 @@ const isEmpty = (troops: TroopCounts): boolean => TROOPS.every((t) => troops[t.k
  *   envoyer les plus forts d'abord laisse aux plus faibles une défense déjà réduite.
  * - Sinon il faut un crash. On essaie chaque candidat et on garde celui qui permet ensuite le plus de victoires,
  *   puis le meilleur ratio puissance perdue / puissance tuée.
- * Les pertes du défenseur sont prises au bas de la fourchette. Avec `healedReturn`, les soignés de son hôpital
- * reviennent avant le passage suivant.
+ * Les pertes du défenseur sont prises au bas de la fourchette. Ses soignés ne reviennent pas pendant le raz : il faut attendre 24 h.
  */
-export function planRaz(attackers: readonly Army[], defender: Army, healedReturn: boolean): RazPlan {
+export function planRaz(attackers: readonly Army[], defender: Army): RazPlan {
   const strength = attackers.map((a) => sideStats(a, false).strength);
   const empty = attackers.flatMap((a, i) => (strength[i] > 0 ? [] : [i]));
 
   const fight = (i: number, troops: TroopCounts): RazPass => {
     const result = simulateCombat(attackers[i], { ...defender, troops });
     const killed = result.defenderLosses?.min ?? troops;
-    const healed = healedReturn && result.defenderRecovered ? result.defenderRecovered.min : null;
-    const after = healed ? add(sub(troops, killed), healed) : sub(troops, killed);
     const lost = powerOf(result.attackerLosses, result.attack.unitPower);
     const dealt = powerOf(killed, result.defense.unitPower);
     return {
@@ -55,7 +50,7 @@ export function planRaz(attackers: readonly Army[], defender: Army, healedReturn
       result,
       defenderBefore: troops,
       defenderKilled: killed,
-      defenderAfter: after,
+      defenderAfter: sub(troops, killed),
       lossRatio: dealt > 0 ? lost / dealt : Infinity,
     };
   };

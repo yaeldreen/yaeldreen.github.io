@@ -1,5 +1,4 @@
 import { RESOURCES } from '../../core/game-data/resources';
-import { Column } from '../../shared/ui/data-table';
 import { formatNumber, formatSpeed } from '../../shared/utils/format';
 import {
   ACADEMY_LEVELS,
@@ -27,6 +26,14 @@ import {
   HIGH_COUNCIL_LEVELS,
   CouncilLevel,
 } from './buildings.data';
+
+export interface Column<T> {
+  header: string;
+  headerClass?: string;
+  cellClass?: string;
+  // Syntaxe "méthode" volontaire : permet d'affecter un Column<Sous-type> à un Column<Type>.
+  value(row: T): string | number;
+}
 
 export type BuildingId =
   | 'hq'
@@ -73,6 +80,9 @@ const costColumns: Column<BuildingLevel>[] = [
 
 const [buildTimeColumn, ...otherCostColumns] = costColumns;
 
+/** Colonnes communes à tous les bâtiments : les autres sont les effets propres au bâtiment (puissance, capacité…). */
+export const COMMON_COLUMNS: ReadonlySet<Column<BuildingLevel>> = new Set([levelColumn, ...costColumns]);
+
 const powerColumn: Column<PowerLevel> = {
   header: 'Puissance',
   headerClass: 'text-red-300',
@@ -110,42 +120,42 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
   {
     id: 'hq',
     label: 'Quartier Général',
-    icon: 'fa-chess-rook',
+    icon: '🏯',
     columns: [levelColumn, ...costColumns],
     rows: HQ_LEVELS,
   } satisfies BuildingGuide,
   {
     id: 'training',
     label: "Centre d'entraînement",
-    icon: 'fa-dumbbell',
+    icon: '🏋️',
     columns: trainingColumns,
     rows: TRAINING_CENTER_LEVELS,
   } satisfies BuildingGuide<TrainingLevel>,
   {
     id: 'academy',
     label: 'Académie',
-    icon: 'fa-graduation-cap',
+    icon: '🎓',
     columns: [levelColumn, powerColumn, ...costColumns],
     rows: ACADEMY_LEVELS,
   } satisfies BuildingGuide<PowerLevel>,
   {
     id: 'chunnin',
     label: 'Centre Chunnin',
-    icon: 'fa-user-ninja',
+    icon: '🥷',
     columns: [levelColumn, powerColumn, ...costColumns],
     rows: CHUNNIN_LEVELS,
   } satisfies BuildingGuide<PowerLevel>,
   {
     id: 'jounin',
     label: 'Centre Jounin',
-    icon: 'fa-user-shield',
+    icon: '🛡️',
     columns: [levelColumn, powerColumn, ...costColumns],
     rows: JOUNIN_LEVELS,
   } satisfies BuildingGuide<PowerLevel>,
   {
     id: 'watchtower',
     label: 'Tour de Garde',
-    icon: 'fa-tower-observation',
+    icon: '🗼',
     columns: [
       levelColumn,
       ...costColumns,
@@ -160,7 +170,7 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
   {
     id: 'wall',
     label: "Mur d'enceinte",
-    icon: 'fa-shield',
+    icon: '🧱',
     columns: [
       levelColumn,
       { header: 'Défense', headerClass: 'text-sky-300', cellClass: 'text-sky-300 font-semibold', value: (r) => `${r.defense.toFixed(2)}%` },
@@ -171,7 +181,7 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
   {
     id: 'hospital',
     label: 'Hôpital',
-    icon: 'fa-hospital',
+    icon: '🏥',
     columns: [
       levelColumn,
       ...costColumns,
@@ -187,7 +197,7 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
   {
     id: 'mine',
     label: 'Mine de ressources',
-    icon: 'fa-gem',
+    icon: '⛏️',
     columns: [
       levelColumn,
       {
@@ -203,42 +213,42 @@ export const BUILDING_GUIDES: readonly BuildingGuide[] = [
   {
     id: 'resourceDepot',
     label: 'Dépôt de ressources',
-    icon: 'fa-warehouse',
+    icon: '🏚️',
     columns: [levelColumn, capacityColumn, ...costColumns],
     rows: RESOURCE_DEPOT_LEVELS,
   } satisfies BuildingGuide<StorageLevel>,
   {
     id: 'foodDepot',
     label: 'Dépôt de nourriture',
-    icon: 'fa-wheat-awn',
+    icon: '🌾',
     columns: [levelColumn, capacityColumn, ...costColumns],
     rows: FOOD_DEPOT_LEVELS,
   } satisfies BuildingGuide<StorageLevel>,
   {
     id: 'reserve',
     label: 'Réserve',
-    icon: 'fa-box-archive',
+    icon: '📦',
     columns: [levelColumn, capacityColumn, ...costColumns],
     rows: RESERVE_LEVELS,
   } satisfies BuildingGuide<StorageLevel>,
   {
     id: 'raptor',
     label: 'Élevage de Rapaces',
-    icon: 'fa-crow',
+    icon: '🦅',
     columns: [levelColumn, ...costColumns],
     rows: RAPTOR_LEVELS,
   } satisfies BuildingGuide,
   {
     id: 'commerce',
     label: 'Commerce',
-    icon: 'fa-store',
+    icon: '🏪',
     columns: [levelColumn, ...costColumns],
     rows: COMMERCE_LEVELS,
   } satisfies BuildingGuide,
   {
     id: 'highCouncil',
     label: 'Haut Conseil',
-    icon: 'fa-landmark',
+    icon: '🏛️',
     columns: [
       levelColumn,
       ...costColumns,

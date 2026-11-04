@@ -5,13 +5,14 @@ import {
   doc,
   Firestore,
   getDoc,
+  getDocs,
   onSnapshot,
   setDoc,
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
 import { firestoreDb, isFirebaseConfigured } from '../../core/firebase';
-import { MapVillage } from '../../core/game-data/map-villages';
+import { MapVillage, playersMissingFromCarte } from '../../core/game-data/map-villages';
 import { MonthlySnapshot, SnapshotSlot } from '../players-update/monthly-snapshot';
 import { OWN_CLAN, Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
 import { EnemyRecord, playerKey } from './enemies.model';
@@ -161,7 +162,8 @@ export class EnemiesStore {
    * et les clans. Les villages neutres vont seulement dans la carte. Les infos saisies à la main
    * (armées, CE, centres…) ne sont pas touchées, sauf pour notre clan dont on ne garde que village et kage.
    */
-  async importMap(villages: readonly MapVillage[]): Promise<MapImportSummary> {
+  /** `partial` : la liste ne couvre qu'une partie de la carte (classement), les villages absents restent. */
+  async importMap(villages: readonly MapVillage[], { partial = false } = {}): Promise<MapImportSummary> {
     const db = this.db;
     if (!db) throw new Error('Base partagée non configurée.');
     const ops: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
@@ -171,7 +173,9 @@ export class EnemiesStore {
     for (const v of villages) ops.push((b) => b.set(doc(db, VILLAGES, docId(v.name)), v));
     // Les villages neutres absents de l'export restent : ils ont leur propre mise à jour.
     for (const old of this.villages()) {
-      if (!old.neutral && !keep.has(docId(old.name))) ops.push((b) => b.delete(doc(db, VILLAGES, docId(old.name))));
+      if (old.neutral || keep.has(docId(old.name))) continue;
+      // Import partiel : seul l'ancien village d'un joueur qui a renommé le sien disparaît.
+      if (!partial || villages.some((v) => playerKey(v.kage) === playerKey(old.kage))) ops.push((b) => b.delete(doc(db, VILLAGES, docId(old.name))));
     }
 
     const knownClans = new Set(this.clanNames().map(playerKey));
@@ -209,6 +213,35 @@ export class EnemiesStore {
   }
 
   /** Remplace les villages neutres de la carte (les villages de joueurs ne sont pas touchés). Retourne leur nombre. */
+  /**
+   * Applique l'export complet de la carte : villages neutres, puis joueurs. Les joueurs absents de la liste sont supprimés
+   * (village, fiche et armée), ainsi que tout village en double. On lit la base pour viser les vrais identifiants de documents.
+   */
+  async importCarte(neutral: readonly MapVillage[], players: readonly MapVillage[]): Promise<MapImportSummary & { removed: string[] }> {
+    const db = this.db;
+    if (!db) throw new Error('Base partagée non configurée.');
+    if (neutral.length) await this.importNeutralVillages(neutral);
+    const summary = await this.importMap(players, { partial: true });
+
+    const ops: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
+    const keep = new Set([...neutral, ...players].map((v) => docId(v.name)));
+    for (const d of (await getDocs(collection(db, VILLAGES))).docs) {
+      if (!(d.data() as MapVillage).neutral && !keep.has(d.id)) ops.push((b) => b.delete(d.ref));
+    }
+    const playerDocs = (await getDocs(collection(db, PLAYERS))).docs;
+    const gone = playersMissingFromCarte(
+      playerDocs.map((d) => d.data() as Player),
+      players,
+    );
+    const goneKeys = new Set(gone.map((p) => playerKey(p.name)));
+    for (const d of playerDocs) if (goneKeys.has(playerKey((d.data() as Player).name))) ops.push((b) => b.delete(d.ref));
+    for (const d of (await getDocs(collection(db, ENEMIES))).docs) {
+      if (goneKeys.has(playerKey((d.data() as EnemyRecord).player))) ops.push((b) => b.delete(d.ref));
+    }
+    await this.commitAll(db, ops);
+    return { ...summary, removed: gone.map((p) => p.name) };
+  }
+
   async importNeutralVillages(villages: readonly MapVillage[]): Promise<number> {
     const db = this.db;
     if (!db) throw new Error('Base partagée non configurée.');

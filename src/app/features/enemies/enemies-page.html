@@ -15,10 +15,10 @@
   </app-card>
 }
 
-<app-card class="p-6">
+<app-card class="p-4 sm:p-6">
   <div class="flex flex-wrap items-center justify-between gap-3 border-b border-stone-800 pb-3 mb-4">
     <h2 class="font-semibold text-stone-200 flex items-center">
-      <i class="fa-solid fa-camera text-red-400 mr-2"></i> Ajouter un rapport de combat
+      <span class="mr-2" aria-hidden="true">📷</span> Ajouter un rapport de combat
     </h2>
     <button type="button" (click)="manualEntry()" class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3.5 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer">
       Saisie manuelle
@@ -36,7 +36,7 @@
       @if (imageUrl(); as url) {
         <img [src]="url" alt="Capture du rapport" class="max-h-56 rounded-lg border border-stone-800" />
       } @else {
-        <i class="fa-solid fa-image text-3xl text-stone-600 mb-3"></i>
+        <span class="text-3xl mb-3" aria-hidden="true">🖼️</span>
         <span class="text-sm text-stone-300">Collez la capture ou le rapport copié en texte (Ctrl+V / Cmd+V), glissez la capture ici ou cliquez pour la choisir</span>
         <span class="text-xs text-stone-500 mt-1">Section Assaillant ou Défenseur, avec les lignes Ninjas et Tués</span>
       }
@@ -56,7 +56,7 @@
     <div>
       @if (reading()) {
         <div class="h-full flex items-center justify-center text-sm text-stone-300">
-          <i class="fa-solid fa-spinner fa-spin text-red-400 mr-2"></i> Lecture de la capture…
+          <span class="mr-2" aria-hidden="true">⏳</span> Lecture de la capture…
         </div>
       } @else if (draft(); as d) {
         <div class="space-y-4">
@@ -139,7 +139,7 @@
             </table>
           </div>
 
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 border-t border-stone-800 pt-3">
+          <div class="grid grid-cols-2 sm:grid-cols-4 items-end gap-2 border-t border-stone-800 pt-3">
             @for (field of statFields; track field.key) {
               <div>
                 <label class="block text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1">{{ field.label }}</label>
@@ -172,7 +172,16 @@
 <app-card class="p-4 space-y-3">
   <div class="flex flex-col sm:flex-row sm:items-center gap-3">
     <span class="text-xs font-medium text-stone-400 uppercase tracking-wider shrink-0">Clan</span>
-    <app-segmented-control [options]="clanOptions()" [(value)]="clanFilter" />
+    <select
+      [ngModel]="clanFilter()"
+      (ngModelChange)="clanFilter.set($event)"
+      aria-label="Clan"
+      class="w-full sm:w-auto bg-stone-950 border border-stone-700 rounded-xl px-3 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700 cursor-pointer"
+    >
+      @for (option of clanOptions(); track option.id) {
+        <option [value]="option.id">{{ option.label }}</option>
+      }
+    </select>
     <button
       type="button"
       (click)="addingClan.set(!addingClan()); manageError.set(null)"
@@ -209,7 +218,7 @@
       <button type="button" (click)="toggleTable(table.name)" class="flex items-center gap-3 font-semibold text-stone-200 cursor-pointer hover:text-white">
         <span class="text-red-400 w-3 inline-block">{{ open ? '▾' : '▸' }}</span>
         {{ table.name }}
-        <span class="text-xs font-normal text-stone-400">{{ table.rows.length }} joueurs</span>
+        <span class="text-xs font-normal text-stone-400">{{ table.rows.length }} joueur{{ table.rows.length > 1 ? 's' : '' }}</span>
       </button>
       @if (table.name !== unlisted) {
         <div class="flex items-center gap-4">
@@ -246,89 +255,79 @@
         }
       }
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse font-mono text-xs">
-          <thead>
-            <tr class="border-b border-stone-800 text-stone-400 uppercase bg-stone-950/60">
-              <th class="py-3 px-4">Joueur</th>
-              <th class="py-3 px-4">Village</th>
+      <ul class="divide-y divide-stone-800/60">
+        @for (row of table.rows; track row.player) {
+          <li class="px-4 py-3 space-y-1 text-xs">
+            <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+              <span class="font-bold text-red-300 text-sm">{{ row.player }}</span>
+              <span class="text-stone-400">{{ row.village }}</span>
+            </div>
+            <p class="text-stone-300">
               @for (field of statFields; track field.key) {
-                <th class="py-3 px-3 text-right whitespace-nowrap" [title]="field.label">{{ field.short }}</th>
-              }
-              @for (t of troops; track t.key) {
-                <th class="py-3 px-4 text-right">{{ t.label }}</th>
-              }
-              <th class="py-3 px-4">Mis à jour</th>
-              <th class="py-3 px-4"></th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-stone-800/60">
-            @for (row of table.rows; track row.player) {
-              <tr class="hover:bg-red-950/20 transition">
-                <td class="py-2.5 px-4 font-bold text-red-300">{{ row.player }}</td>
-                <td class="py-2.5 px-4 text-stone-400 font-sans">{{ row.village }}</td>
-                @for (field of statFields; track field.key) {
-                  <td class="py-2.5 px-3 text-right" [class]="row.stats[field.key] !== null ? (field.max ? 'text-cyan-300' : 'text-stone-200') : 'text-stone-600'">
-                    {{ row.stats[field.key] !== null ? formatNumber(row.stats[field.key]!) : '—' }}
+                @if (!field.max) {
+                  <span class="mr-3">
+                    {{ field.key === 'points' ? '⭐' : '👥' }}
+                    <span class="font-mono" [class]="row.stats[field.key] !== null ? 'text-stone-100' : 'text-stone-600'">{{ row.stats[field.key] !== null ? formatNumber(row.stats[field.key]!) : '?' }}</span>
                     @if (monthDelta(row.player, field.key); as delta) {
-                      <span class="block text-[10px]" [class]="delta > 0 ? 'text-emerald-300' : 'text-rose-300'" [title]="'Sur le mois : ' + evolutionMonths()">{{ signed(delta) }}</span>
+                      <span class="font-mono" [class]="delta > 0 ? 'text-emerald-300' : 'text-rose-300'" [title]="'Sur le mois : ' + evolutionMonths()">({{ signed(delta) }})</span>
                     } @else if (monthDelta(row.player, field.key) === 0) {
-                      <span class="block text-[10px] text-stone-500" [title]="'Sur le mois : ' + evolutionMonths()">±0</span>
+                      <span class="font-mono text-stone-500" [title]="'Sur le mois : ' + evolutionMonths()">(±0)</span>
                     }
-                  </td>
-                }
-                @for (t of troops; track t.key) {
-                  <td class="py-2.5 px-4 text-right" [class]="row.record ? 'text-stone-200' : 'text-stone-600'">
-                    {{ row.record ? formatNumber(row.record.troops[t.key]) : '—' }}
-                  </td>
-                }
-                <td class="py-2.5 px-4" [class]="row.record ? 'text-stone-400' : 'text-stone-600'">
-                  {{ row.record ? formatDate(row.record.updatedAt) : 'Aucun rapport' }}
-                </td>
-                <td class="py-2.5 px-4 text-right whitespace-nowrap font-sans space-x-3">
-                  <button type="button" (click)="editArmy(row)" class="text-stone-400 hover:text-red-300 cursor-pointer">Modifier</button>
-                  @if (row.record) {
-                    <button type="button" (click)="removeArmy(row.player)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Effacer l'armée</button>
-                  }
-                  @if (row.clan !== undefined) {
-                    <button type="button" (click)="startTransfer(row)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Retirer</button>
-                  }
-                </td>
-              </tr>
-              @if (transfer(); as t) {
-                @if (t.player === row.player) {
-                  <tr class="bg-stone-950/60">
-                    <td colspan="11" class="py-3 px-4 font-sans">
-                      <div class="flex flex-wrap items-center gap-2 justify-end">
-                        <span class="text-stone-300">Transférer {{ row.player }} vers</span>
-                        <select
-                          [ngModel]="t.target"
-                          (ngModelChange)="setTransferTarget($event)"
-                          class="bg-stone-950 border border-stone-700 rounded-lg px-2 py-1.5 text-stone-200 text-xs focus:outline-none focus:border-red-700 cursor-pointer"
-                        >
-                          @if (row.clan !== null) {
-                            <option value="">{{ noClan }}</option>
-                          }
-                          @for (clan of otherClans(row.clan); track clan) {
-                            <option [value]="clan">{{ clan }}</option>
-                          }
-                        </select>
-                        <button type="button" (click)="confirmTransfer()" class="bg-red-800 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Transférer</button>
-                        <button type="button" (click)="removePlayer(row.player)" class="text-stone-500 hover:text-rose-400 px-2 cursor-pointer">Supprimer définitivement</button>
-                        <button type="button" (click)="transfer.set(null)" class="text-stone-400 hover:text-stone-200 px-2 cursor-pointer">Annuler</button>
-                      </div>
-                    </td>
-                  </tr>
+                  </span>
                 }
               }
-            } @empty {
-              <tr>
-                <td colspan="11" class="py-4 px-4 text-center font-sans text-stone-500">Aucun joueur dans ce clan.</td>
-              </tr>
+            </p>
+            <p class="text-stone-400">
+              @for (field of statFields; track field.key) {
+                @if (field.max) {
+                  <span class="mr-2 whitespace-nowrap">{{ field.short }} <span class="font-mono" [class]="row.stats[field.key] !== null ? 'text-cyan-300' : 'text-stone-600'">{{ row.stats[field.key] ?? '?' }}</span></span>
+                }
+              }
+            </p>
+            <p class="text-stone-400">
+              ⚔️
+              @if (row.record; as record) {
+                <span class="font-mono text-stone-100">{{ troopsLine(record.troops) }}</span> · {{ formatDate(record.updatedAt) }}
+              } @else {
+                <span class="text-stone-600">Aucun rapport</span>
+              }
+            </p>
+            <div class="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+              <button type="button" (click)="editArmy(row)" class="text-stone-300 hover:text-red-300 cursor-pointer">Modifier</button>
+              @if (row.record) {
+                <button type="button" (click)="removeArmy(row.player)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Effacer l'armée</button>
+              }
+              @if (row.clan !== undefined) {
+                <button type="button" (click)="startTransfer(row)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Retirer</button>
+              }
+            </div>
+            @if (transfer(); as t) {
+              @if (t.player === row.player) {
+                <div class="flex flex-wrap items-center gap-2 pt-2">
+                  <span class="text-stone-300">Transférer vers</span>
+                  <select
+                    [ngModel]="t.target"
+                    (ngModelChange)="setTransferTarget($event)"
+                    class="bg-stone-950 border border-stone-700 rounded-lg px-2 py-1.5 text-stone-200 text-xs focus:outline-none focus:border-red-700 cursor-pointer"
+                  >
+                    @if (row.clan !== null) {
+                      <option value="">{{ noClan }}</option>
+                    }
+                    @for (clan of otherClans(row.clan); track clan) {
+                      <option [value]="clan">{{ clan }}</option>
+                    }
+                  </select>
+                  <button type="button" (click)="confirmTransfer()" class="bg-red-800 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer">Transférer</button>
+                  <button type="button" (click)="removePlayer(row.player)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Supprimer définitivement</button>
+                  <button type="button" (click)="transfer.set(null)" class="text-stone-400 hover:text-stone-200 cursor-pointer">Annuler</button>
+                </div>
+              }
             }
-          </tbody>
-        </table>
-      </div>
+          </li>
+        } @empty {
+          <li class="py-4 px-4 text-center text-xs text-stone-500">Aucun joueur dans ce clan.</li>
+        }
+      </ul>
     }
   </app-card>
 }

@@ -1,10 +1,10 @@
 @let p = plan();
 @let s = storage();
 <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-  <app-card class="md:col-span-5 p-6 space-y-5">
+  <app-card class="md:col-span-5 p-4 sm:p-6 space-y-5">
     <div class="border-b border-stone-800 pb-3">
       <h2 class="font-semibold text-stone-200 flex items-center">
-        <i class="fa-solid fa-warehouse text-red-400 mr-2"></i> Mes dépôts
+        <span class="mr-2" aria-hidden="true">🏚️</span> Mes dépôts
       </h2>
       <p class="text-xs text-stone-400 mt-1">Ce que vous pouvez stocker : au-delà, le pillage est gâché.</p>
     </div>
@@ -25,7 +25,7 @@
     <div class="border-t border-stone-800 pt-5 space-y-4">
       <div>
         <h2 class="font-semibold text-stone-200 flex items-center">
-          <i class="fa-solid fa-users-gear text-red-400 mr-2"></i> Mon armée
+          <span class="mr-2" aria-hidden="true">👥</span> Mon armée
         </h2>
         <p class="text-xs text-stone-400 mt-1">Troupes disponibles pour piller.</p>
       </div>
@@ -49,7 +49,7 @@
     </div>
   </app-card>
 
-  <app-card class="md:col-span-7 p-6 space-y-6">
+  <app-card class="md:col-span-7 p-4 sm:p-6 space-y-6">
     <div class="flex flex-wrap gap-3 justify-between items-center border-b border-stone-800 pb-3">
       <h2 class="font-semibold text-stone-200 flex items-center">
         Équipes de pillage
@@ -59,7 +59,69 @@
       </span>
     </div>
 
-    @if (p.teams === 0) {
+    <app-segmented-control class="block" [options]="modes" [value]="mode()" (valueChange)="mode.set($event)" />
+
+    @if (mode() === 'max') {
+      @let f = fullPlan();
+      @if (f.teams === 0) {
+        <p class="text-sm text-stone-400">Renseignez votre armée pour calculer les équipes.</p>
+      } @else {
+        <div class="grid grid-cols-2 gap-4">
+          <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+            <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Équipes pleines</span>
+            <span class="text-xl font-bold font-mono text-stone-100">{{ f.teams }}</span>
+            <span class="block text-[11px] text-stone-500">{{ fillPercent() }} % des dépôts</span>
+          </div>
+          <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4">
+            <span class="text-xs text-stone-400 block uppercase tracking-wider font-medium">Pillage total</span>
+            <span class="text-xl font-bold font-mono text-emerald-300">{{ formatNumber(f.capacity * f.teams) }}</span>
+            <span class="block text-[11px] text-stone-500">par ressource</span>
+          </div>
+        </div>
+
+        <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4 space-y-3">
+          <div class="flex flex-wrap justify-between items-center gap-2">
+            <span class="text-sm font-semibold text-stone-200">{{ f.teams }} × équipe</span>
+            <span class="text-xs text-stone-400">
+              Pillage <span class="font-mono font-bold text-red-300">{{ formatNumber(f.capacity) }}</span> / ressource
+            </span>
+          </div>
+          <div class="grid grid-cols-3 gap-3">
+            @for (troop of troopTypes; track troop.id) {
+              <div>
+                <span class="text-[11px] text-stone-400 flex items-center uppercase tracking-wider">
+                  <span class="w-2 h-2 rounded-full mr-1.5" [class]="troop.dotClass"></span> {{ troop.label }}
+                </span>
+                <span class="text-xl font-bold font-mono" [class]="troop.textClass">{{ formatNumber(f.team[troop.id]) }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="bg-stone-950/60 border border-stone-800 rounded-xl p-4 space-y-3">
+          @if (leftoverCapacity() > 0) {
+            <div class="flex flex-wrap justify-between items-center gap-2">
+              <span class="text-sm font-semibold text-stone-200"><span class="mr-1.5" aria-hidden="true">🧺</span>Reste de l'armée</span>
+              <span class="text-xs text-stone-400">
+                Pillerait <span class="font-mono font-bold text-stone-200">{{ formatNumber(leftoverCapacity()) }}</span> / ressource
+              </span>
+            </div>
+            <div class="grid grid-cols-3 gap-3">
+              @for (troop of troopTypes; track troop.id) {
+                <div>
+                  <span class="text-[11px] text-stone-400 flex items-center uppercase tracking-wider">
+                    <span class="w-2 h-2 rounded-full mr-1.5" [class]="troop.dotClass"></span> {{ troop.label }}
+                  </span>
+                  <span class="text-xl font-bold font-mono" [class]="troop.textClass">{{ formatNumber(f.leftover[troop.id]) }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-sm text-stone-300"><span class="mr-1.5" aria-hidden="true">🧺</span>Rien ne reste : toute l'armée est envoyée.</p>
+          }
+        </div>
+      }
+    } @else if (p.teams === 0) {
       <p class="text-sm text-stone-400">Renseignez votre armée pour calculer les équipes.</p>
     } @else {
       <div class="grid grid-cols-2 gap-4">
@@ -104,12 +166,20 @@
     }
 
     <div class="bg-red-950/20 border border-red-700/20 rounded-xl p-3.5 text-xs text-red-300 flex space-x-3">
-      <i class="fa-solid fa-circle-info text-red-400 text-base mt-0.5"></i>
-      <span>
-        Chaque unité pille la même quantité de chaque ressource (Genin 13, Chunin 26, Jounin 53). Toute l'armée est répartie en
-        le moins d'équipes possible, chacune sans dépasser le plus petit dépôt (dépôts vides) pour ne rien gâcher. Les équipes
-        sont équilibrées : elles pillent à peu près autant les unes que les autres, sans forcément remplir les dépôts.
-      </span>
+      <span class="text-base mt-0.5" aria-hidden="true">ℹ️</span>
+      @if (mode() === 'max') {
+        <span>
+          Chaque unité pille la même quantité de chaque ressource (Genin 13, Chunin 26, Jounin 53). Une même équipe est envoyée
+          autant de fois que possible, la plus proche du plus petit dépôt (dépôts vides) sans le dépasser. Ce qui ne suffit pas à
+          former une équipe de plus reste à la maison.
+        </span>
+      } @else {
+        <span>
+          Chaque unité pille la même quantité de chaque ressource (Genin 13, Chunin 26, Jounin 53). Toute l'armée est répartie en
+          le moins d'équipes possible, chacune sans dépasser le plus petit dépôt (dépôts vides) pour ne rien gâcher. Les équipes
+          sont équilibrées : elles pillent à peu près autant les unes que les autres, sans forcément remplir les dépôts.
+        </span>
+      }
     </div>
   </app-card>
 </div>

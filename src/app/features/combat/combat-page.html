@@ -96,10 +96,10 @@
   />
 </div>
 
-<app-card class="p-6 space-y-6">
+<app-card class="p-4 sm:p-6 space-y-6">
   <div class="flex justify-between items-center border-b border-stone-800 pb-3">
     <h2 class="font-semibold text-stone-200 flex items-center">
-      <i class="fa-solid fa-scale-balanced text-red-400 mr-2"></i> Résultat estimé
+      <span class="mr-2" aria-hidden="true">⚖️</span> Résultat estimé
     </h2>
     @if (r.ratio !== null) {
       <span
@@ -129,81 +129,30 @@
       </div>
     </div>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="text-xs text-stone-400 uppercase tracking-wider border-b border-stone-800">
-            <th class="text-left py-2 pr-4 font-medium">Tués</th>
-            @for (troop of troopTypes; track troop.key) {
-              <th class="text-right py-2 px-4 font-medium">{{ troop.label }}</th>
-            }
-            <th class="text-right py-2 pl-4 font-medium">Points gagnés par l'adversaire</th>
-          </tr>
-        </thead>
-        <tbody class="font-mono">
-          <tr class="border-b border-stone-800/60">
-            <td class="py-2 pr-4 font-sans text-red-300 font-semibold">Assaillant</td>
-            @for (troop of troopTypes; track troop.key) {
-              <td class="text-right py-2 px-4 text-stone-200">{{ formatNumber(r.attackerLosses[troop.key]) }}</td>
-            }
-            <td class="text-right py-2 pl-4 text-emerald-300">+{{ formatNumber(r.defenderPoints) }}</td>
-          </tr>
-          <tr class="border-b border-stone-800/60 text-xs">
-            <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ récupérés (hôpital {{ r.attackerRecoveryRate }} %)</td>
-            @for (troop of troopTypes; track troop.key) {
-              <td class="text-right py-1.5 px-4 text-emerald-300">+{{ formatNumber(r.attackerRecovered[troop.key]) }}</td>
-            }
-            <td></td>
-          </tr>
-          <tr class="border-b border-stone-800 text-xs">
-            <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ pertes définitives</td>
-            @for (troop of troopTypes; track troop.key) {
-              <td class="text-right py-1.5 px-4 text-red-300 font-bold">{{ formatNumber(r.attackerLosses[troop.key] - r.attackerRecovered[troop.key]) }}</td>
-            }
-            <td></td>
-          </tr>
-          <tr>
-            <td class="py-2 pr-4 font-sans text-emerald-300 font-semibold">Défenseur</td>
-            @if (r.defenderLosses; as d) {
-              @for (troop of troopTypes; track troop.key) {
-                <td class="text-right py-2 px-4 text-stone-200">
-                  {{ formatNumber(d.min[troop.key]) }} – {{ formatNumber(d.max[troop.key]) }}
-                </td>
-              }
-              <td class="text-right py-2 pl-4 text-red-300">
-                +{{ formatNumber(r.attackerPoints!.min) }} – {{ formatNumber(r.attackerPoints!.max) }}
-              </td>
-            } @else {
-              <td colspan="4" class="text-right py-2 pl-4 font-sans text-stone-500">Renseignez l'armée de l'assaillant</td>
-            }
-          </tr>
-          @if (r.defenderLosses && r.defenderRecovered; as dr) {
-            <tr class="border-b border-stone-800/60 text-xs">
-              <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ récupérés (hôpital {{ r.defenderRecoveryRate }} %)</td>
-              @for (troop of troopTypes; track troop.key) {
-                <td class="text-right py-1.5 px-4 text-emerald-300">
-                  +{{ formatNumber(dr.min[troop.key]) }} – {{ formatNumber(dr.max[troop.key]) }}
-                </td>
-              }
-              <td></td>
-            </tr>
-            <tr class="text-xs">
-              <td class="py-1.5 pr-4 pl-3 font-sans text-stone-400">↳ pertes définitives</td>
-              @for (troop of troopTypes; track troop.key) {
-                <td class="text-right py-1.5 px-4 text-red-300 font-bold">
-                  {{ formatNumber(r.defenderLosses.min[troop.key] - dr.min[troop.key]) }} – {{ formatNumber(r.defenderLosses.max[troop.key] - dr.max[troop.key]) }}
-                </td>
-              }
-              <td></td>
-            </tr>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+      <div class="bg-stone-950/50 border border-stone-800 rounded-xl p-3 space-y-1">
+        <p class="font-semibold text-red-300">🗡️ Assaillant</p>
+        <p class="text-stone-300">☠️ Tués <span class="font-mono text-stone-100">{{ troopsLine(r.attackerLosses) }}</span></p>
+        <p class="text-stone-300">🏥 Soignés ({{ r.attackerRecoveryRate }} %) <span class="font-mono text-emerald-300">+{{ troopsLine(r.attackerRecovered) }}</span></p>
+        <p class="text-stone-300">💀 Définitif <span class="font-mono font-bold text-red-300">{{ netLine(r.attackerLosses, r.attackerRecovered) }}</span></p>
+        <p class="text-stone-300">⭐ Points pour le défenseur <span class="font-mono text-emerald-300">+{{ formatNumber(r.defenderPoints) }}</span></p>
+      </div>
+      <div class="bg-stone-950/50 border border-stone-800 rounded-xl p-3 space-y-1">
+        <p class="font-semibold text-emerald-300">🛡️ Défenseur</p>
+        @if (r.defenderLosses; as d) {
+          <p class="text-stone-300">☠️ Tués <span class="font-mono text-stone-100">{{ rangeLine(d.min, d.max) }}</span></p>
+          @if (r.defenderRecovered; as dr) {
+            <p class="text-stone-300">🏥 Soignés ({{ r.defenderRecoveryRate }} %) <span class="font-mono text-emerald-300">+{{ rangeLine(dr.min, dr.max) }}</span></p>
           }
-        </tbody>
-      </table>
+          <p class="text-stone-300">⭐ Points pour l'assaillant <span class="font-mono text-red-300">+{{ formatNumber(r.attackerPoints!.min) }} – {{ formatNumber(r.attackerPoints!.max) }}</span></p>
+        }
+      </div>
     </div>
+    <p class="text-[11px] text-stone-500">Genin / Chuunin / Jounin</p>
   }
 
   <div class="bg-red-950/20 border border-red-700/20 rounded-xl p-3.5 text-xs text-red-300 flex space-x-3">
-    <i class="fa-solid fa-circle-info text-red-400 text-base mt-0.5"></i>
+    <span class="text-base mt-0.5" aria-hidden="true">ℹ️</span>
     <span>
       Formules provisoires, déduites de quelques rapports. Puissance de base 10 / 40 / 60, bonus additionnés
       (Camp d'entraînement + centre du type de troupe, + Mur en défense), puis ×1,2 avec le ticket attaque / défense. L'assaillant perd {{ lossFactorPct }} % ×
@@ -222,15 +171,15 @@
 
 } @else {
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-  <app-card class="p-6 space-y-5">
+  <app-card class="p-4 sm:p-6 space-y-5">
     <div class="border-b border-stone-800 pb-3">
       <h2 class="font-semibold text-stone-200 flex items-center">
-        <i class="fa-solid fa-hand-fist text-red-400 mr-2"></i> Mon attaque
+        <span class="mr-2" aria-hidden="true">🗡️</span> Mon attaque
       </h2>
       <p class="text-xs text-stone-400 mt-1">Vos niveaux et votre armée disponible, retenus dans ce navigateur.</p>
     </div>
 
-    <div class="grid grid-cols-2 gap-3">
+    <div class="grid grid-cols-2 items-end gap-3">
       @for (field of myLevelFields; track field.key) {
         <div>
           <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">{{ field.label }}</label>
@@ -273,10 +222,10 @@
   />
 </div>
 
-<app-card class="p-6 space-y-4">
+<app-card class="p-4 sm:p-6 space-y-4">
   <div class="border-b border-stone-800 pb-3">
     <h2 class="font-semibold text-stone-200 flex items-center">
-      <i class="fa-solid fa-chess-knight text-red-400 mr-2"></i> Armée optimale
+      <span class="mr-2" aria-hidden="true">🎯</span> Armée optimale
     </h2>
     <p class="text-xs text-stone-400 mt-1">
       Hors hôpital : la composition dont les pertes se reforment le plus vite, type par type (Genin {{ minutes.genin }} min,
@@ -295,32 +244,23 @@
         }
       </div>
 
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="text-xs text-stone-400 uppercase tracking-wider border-b border-stone-800">
-              <th class="text-left py-2 pr-4 font-medium">À reformer</th>
-              <th class="text-right py-2 px-4 font-medium">Vous</th>
-              <th class="text-right py-2 pl-4 font-medium">Ennemi (au moins)</th>
-            </tr>
-          </thead>
-          <tbody class="font-mono">
-            @for (troop of troopTypes; track troop.key) {
-              <tr class="border-b border-stone-800/60">
-                <td class="py-2 pr-4 font-sans text-stone-300">{{ troop.label }}</td>
-                <td class="py-2 px-4 text-right text-red-300">
-                  {{ formatNumber(o.result.attackerLosses[troop.key]) }} · {{ formatDuration(o.lostMinutes[troop.key] * 60) }}
-                </td>
-                <td class="py-2 pl-4 text-right text-emerald-300">
-                  @if (o.result.defenderLosses && o.enemyLostMinutes; as e) {
-                    {{ formatNumber(o.result.defenderLosses.min[troop.key]) }} · {{ formatDuration(e.min[troop.key] * 60) }}
-                  }
-                </td>
-              </tr>
+      <ul class="space-y-1.5 text-sm">
+        @for (troop of troopTypes; track troop.key) {
+          <li class="bg-stone-950/50 border border-stone-800 rounded-xl px-3 py-2">
+            <p class="font-medium text-stone-200">{{ troop.label }}</p>
+            <p class="text-xs text-stone-400">
+              Tes pertes <span class="font-mono text-red-300">{{ formatNumber(o.result.attackerLosses[troop.key]) }}</span> · ⏱️
+              <span class="font-mono text-red-300">{{ formatDuration(o.lostMinutes[troop.key] * 60) }}</span>
+            </p>
+            @if (o.result.defenderLosses && o.enemyLostMinutes; as e) {
+              <p class="text-xs text-stone-400">
+                Ennemi (au moins) <span class="font-mono text-emerald-300">{{ formatNumber(o.result.defenderLosses.min[troop.key]) }}</span> · ⏱️
+                <span class="font-mono text-emerald-300">{{ formatDuration(e.min[troop.key] * 60) }}</span>
+              </p>
             }
-          </tbody>
-        </table>
-      </div>
+          </li>
+        }
+      </ul>
       <p class="text-[11px] text-stone-500">
         Chaque type se reforme en parallèle dans son bâtiment : l'armée est répartie (15 Genin pour 10 Chuunin pour 6 Jounin)
         pour que vos trois files se reconstituent en même temps, le plus vite possible.

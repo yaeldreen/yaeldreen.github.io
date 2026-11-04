@@ -6,12 +6,12 @@ import { Army } from './combat.logic';
 export const LEVEL_MAX = 20;
 
 export const LEVEL_FIELDS: readonly { key: LevelKey; label: string; icon: string }[] = [
-  { key: 'training', label: "Camp d'entraînement", icon: 'fa-dumbbell' },
-  { key: 'academy', label: 'Académie', icon: 'fa-graduation-cap' },
-  { key: 'chunnin', label: 'Centre Chuunin', icon: 'fa-user-ninja' },
-  { key: 'jounin', label: 'Centre Jounin', icon: 'fa-user-shield' },
-  { key: 'hospital', label: 'Hôpital', icon: 'fa-hospital' },
-  { key: 'wall', label: "Mur d'enceinte", icon: 'fa-shield' },
+  { key: 'training', label: "Camp d'entraînement", icon: '🏋️' },
+  { key: 'academy', label: 'Académie', icon: '🎓' },
+  { key: 'chunnin', label: 'Centre Chuunin', icon: '🥷' },
+  { key: 'jounin', label: 'Centre Jounin', icon: '🛡️' },
+  { key: 'hospital', label: 'Hôpital', icon: '🏥' },
+  { key: 'wall', label: "Mur d'enceinte", icon: '🧱' },
 ];
 
 export const clamp = (value: number | null, min: number, max: number): number =>

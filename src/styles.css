@@ -1,3 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+/* Espace entre les blocs de chaque page : le composant de page est le parent direct des blocs. */
+main > :not(router-outlet) {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 40rem) {
+  main > :not(router-outlet) {
+    gap: 1.5rem;
+  }
+}

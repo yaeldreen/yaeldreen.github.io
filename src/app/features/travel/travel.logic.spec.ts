@@ -21,12 +21,16 @@ describe('temps de trajet', () => {
     expect(travelMs(38.5, 11, true)).toBe((30 * 60 + 10) * 1000);
   });
 
+  it('affiche un temps par km propre, sans erreur d’arrondi (CE 7 : 135,2 s)', () => {
+    expect(computeReturnRows(1, 0, { level: 11, distanceKm: 0, nowMs: 0 })[6].speedPerKm).toBe('02:15,20');
+  });
+
   it('applique le ticket dans le tableau des retours', () => {
     const row = computeReturnRows(38.5, 0, { level: 11, distanceKm: 0, nowMs: 0 })[10];
     expect(row.level).toBe(11);
     expect(row.speedPerKm).toBe('01:33,60');
     expect(row.marginMs).toBe(3_604_000);
     expect(row.ticketMarginMs).toBe(1_810_000);
-    expect(row.ticketSpeedPerKm).toBe('47 s / km');
+    expect(row.ticketSpeedPerKm).toBe('47 s/km');
   });
 });

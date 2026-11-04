@@ -14,13 +14,13 @@ import { ocrErrorDetail, readReportImage } from '../enemies/report-ocr';
 import {
   computeDistance,
   computeReturnRows,
-  Coordinate,
   clanVillages,
   CounterAttack,
   counterArrivalMs,
   DistanceMode,
 } from './travel.logic';
-import { findVillage, villageOptions } from '../../core/game-data/map-villages';
+import { findVillage, MapVillage, villageOptions } from '../../core/game-data/map-villages';
+import { findPlayer } from '../enemies/clans.data';
 
 const ME_KEY = 'travel.me';
 const CE_KEY = 'travel.ce';
@@ -34,9 +34,9 @@ const CE_KEY = 'travel.ce';
 })
 export class TravelPage implements OnDestroy {
   protected readonly modeOptions: readonly SegmentOption<DistanceMode>[] = [
-    { id: 'manual', label: 'Saisie km directe' },
-    { id: 'coords', label: 'Villages (1 / 2)' },
-    { id: 'report', label: 'Calcul rapport' },
+    { id: 'manual', label: 'Km' },
+    { id: 'coords', label: 'Villages' },
+    { id: 'report', label: 'Rapport' },
   ];
   private readonly store = inject(EnemiesStore);
   protected readonly villageOptions = computed((): ComboboxOption[] => villageOptions(this.store.villages()));
@@ -83,8 +83,8 @@ export class TravelPage implements OnDestroy {
   private readonly now = signal(Date.now());
   private readonly clock = setInterval(() => this.now.set(Date.now()), 1000);
 
-  /** Village de l'assaillant, quand ses coordonnées sont connues (pas en saisie km directe). */
-  private readonly attackerPoint = computed((): Coordinate | null => {
+  /** Village de l'assaillant, quand il est connu (pas en saisie km directe). */
+  private readonly attackerPoint = computed((): MapVillage | null => {
     switch (this.distanceMode()) {
       case 'coords':
         return this.villages()[0].village;
@@ -111,14 +111,33 @@ export class TravelPage implements OnDestroy {
   );
   protected readonly counterArrival = computed(() => formatDateTime(counterArrivalMs(this.counter())));
 
-  protected readonly rows = computed(() => {
+  private readonly departureMs = computed(() => {
     const departure = this.departureTime();
-    return computeReturnRows(this.distance(), departure ? new Date(departure).getTime() : Date.now(), this.counter());
+    return departure ? new Date(departure).getTime() : Date.now();
+  });
+  protected readonly attack = computed(() => formatDateTime(this.departureMs()));
+
+  protected readonly rows = computed(() => computeReturnRows(this.distance(), this.departureMs(), this.counter()));
+
+  /** « Leaf village (Asuma) → Ninjed (Jued) », quand les deux villages sont connus. */
+  protected readonly route = computed((): string | null => {
+    const mode = this.distanceMode();
+    if (mode === 'manual') return null;
+    const [from, to] = (mode === 'coords' ? this.villages() : this.reportVillages()).map((v) => v.village);
+    return from && to ? `${from.name} (${from.kage}) → ${to.name} (${to.kage})` : null;
+  });
+
+  /** CE de l'assaillant s'il est renseigné dans les infos joueurs : sa ligne est mise en avant. */
+  protected readonly attackerCe = computed((): number | null => {
+    const attacker = this.attackerPoint();
+    if (!attacker) return null;
+    const players = this.store.players();
+    return (findPlayer(players, attacker.kage) ?? findPlayer(players, attacker.name))?.player.ce ?? null;
   });
 
   /** "+12 min 30 s" d'avance, "−3 min" de retard. */
   protected formatMargin(ms: number): string {
-    return `${ms >= 0 ? '+' : '−'}${formatDuration(Math.abs(ms) / 1000)}`;
+    return `${ms >= 0 ? '+' : '−'}${formatDuration(Math.round(Math.abs(ms) / 1000))}`;
   }
 
   protected setMe(kage: string): void {

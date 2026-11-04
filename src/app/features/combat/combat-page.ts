@@ -5,7 +5,7 @@ import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDuration, formatNumber } from '../../shared/utils/format';
 import { readStored, writeStored } from '../../shared/utils/storage';
-import { TROOPS, TroopKey } from '../enemies/enemies.model';
+import { TroopCounts, TROOPS, TroopKey } from '../enemies/enemies.model';
 import { ArmyCard, PlayerPick } from './army-card';
 import { clamp, emptySide, LEVEL_FIELDS, LEVEL_MAX, toArmy } from './army-form';
 import { encodeHistory, HistoryEntry, HistorySide, loadHistory, pushHistory, saveHistory, SideForm } from './combat-history';
@@ -54,10 +54,10 @@ export class CombatPage {
   protected readonly levelMax = LEVEL_MAX;
   protected readonly lossFactorPct = (ATTACKER_LOSS_FACTOR * 100).toFixed(1);
   protected readonly ticketBonus = HOSPITAL_TICKET_BONUS;
-  protected readonly defenderRangePct = `${DEFENDER_LOSS_RANGE.min * 100} à ${DEFENDER_LOSS_RANGE.max * 100} %`;
+  protected readonly defenderRangePct = `${Math.round(DEFENDER_LOSS_RANGE.min * 100)} à ${Math.round(DEFENDER_LOSS_RANGE.max * 100)} %`;
   protected readonly defenseWins = {
     attacker: (DEFENSE_WINS.attackerFactor * 100).toFixed(0),
-    defender: `${DEFENSE_WINS.defenderFactor.min * 100} à ${DEFENSE_WINS.defenderFactor.max * 100}`,
+    defender: `${Math.round(DEFENSE_WINS.defenderFactor.min * 100)} à ${Math.round(DEFENSE_WINS.defenderFactor.max * 100)}`,
   };
 
   protected readonly tabOptions: readonly SegmentOption<Tab>[] = [
@@ -240,6 +240,20 @@ export class CombatPage {
     this.defender.set(emptySide());
     this.playerNames.set({ attacker: '', defender: '' });
     this.loaded.set({ attacker: null, defender: null });
+  }
+
+  /** « 132 / 84 / 14 » (Genin / Chuunin / Jounin). */
+  protected troopsLine(troops: TroopCounts): string {
+    return TROOPS.map((t) => formatNumber(troops[t.key])).join(' / ');
+  }
+
+  protected netLine(losses: TroopCounts, recovered: TroopCounts): string {
+    return TROOPS.map((t) => formatNumber(losses[t.key] - recovered[t.key])).join(' / ');
+  }
+
+  /** « 346–381 / 207–228 / 27–29 » : une fourchette par type de troupe. */
+  protected rangeLine(min: TroopCounts, max: TroopCounts): string {
+    return TROOPS.map((t) => (min[t.key] === max[t.key] ? formatNumber(min[t.key]) : `${formatNumber(min[t.key])}–${formatNumber(max[t.key])}`)).join(' / ');
   }
 
   protected percent(rate: number): string {

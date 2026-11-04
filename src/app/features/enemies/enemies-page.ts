@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { Card } from '../../shared/ui/card';
 import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
-import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
+import { SegmentOption } from '../../shared/ui/segmented-control';
 import { formatNumber } from '../../shared/utils/format';
 import { findVillage } from '../../core/game-data/map-villages';
 import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PLAYER_STATS, PlayerMatch, PlayerStatKey } from './clans.data';
@@ -77,7 +77,7 @@ const toRow = (
 
 @Component({
   selector: 'app-enemies-page',
-  imports: [Card, NumberInput, FormsModule, SegmentedControl, LevelInput],
+  imports: [Card, NumberInput, FormsModule, LevelInput],
   templateUrl: './enemies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(window:paste)': 'onPaste($event)' },
@@ -155,6 +155,11 @@ export class EnemiesPage implements OnDestroy {
     const row = this.evolution().get(playerKey(player));
     if (!row) return null;
     return key === 'points' ? row.pointsDelta : key === 'inhabitants' ? row.inhabitantsDelta : null;
+  }
+
+  /** « 1 756 / 1 055 / 213 » (Genin / Chuunin / Jounin). */
+  protected troopsLine(troops: TroopCounts): string {
+    return TROOPS.map((t) => formatNumber(troops[t.key])).join(' / ');
   }
 
   protected signed(n: number): string {

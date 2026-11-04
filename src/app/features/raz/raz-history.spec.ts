@@ -6,7 +6,6 @@ const entry = (at: number, attackers = 3): RazEntry => ({
   at,
   defender: side('Malice at the pa', 2323),
   attackers: Array.from({ length: attackers }, (_, i) => side(`Attaquant ${i}`, 1000 + i)),
-  healedReturn: true,
 });
 
 describe('historique de raz', () => {
@@ -27,6 +26,12 @@ describe('historique de raz', () => {
   it('abandonne le plus ancien quand le cookie déborderait', () => {
     const list = pushRazHistory([entry(1, 25)], entry(2, 25));
     expect(list.map((e) => e.at)).toEqual([2]);
+  });
+
+  it('relit un ancien cookie qui gardait le choix des soignés', () => {
+    const old = JSON.parse(encodeRazHistory([entry(1)]));
+    old[0].push(1);
+    expect(decodeRazHistory(JSON.stringify(old))).toEqual([entry(1)]);
   });
 
   it('ignore un cookie illisible', () => {

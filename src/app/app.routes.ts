@@ -43,11 +43,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/nearest/nearest-page').then((m) => m.NearestPage),
   },
   {
-    path: 'tour',
-    title: 'Tour de contrôle',
-    loadComponent: () => import('./features/watchtower/watchtower-page').then((m) => m.WatchtowerPage),
-  },
-  {
     path: 'ennemis',
     title: 'Infos Ennemis',
     loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),

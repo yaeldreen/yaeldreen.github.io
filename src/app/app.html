@@ -36,14 +36,14 @@
             [class]="rla.isActive ? 'bg-red-800 text-white' : 'text-stone-300 hover:bg-stone-800 hover:text-white'"
             class="px-4 py-3 rounded-xl text-sm font-medium transition cursor-pointer flex items-center"
           >
-            <i class="fa-solid {{ tab.icon }} mr-2"></i> {{ tab.label }}
+            <span class="mr-2" aria-hidden="true">{{ tab.icon }}</span> {{ tab.label }}
           </a>
         }
       </nav>
     }
   </header>
 
-  <main class="max-w-7xl mx-auto px-4 py-8 w-full flex-grow space-y-6">
+  <main class="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 w-full flex-grow">
     <router-outlet />
   </main>
 

@@ -1,6 +1,14 @@
+@switch (status()) {
+  @case ('live') {
+    <p class="text-xs text-emerald-300 text-center">🟢 En direct : tout le monde voit et modifie ce même raz.</p>
+  }
+  @case ('offline') {
+    <p class="text-xs text-amber-300 text-center">⚠️ Partage indisponible : ce raz reste sur cet appareil. Vérifiez la connexion et que les règles Firestore sont publiées.</p>
+  }
+}
 @if (report(); as rep) {
   @let plan = rep.plan;
-  <app-card class="p-6 space-y-5">
+  <app-card class="p-4 sm:p-6 space-y-5">
     <div class="border-b border-stone-800 pb-3 flex flex-wrap justify-between items-center gap-3">
       <h2 class="font-semibold text-stone-200">Rapport de raz · {{ rep.defenderName }}</h2>
       <button
@@ -53,58 +61,17 @@
                 <span>Force assaillant <span class="font-mono text-red-300">{{ power(r.attack.strength) }}</span></span>
                 <span>Force défense <span class="font-mono text-emerald-300">{{ power(r.defense.strength) }}</span></span>
               </div>
-              <div class="overflow-x-auto">
-                <table class="w-full">
-                  <thead>
-                    <tr class="text-[11px] text-stone-400 uppercase tracking-wider border-b border-stone-800">
-                      <th class="text-left py-1.5 pr-3 font-medium"></th>
-                      @for (t of troopTypes; track t.key) {
-                        <th class="text-right py-1.5 px-2 font-medium">{{ t.label }}</th>
-                      }
-                    </tr>
-                  </thead>
-                  <tbody class="font-mono">
-                    <tr class="text-red-300 font-sans font-semibold"><td class="pt-2 pr-3" colspan="4">Assaillant · {{ rep.names[pass.attacker] }}</td></tr>
-                    <tr>
-                      <td class="py-1 pr-3 font-sans text-stone-400">Ninjas</td>
-                      @for (t of troopTypes; track t.key) {
-                        <td class="text-right py-1 px-2 text-stone-200">{{ formatNumber(rep.sent[pass.attacker][t.key]) }}</td>
-                      }
-                    </tr>
-                    <tr>
-                      <td class="py-1 pr-3 font-sans text-stone-400">Tués ({{ percent(r.attackerLossRate) }})</td>
-                      @for (t of troopTypes; track t.key) {
-                        <td class="text-right py-1 px-2 text-red-300">{{ formatNumber(r.attackerLosses[t.key]) }}</td>
-                      }
-                    </tr>
-                    <tr>
-                      <td class="py-1 pr-3 font-sans text-stone-400">Soignés ({{ r.attackerRecoveryRate }} %)</td>
-                      @for (t of troopTypes; track t.key) {
-                        <td class="text-right py-1 px-2 text-emerald-300">+{{ formatNumber(r.attackerRecovered[t.key]) }}</td>
-                      }
-                    </tr>
-
-                    <tr class="text-emerald-300 font-sans font-semibold"><td class="pt-3 pr-3" colspan="4">Défenseur · {{ rep.defenderName }}</td></tr>
-                    <tr>
-                      <td class="py-1 pr-3 font-sans text-stone-400">Ninjas</td>
-                      @for (t of troopTypes; track t.key) {
-                        <td class="text-right py-1 px-2 text-stone-200">{{ formatNumber(pass.defenderBefore[t.key]) }}</td>
-                      }
-                    </tr>
-                    <tr>
-                      <td class="py-1 pr-3 font-sans text-stone-400">Tués ({{ percent(r.defenderLossRate!.min) }})</td>
-                      @for (t of troopTypes; track t.key) {
-                        <td class="text-right py-1 px-2 text-red-300">{{ formatNumber(pass.defenderKilled[t.key]) }}</td>
-                      }
-                    </tr>
-                    <tr>
-                      <td class="py-1 pr-3 font-sans text-stone-400">Après le passage</td>
-                      @for (t of troopTypes; track t.key) {
-                        <td class="text-right py-1 px-2 text-stone-100 font-bold">{{ formatNumber(pass.defenderAfter[t.key]) }}</td>
-                      }
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="space-y-1 text-stone-300">
+                <p class="font-semibold text-red-300">🗡️ {{ rep.names[pass.attacker] }}</p>
+                <p>👥 <span class="font-mono text-stone-100">{{ troopsOf(rep.sent[pass.attacker]) }}</span></p>
+                <p>☠️ <span class="font-mono text-red-300">{{ troopsOf(r.attackerLosses) }}</span> ({{ percent(r.attackerLossRate) }})</p>
+                <p>🏥 <span class="font-mono text-emerald-300">+{{ troopsOf(r.attackerRecovered) }}</span> ({{ r.attackerRecoveryRate }} %)</p>
+              </div>
+              <div class="space-y-1 text-stone-300">
+                <p class="font-semibold text-emerald-300">🛡️ {{ rep.defenderName }}</p>
+                <p>👥 <span class="font-mono text-stone-100">{{ troopsOf(pass.defenderBefore) }}</span></p>
+                <p>☠️ <span class="font-mono text-red-300">{{ troopsOf(pass.defenderKilled) }}</span> ({{ percent(r.defenderLossRate!.min) }})</p>
+                <p>➡️ Après le passage <span class="font-mono font-bold text-stone-100">{{ troopsOf(pass.defenderAfter) }}</span></p>
               </div>
               <p class="text-stone-400">
                 Points gagnés : assaillant <span class="font-mono text-red-300">+{{ formatNumber(r.attackerPoints!.min) }}</span>,
@@ -128,7 +95,7 @@
       Tant qu'un attaquant peut gagner, le plus fort passe en premier : chaque victoire retire au moins 50 % de la défense et coûte
       à peu près la même puissance quel que soit l'attaquant, les plus faibles passent donc sur une défense déjà réduite. Si personne
       ne peut gagner, un attaquant crashe : celui qui permet ensuite le plus de passages, puis le meilleur ratio pertes / ennemis tués.
-      Pertes du défenseur prises au bas de la fourchette{{ healedReturn() ? ', soignés du défenseur revenus avant chaque passage' : '' }}.
+      Pertes du défenseur prises au bas de la fourchette. Ses soignés ne reviennent pas pendant le raz : il faut attendre 24 h.
     </p>
 
     <button
@@ -213,11 +180,7 @@
     </div>
   </div>
 
-  <app-card class="p-6 space-y-4">
-    <label class="flex items-center gap-2 text-xs text-stone-300 cursor-pointer select-none">
-      <input type="checkbox" [checked]="healedReturn()" (change)="healedReturn.set($any($event.target).checked)" class="accent-red-700 w-4 h-4 cursor-pointer" />
-      Les soignés du défenseur reviennent entre deux passages
-    </label>
+  <app-card class="p-4 sm:p-6 space-y-4">
     <button
       type="button"
       (click)="simulate()"

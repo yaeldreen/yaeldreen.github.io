@@ -1,17 +1,15 @@
-<app-card class="p-6 space-y-6">
-  <div class="flex items-center justify-between border-b border-stone-800 pb-3">
-    <h2 class="font-semibold text-stone-200 flex items-center">
-      <i class="fa-solid fa-sliders text-red-400 mr-2"></i> Mode de calcul de la distance
-    </h2>
+<app-card class="p-4 sm:p-6 space-y-5">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-800 pb-3">
+    <h2 class="font-semibold text-stone-200">↩️ Calcul des retours</h2>
     <app-segmented-control [options]="modeOptions" [(value)]="distanceMode" />
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
     @if (distanceMode() === 'manual') {
       <div>
         <div class="flex justify-between items-center mb-2">
           <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider">
-            <i class="fa-solid fa-route text-red-400 mr-1.5"></i> Distance à parcourir (km)
+            <span class="mr-1.5" aria-hidden="true">🗺️</span> Distance (km)
           </label>
           <span class="text-xs text-red-400 font-mono font-semibold">{{ distance() }} km</span>
         </div>
@@ -29,7 +27,7 @@
           @if (imageUrl(); as url) {
             <img [src]="url" alt="Capture du rapport" class="max-h-56 rounded-lg border border-stone-800" />
           } @else {
-            <i class="fa-solid fa-image text-3xl text-stone-600 mb-3"></i>
+            <span class="text-3xl mb-3" aria-hidden="true">🖼️</span>
             <span class="text-sm text-stone-300">Collez la capture du rapport (Ctrl+V / Cmd+V), glissez-la ici ou cliquez pour la choisir</span>
             <span class="text-xs text-stone-500 mt-1">Assaillant, défenseur et heure d'attaque sont lus automatiquement</span>
           }
@@ -48,7 +46,7 @@
 
         <div class="space-y-4">
           @if (reading()) {
-            <p class="text-sm text-stone-300"><i class="fa-solid fa-spinner fa-spin text-red-400 mr-2"></i> Lecture de la capture…</p>
+            <p class="text-sm text-stone-300"><span class="mr-2" aria-hidden="true">⏳</span> Lecture de la capture…</p>
           }
           @if (readWarning(); as warning) {
             <p class="text-xs text-amber-300 bg-amber-950/20 border border-amber-500/30 rounded-lg p-2.5">{{ warning }}</p>
@@ -97,25 +95,22 @@
     <div class="md:col-span-2">
       <div class="flex justify-between items-center mb-2">
         <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider">
-          <i class="fa-solid fa-clock text-red-400 mr-1.5"></i> Heure d'Attaque (avec secondes)
+          <span class="mr-1.5" aria-hidden="true">🕐</span> Heure d'attaque
         </label>
         <button type="button" (click)="setNow()" class="text-xs text-red-400 hover:text-red-300 underline transition cursor-pointer">
           Maintenant
         </button>
       </div>
       <app-datetime-seconds-input [(value)]="departureTime" />
-      <p class="text-xs text-stone-500 mt-3">* Vitesses officielles de déplacement par kilomètre (Niveaux 1 à 20).</p>
     </div>
 
-    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-4 gap-4 border-t border-stone-800 pt-5 items-end">
+    <div class="md:col-span-2 grid grid-cols-2 gap-3 border-t border-stone-800 pt-4 items-end">
       <div>
-        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
-          <i class="fa-solid fa-user text-red-400 mr-1.5"></i> Qui es-tu ?
-        </label>
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">👤 Qui es-tu ?</label>
         <select
           [ngModel]="me()"
           (ngModelChange)="setMe($event)"
-          class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700 cursor-pointer"
+          class="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700 cursor-pointer"
         >
           <option value="">Le défenseur</option>
           @for (v of clanVillages(); track v.kage) {
@@ -124,84 +119,60 @@
         </select>
       </div>
       <div>
-        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">
-          <i class="fa-solid fa-dumbbell text-red-400 mr-1.5"></i> Mon CE
-        </label>
+        <label class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">🏋️ Mon CE</label>
         <app-level-input [value]="ourLevel()" (valueChange)="setOurLevel($event)" [min]="1" [max]="20" placeholder="11" />
-      </div>
-      <div class="sm:col-span-2 bg-stone-900 px-4 py-3 rounded-xl border border-stone-800 text-xs text-stone-300">
-        @if (counterFromMyVillage()) {
-          Mon trajet ({{ myVillage()!.name }} → assaillant) :
-        } @else {
-          Mon trajet (défenseur → assaillant) :
-        }
-        <span class="font-mono font-bold text-red-400">{{ counter().distanceKm }} km</span>.
-        Départ maintenant (CE {{ counter().level }}) → arrivée
-        <span class="font-mono font-bold text-emerald-400">{{ counterArrival().time }}</span>
-        <span class="text-stone-500">{{ counterArrival().date }}</span>
-        @if (myVillage() && !counterFromMyVillage()) {
-          <span class="block text-stone-500 mt-1">En saisie km directe, la position de l'assaillant est inconnue : distance du défenseur.</span>
-        }
       </div>
     </div>
   </div>
 </app-card>
 
-<app-card class="overflow-hidden">
-  <div class="p-6 border-b border-stone-800 flex justify-between items-center">
-    <h2 class="font-semibold text-stone-200 flex items-center">
-      <i class="fa-solid fa-table-list text-red-400 mr-2"></i> Tableau Calcul Retour
-    </h2>
-    <span class="text-xs text-stone-400 font-mono">Distance : {{ distance() }} km</span>
+<app-card class="p-4 sm:p-6 space-y-4">
+  <div class="border-b border-stone-800 pb-3 space-y-1.5 text-sm text-stone-300">
+    <h2 class="font-semibold text-stone-100 text-base">↩️ Retours · <span class="font-mono text-red-300">{{ distance() }} km</span></h2>
+    <p>⚔️ Attaque à <span class="font-mono font-bold text-stone-100">{{ attack().time }}</span> <span class="ml-1 text-stone-500 text-xs">{{ attack().date }}</span></p>
+    @if (route(); as r) {
+      <p>🗺️ {{ r }}</p>
+    }
+    <p>
+      🏃 Ma contre-attaque (CE {{ counter().level }}, {{ counter().distanceKm }} km
+      {{ counterFromMyVillage() ? 'depuis ' + myVillage()!.name : 'depuis le village attaqué' }}) arrive à
+      <span class="font-mono font-bold text-emerald-400">{{ counterArrival().time }}</span> si je pars maintenant
+    </p>
+    @if (attackerCe(); as ce) {
+      <p>⭐ CE connu de l'assaillant : <span class="font-bold text-amber-300">{{ ce }}</span></p>
+    }
+    @if (myVillage() && !counterFromMyVillage()) {
+      <p class="text-xs text-stone-500">En saisie km directe, la position de l'assaillant est inconnue : distance du défenseur.</p>
+    }
   </div>
 
-  <div class="overflow-x-auto">
-    <table class="w-full text-left border-collapse">
-      <thead>
-        <tr class="border-b border-stone-800 text-xs text-stone-400 uppercase tracking-wider bg-stone-950/40">
-          <th class="py-3 px-5">Niveau du Centre</th>
-          <th class="py-3 px-5">Vitesse de déplacement / Km</th>
-          <th class="py-3 px-5">Heure de retour</th>
-          <th class="py-3 px-5">Heure de retour - ticket</th>
-          <th class="py-3 px-5 text-center">Retour faisable</th>
-          <th class="py-3 px-5 text-center">Retour faisable avec ticket</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-stone-800/60 font-mono text-sm">
-        @for (row of rows(); track row.level) {
-          <tr class="hover:bg-red-950/20 transition">
-            <td class="py-3 px-5 font-bold text-red-300">
-              <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-700/20 text-red-400 border border-red-700/30 text-xs mr-2">{{ row.level }}</span>
-              Niveau {{ row.level }}
-            </td>
-            <td class="py-3 px-5 text-stone-300">{{ row.speedPerKm }}</td>
-            <td class="py-3 px-5 font-bold text-emerald-400">
-              {{ row.arrival.time }}
-              <span class="block text-xs font-normal text-stone-500">{{ row.arrival.date }}</span>
-            </td>
-            <td class="py-3 px-5 font-bold text-violet-400">
-              {{ row.ticketArrival.time }}
-              <span class="block text-xs font-normal text-stone-500">{{ row.ticketArrival.date }} · {{ row.ticketSpeedPerKm }}</span>
-            </td>
-            <td class="py-3 px-5 text-center">
-              @if (row.feasible) {
-                <span class="font-bold text-emerald-400" title="Nos troupes arrivent avant leur retour">✓ Oui</span>
-              } @else {
-                <span class="font-bold text-red-500" title="Leurs troupes sont rentrées avant notre arrivée">✗ Non</span>
-              }
-              <span class="block text-xs font-normal text-stone-500">{{ formatMargin(row.marginMs) }}</span>
-            </td>
-            <td class="py-3 px-5 text-center">
-              @if (row.ticketFeasible) {
-                <span class="font-bold text-emerald-400" title="Nos troupes arrivent avant leur retour avec ticket">✓ Oui</span>
-              } @else {
-                <span class="font-bold text-red-500" title="Avec ticket, leurs troupes sont rentrées avant notre arrivée">✗ Non</span>
-              }
-              <span class="block text-xs font-normal text-stone-500">{{ formatMargin(row.ticketMarginMs) }}</span>
-            </td>
-          </tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  <ul class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+    @for (row of rows(); track row.level) {
+      <li
+        class="grid grid-cols-[5rem_1fr] gap-x-3 items-center rounded-xl border px-3 py-2"
+        [class]="row.level === attackerCe() ? 'border-amber-500/50 bg-amber-950/20' : 'border-stone-800 bg-stone-950/50'"
+      >
+        <div>
+          <span class="block font-bold text-red-300 text-sm">{{ row.level === attackerCe() ? '⭐ ' : '' }}CE {{ row.level }}</span>
+          <span class="block font-mono text-[10px] text-stone-500">{{ row.speedPerKm }}</span>
+          <span class="block whitespace-nowrap font-mono text-[10px] text-stone-500">🎟️ {{ row.ticketSpeedPerKm }}</span>
+        </div>
+        <div class="space-y-1 font-mono text-sm min-w-0">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="whitespace-nowrap font-bold text-stone-100">🕐 {{ row.arrival.time }}</span>
+            <span class="text-right text-xs" [class]="row.feasible ? 'text-emerald-400' : 'text-red-400'">{{ row.feasible ? '✅' : '❌' }} {{ formatMargin(row.marginMs) }}</span>
+          </div>
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="whitespace-nowrap font-bold text-violet-300">🎟️ {{ row.ticketArrival.time }}</span>
+            <span class="text-right text-xs" [class]="row.ticketFeasible ? 'text-emerald-400' : 'text-red-400'">{{ row.ticketFeasible ? '✅' : '❌' }} {{ formatMargin(row.ticketMarginMs) }}</span>
+          </div>
+          @if (row.arrival.date !== attack().date) {
+            <span class="block font-sans text-[10px] text-stone-500">{{ row.arrival.date }}</span>
+          }
+        </div>
+      </li>
+    }
+  </ul>
+
+  <p class="text-[11px] text-stone-500">🕐 sans ticket · 🎟️ ticket vitesse · ✅ ma contre-attaque arrive avant leur retour · ❌ trop tard</p>
 </app-card>

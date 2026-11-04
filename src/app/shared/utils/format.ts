@@ -15,7 +15,9 @@ export function formatDuration(totalSeconds: number): string {
 }
 
 /** Centièmes de seconde → "MM:SS,CC" (ou "00:MM:SS,CC" avec `withHours`). */
-export function formatSpeed(centiseconds: number, withHours = false): string {
+export function formatSpeed(value: number, withHours = false): string {
+  // Le temps par km peut être un calcul à virgule (72,8 s × 100) : on revient à un entier de centièmes.
+  const centiseconds = Math.round(value);
   const minutes = Math.floor(centiseconds / 6000);
   const seconds = Math.floor(centiseconds / 100) % 60;
   return `${withHours ? '00:' : ''}${pad(minutes)}:${pad(seconds)},${pad(centiseconds % 100)}`;
@@ -35,8 +37,7 @@ export interface FormattedDateTime {
 export function formatDateTime(ms: number): FormattedDateTime {
   const d = new Date(ms);
   return {
-    // Une demi-seconde (ticket vitesse) s'affiche : 14:05:09,5.
-    time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + (d.getMilliseconds() ? `,${Math.floor(d.getMilliseconds() / 100)}` : ''),
+    time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
     date: d.toLocaleDateString([], { weekday: 'short', day: 'numeric', month: 'short' }),
   };
 }

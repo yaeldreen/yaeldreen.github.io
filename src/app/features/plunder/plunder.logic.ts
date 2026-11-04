@@ -74,3 +74,49 @@ export function planPlunder(army: Troops, target: number): PlunderPlan {
     total,
   };
 }
+
+export interface FullTeamPlan {
+  /** Équipe type (vide si aucune troupe). */ team: Troops;
+  /** Pillage de l'équipe, par ressource. */ capacity: number;
+  /** Nombre d'équipes identiques que l'armée peut former. */ teams: number;
+  /** Troupes restantes après ces équipes. */ leftover: Troops;
+}
+
+/**
+ * Pillage max : l'équipe dont le pillage est le plus proche de `target` sans le dépasser, envoyée autant de fois que
+ * possible ; le reste de l'armée est signalé. À pillage égal : celle qui permet le plus d'équipes, puis la moins nombreuse.
+ * Pour chaque nombre de Jounin et de Chunin, on complète avec le maximum de Genin possible.
+ */
+export function planFullTeams(army: Troops, target: number): FullTeamPlan {
+  const capacityOf = (id: TroopId): number => TROOP_TYPES.find((t) => t.id === id)?.capacity ?? 0;
+  const [geninCap, chuninCap, jouninCap] = [capacityOf('genin'), capacityOf('chunin'), capacityOf('jounin')];
+  // Équipes formables pour un type : illimité s'il n'est pas utilisé.
+  const copies = (available: number, used: number): number => (used > 0 ? Math.floor(available / used) : Infinity);
+  let best: { team: Troops; capacity: number; teams: number; units: number } | null = null;
+
+  for (let jounin = 0; jounin <= army.jounin; jounin++) {
+    const afterJounin = target - jounin * jouninCap;
+    if (afterJounin < 0) break;
+    for (let chunin = 0; chunin <= army.chunin; chunin++) {
+      const remaining = afterJounin - chunin * chuninCap;
+      if (remaining < 0) break;
+      const genin = Math.min(army.genin, Math.floor(remaining / geninCap));
+      const capacity = genin * geninCap + chunin * chuninCap + jounin * jouninCap;
+      if (capacity === 0 || (best && capacity < best.capacity)) continue;
+      const teams = Math.min(copies(army.genin, genin), copies(army.chunin, chunin), copies(army.jounin, jounin));
+      const units = genin + chunin + jounin;
+      if (!best || capacity > best.capacity || teams > best.teams || (teams === best.teams && units < best.units)) {
+        best = { team: { genin, chunin, jounin }, capacity, teams, units };
+      }
+    }
+  }
+
+  if (!best) return { team: { ...EMPTY }, capacity: 0, teams: 0, leftover: { ...army } };
+  const { team, capacity, teams } = best;
+  return {
+    team,
+    capacity,
+    teams,
+    leftover: { genin: army.genin - team.genin * teams, chunin: army.chunin - team.chunin * teams, jounin: army.jounin - team.jounin * teams },
+  };
+}

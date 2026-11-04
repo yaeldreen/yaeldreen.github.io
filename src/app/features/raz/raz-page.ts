@@ -1,22 +1,17 @@
-import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { Card } from '../../shared/ui/card';
 import { formatNumber } from '../../shared/utils/format';
 import { TROOPS, TroopKey } from '../enemies/enemies.model';
 import { ArmyCard, PlayerPick } from '../combat/army-card';
-import { emptySide, toArmy } from '../combat/army-form';
+import { toArmy } from '../combat/army-form';
 import { SideForm } from '../combat/combat-history';
 import { sideStats } from '../combat/combat.logic';
 import { loadRazHistory, pushRazHistory, RazEntry, saveRazHistory } from './raz-history';
+import { RazRoom } from './raz-room';
+import { emptyRoom, newFighter } from './raz-room.logic';
 import { planRaz, RazPlan } from './raz.logic';
 
-interface Fighter {
-  id: number;
-  player: string;
-  loaded: string | null;
-  form: SideForm;
-}
-
-/** Raz simulé : figé au moment du clic sur « Simuler le raz ». */
+/** Raz simulé, affiché à tout le monde jusqu'au retour aux armées. */
 interface RazReport {
   plan: RazPlan;
   names: string[];
@@ -26,26 +21,32 @@ interface RazReport {
 
 /**
  * Simu raz : plusieurs attaquants passent l'un après l'autre sur la même défense, dans l'ordre optimisé.
- * D'abord la saisie des armées, puis le rapport ; les 2 derniers raz sont gardés dans un cookie.
+ * D'abord la saisie des armées, puis le rapport. Armées et rapport sont partagés en direct (voir RazRoom) ;
+ * les 2 derniers raz de chacun restent dans un cookie.
  */
 @Component({
   selector: 'app-raz-page',
   imports: [Card, ArmyCard],
+  providers: [RazRoom],
   templateUrl: './raz-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RazPage {
-  private nextId = 1;
-  private readonly newFighter = (form = emptySide(), player = ''): Fighter => ({ id: this.nextId++, player, loaded: null, form });
-
-  protected readonly defender = signal<Fighter>(this.newFighter());
-  protected readonly attackers = signal<Fighter[]>([this.newFighter()]);
-  /** Attaquant dont la carte est dépliée ; les autres sont des volets fermés. */
+  private readonly room = inject(RazRoom);
+  protected readonly status = this.room.status;
+  protected readonly defender = this.room.defender;
+  protected readonly attackers = this.room.attackers;
+  /** Attaquant dont la carte est dépliée, propre à chacun ; les autres sont des volets fermés. */
   protected readonly openId = signal<number | null>(this.attackers()[0].id);
-  /** Les soignés de l'hôpital du défenseur reviennent avant le passage suivant (hypothèse prudente). */
-  protected readonly healedReturn = signal(true);
 
-  protected readonly report = signal<RazReport | null>(null);
+  constructor() {
+    // Attaquant remplacé par quelqu'un d'autre : s'il n'en reste qu'un, on le déplie.
+    effect(() => {
+      const list = this.attackers();
+      if (this.openId() !== null && !list.some((a) => a.id === this.openId())) this.openId.set(list.length === 1 ? list[0].id : null);
+    });
+  }
+
   /** Passage dont le rapport détaillé est ouvert. */
   protected readonly openPass = signal<number | null>(null);
 
@@ -62,32 +63,30 @@ export class RazPage {
   // --- Saisie ---
 
   protected setDefenderForm(form: SideForm): void {
-    this.defender.update((d) => ({ ...d, form }));
+    this.room.editDefender((d) => ({ ...d, form }));
   }
 
   protected selectDefender({ name, prefill }: PlayerPick): void {
-    this.defender.update((d) => ({ ...d, player: name, loaded: prefill?.loaded ?? null, form: prefill?.form ?? d.form }));
+    this.room.editDefender((d) => ({ ...d, player: name, loaded: prefill?.loaded ?? null, form: prefill?.form ?? d.form }));
   }
 
   protected setAttackerForm(id: number, form: SideForm): void {
-    this.attackers.update((list) => list.map((a) => (a.id === id ? { ...a, form } : a)));
+    this.room.editAttacker(id, (a) => ({ ...a, form }));
   }
 
   protected selectAttacker(id: number, { name, prefill }: PlayerPick): void {
-    this.attackers.update((list) =>
-      list.map((a) => (a.id === id ? { ...a, player: name, loaded: prefill?.loaded ?? null, form: prefill?.form ?? a.form } : a)),
-    );
+    this.room.editAttacker(id, (a) => ({ ...a, player: name, loaded: prefill?.loaded ?? null, form: prefill?.form ?? a.form }));
   }
 
   /** Le nouvel attaquant s'ouvre, le précédent se replie en volet. */
   protected addAttacker(): void {
-    const fighter = this.newFighter();
-    this.attackers.update((list) => [...list, fighter]);
+    const fighter = newFighter();
+    this.room.addAttacker(fighter);
     this.openId.set(fighter.id);
   }
 
   protected removeAttacker(id: number): void {
-    this.attackers.update((list) => (list.length > 1 ? list.filter((a) => a.id !== id) : list));
+    if (this.attackers().length > 1) this.room.removeAttacker(id);
     if (this.openId() === id) this.openId.set(null);
   }
 
@@ -96,31 +95,39 @@ export class RazPage {
   }
 
   protected reset(): void {
-    this.defender.set(this.newFighter());
-    const first = this.newFighter();
-    this.attackers.set([first]);
-    this.openId.set(first.id);
+    if (!this.confirmShared('Tout remettre à zéro pour tout le monde ?')) return;
+    const room = emptyRoom();
+    this.room.replaceAll(room);
+    this.openId.set(room.attackers[0].id);
+  }
+
+  /** Remplacer le raz en cours touche tout le monde : on ne demande confirmation que s'il est partagé. */
+  private confirmShared(question: string): boolean {
+    return this.status() !== 'live' || window.confirm(question);
   }
 
   // --- Rapport ---
 
-  protected simulate(): void {
-    if (!this.canSimulate()) return;
-    const attackers = this.attackers();
-    const armies = attackers.map((a) => toArmy(a.form));
-    this.report.set({
-      plan: planRaz(armies, toArmy(this.defender().form), this.healedReturn()),
+  protected readonly report = computed((): RazReport | null => {
+    if (!this.room.simulated() || !this.canSimulate()) return null;
+    const armies = this.attackers().map((a) => toArmy(a.form));
+    return {
+      plan: planRaz(armies, toArmy(this.defender().form)),
       names: this.summaries().map((s) => s.name),
       sent: armies.map((a) => a.troops),
       defenderName: this.defender().player || 'Défenseur',
-    });
+    };
+  });
+
+  protected simulate(): void {
+    if (!this.canSimulate()) return;
+    this.room.setSimulated(true);
     this.openPass.set(null);
     this.history.update((h) =>
       pushRazHistory(h, {
         at: Date.now(),
         defender: { player: this.defender().player, form: this.defender().form },
-        attackers: attackers.map((a) => ({ player: a.player, form: a.form })),
-        healedReturn: this.healedReturn(),
+        attackers: this.attackers().map((a) => ({ player: a.player, form: a.form })),
       }),
     );
     saveRazHistory(this.history());
@@ -128,7 +135,7 @@ export class RazPage {
   }
 
   protected backToArmies(): void {
-    this.report.set(null);
+    this.room.setSimulated(false);
     window.scrollTo({ top: 0 });
   }
 
@@ -144,12 +151,15 @@ export class RazPage {
 
   protected readonly history = signal<RazEntry[]>(loadRazHistory());
 
-  /** Remet les armées d'un raz passé et affiche son rapport. */
+  /** Remet les armées d'un raz passé pour tout le monde et affiche son rapport. */
   protected loadFromHistory(entry: RazEntry): void {
-    this.defender.set(this.newFighter(structuredClone(entry.defender.form), entry.defender.player));
-    this.attackers.set(entry.attackers.map((a) => this.newFighter(structuredClone(a.form), a.player)));
+    if (!this.confirmShared('Remplacer le raz en cours pour tout le monde ?')) return;
+    this.room.replaceAll({
+      defender: newFighter(structuredClone(entry.defender.form), entry.defender.player),
+      attackers: entry.attackers.map((a) => newFighter(structuredClone(a.form), a.player)),
+      simulated: false,
+    });
     this.openId.set(null);
-    this.healedReturn.set(entry.healedReturn);
     this.simulate();
   }
 
