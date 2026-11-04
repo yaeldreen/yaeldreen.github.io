@@ -14,7 +14,8 @@ import { FormsModule } from '@angular/forms';
       [placeholder]="placeholder()"
       [ngModel]="value()"
       (ngModelChange)="value.set($event)"
-      class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 font-mono text-sm focus:outline-none focus:border-red-700"
+      class="w-full bg-stone-950 border border-stone-700 text-stone-100 font-mono text-sm focus:outline-none focus:border-red-700"
+      [class]="compact() ? 'rounded-lg px-2.5 py-1.5' : 'rounded-xl px-4 py-2.5'"
     />
   `,
 })
@@ -25,4 +26,6 @@ export class NumberInput {
   readonly max = input<number>();
   readonly step = input(1);
   readonly placeholder = input('');
+  /** Champ plus petit, pour les lignes de saisie serrées. */
+  readonly compact = input(false);
 }

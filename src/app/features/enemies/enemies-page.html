@@ -255,12 +255,15 @@
         }
       }
 
-      <ul class="divide-y divide-stone-800/60">
+      <ul class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-3 p-2 sm:p-3">
         @for (row of table.rows; track row.player) {
-          <li class="px-4 py-3 space-y-1 text-xs">
-            <div class="flex flex-wrap items-baseline justify-between gap-x-3">
-              <span class="font-bold text-red-300 text-sm">{{ row.player }}</span>
-              <span class="text-stone-400">{{ row.village }}</span>
+          <li
+            class="min-w-0 flex flex-col gap-1 bg-stone-950/50 border border-stone-800 rounded-xl p-2.5 sm:p-3 text-xs"
+            [class.col-span-full]="transfer()?.player === row.player"
+          >
+            <div class="min-w-0">
+              <p class="font-bold text-red-300 text-sm truncate" [title]="row.player">{{ row.player }}</p>
+              <p class="text-stone-400 truncate" [title]="row.village">{{ row.village }}</p>
             </div>
             <p class="text-stone-300">
               @for (field of statFields; track field.key) {
@@ -292,7 +295,7 @@
                 <span class="text-stone-600">Aucun rapport</span>
               }
             </p>
-            <div class="flex flex-wrap gap-x-4 gap-y-1 pt-1">
+            <div class="flex flex-wrap gap-x-3 gap-y-1 pt-1 mt-auto">
               <button type="button" (click)="editArmy(row)" class="text-stone-300 hover:text-red-300 cursor-pointer">Modifier</button>
               @if (row.record) {
                 <button type="button" (click)="removeArmy(row.player)" class="text-stone-500 hover:text-rose-400 cursor-pointer">Effacer l'armée</button>
@@ -325,7 +328,7 @@
             }
           </li>
         } @empty {
-          <li class="py-4 px-4 text-center text-xs text-stone-500">Aucun joueur dans ce clan.</li>
+          <li class="col-span-full py-4 px-4 text-center text-xs text-stone-500">Aucun joueur dans ce clan.</li>
         }
       </ul>
     }
