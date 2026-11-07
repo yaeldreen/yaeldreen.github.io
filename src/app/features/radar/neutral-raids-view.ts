@@ -1,14 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MapVillage } from '../../core/game-data/map-villages';
 import { Card } from '../../shared/ui/card';
 import { readStored, writeStored } from '../../shared/utils/storage';
 import { NO_CLAN } from '../enemies/clans.data';
 import { EnemiesStore } from '../enemies/enemies-store';
-import { GAME_ORIGIN } from '../players-update/ranking-snapshot';
 import { computeDistance } from '../travel/travel.logic';
 import { NeutralRaidsStore } from './neutral-raids-store';
-import { NeutralRaid, nextRefreshAt, raidedVillages, raidsPageUrl, raidTime, readRaidsMessage, sortedRaids } from './neutral-raids.logic';
+import { NeutralRaid, parseRaidsExport, raidedVillages, raidTime, sortedRaids } from './neutral-raids.logic';
+import { GAME_URL } from './radar.logic';
 
 const HIDDEN_CLANS_KEY = 'raids.hiddenClans';
 /** Attaquant dont le village n'est pas sur la carte : son clan est inconnu. */
@@ -28,23 +29,17 @@ const retourParams = (from: MapVillage, target: MapVillage, raid: NeutralRaid) =
 /** Vue « Villages neutres » du Radar : les attaques relevées dans l'historique de chaque village neutre du jeu. */
 @Component({
   selector: 'app-neutral-raids-view',
-  imports: [Card, RouterLink],
+  imports: [Card, FormsModule, RouterLink],
   templateUrl: './neutral-raids-view.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(window:message)': 'onRaidsMessage($event)' },
 })
 export class NeutralRaidsView {
   protected readonly raidsStore = inject(NeutralRaidsStore);
   private readonly villagesStore = inject(EnemiesStore);
   protected readonly raidTime = raidTime;
-  protected readonly gameOrigin = GAME_ORIGIN;
+  protected readonly gameOrigin = GAME_URL;
 
-  /** L'heure avance toute seule pour débloquer le bouton une heure après la dernière actualisation. */
-  private readonly now = signal(Date.now());
-  protected readonly nextRefresh = computed(() => nextRefreshAt(this.raidsStore.lastRefresh(), this.now()));
-  private readonly neutralIds = computed(() => this.villagesStore.villages().flatMap((v) => (v.neutral && v.gameId !== undefined ? [v.gameId] : [])));
-
-  protected readonly waiting = signal(false);
+  protected readonly raidsText = signal('');
   protected readonly saving = signal(false);
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
@@ -99,63 +94,27 @@ export class NeutralRaidsView {
     writeStored(HIDDEN_CLANS_KEY, JSON.stringify(hidden));
   }
 
-  constructor() {
-    const timer = setInterval(() => this.now.set(Date.now()), 30_000);
-    inject(DestroyRef).onDestroy(() => clearInterval(timer));
-  }
-
-  /**
-   * Ouvre le premier village neutre du jeu : le script y relève l'historique de tous les villages neutres et le renvoie ici.
-   * La fenêtre s'ouvre avant la réservation de l'heure, sinon le navigateur la bloquerait ; elle est refermée si la réservation échoue.
-   */
-  protected async refresh(): Promise<void> {
+  /** Ajoute les attaques collées qui ne sont pas encore en base. */
+  protected async importRaids(): Promise<void> {
     this.message.set(null);
     this.error.set(null);
-    const ids = this.neutralIds();
-    if (!ids.length) {
-      this.error.set('Aucun village neutre sur la carte : importez la carte dans « MAJ joueurs ».');
+    let parsed: { raids: NeutralRaid[]; ignored: number };
+    try {
+      parsed = parseRaidsExport(this.raidsText());
+    } catch (e) {
+      this.error.set((e as Error).message);
       return;
     }
-    const popup = window.open(raidsPageUrl(ids), '_blank');
-    if (!popup) {
-      this.error.set("Le navigateur a bloqué l'ouverture du jeu : autorisez les fenêtres pour cette appli.");
-      return;
-    }
-    try {
-      await this.raidsStore.claimRefresh();
-      this.waiting.set(true);
-    } catch {
-      popup.close();
-      this.error.set("Actualisation refusée : une autre a eu lieu il y a moins d'une heure, ou les règles Firestore ne sont pas publiées.");
-    }
-  }
-
-  protected onRaidsMessage(event: MessageEvent): void {
-    if (event.origin !== GAME_ORIGIN) return;
-    const raids = readRaidsMessage(event.data);
-    if (raids) void this.save(raids);
-  }
-
-  /** Secours quand le relevé n'a pas pu revenir tout seul : le script l'a copié. */
-  protected async paste(): Promise<void> {
-    this.error.set(null);
-    let raids: NeutralRaid[] | null = null;
-    try {
-      raids = readRaidsMessage(JSON.parse(await navigator.clipboard.readText()));
-    } catch {
-      // Presse-papiers refusé ou texte qui n'est pas du JSON : même message que pour un relevé illisible.
-    }
-    if (raids) await this.save(raids);
-    else this.error.set('Le presse-papiers ne contient pas de relevé : touchez « Copier pour La Table Ronde » sur la page du jeu.');
-  }
-
-  private async save(raids: NeutralRaid[]): Promise<void> {
-    this.waiting.set(false);
     this.saving.set(true);
     try {
-      const added = await this.raidsStore.save(raids);
-      this.message.set(`${added} nouvelle${added > 1 ? 's' : ''} attaque${added > 1 ? 's' : ''} enregistrée${added > 1 ? 's' : ''}, ${raids.length - added} déjà connue${raids.length - added > 1 ? 's' : ''}.`);
-      this.error.set(null);
+      const added = await this.raidsStore.save(parsed.raids);
+      const known = parsed.raids.length - added;
+      const s = (n: number) => (n > 1 ? 's' : '');
+      this.message.set(
+        `${added} nouvelle${s(added)} attaque${s(added)} enregistrée${s(added)}, ${known} déjà connue${s(known)}` +
+          (parsed.ignored ? `, ${parsed.ignored} ignorée${s(parsed.ignored)} (village de joueur).` : '.'),
+      );
+      this.raidsText.set('');
     } catch {
       this.error.set('Enregistrement refusé par la base : vérifiez que les règles Firestore sont publiées.');
     } finally {
@@ -165,9 +124,5 @@ export class NeutralRaidsView {
 
   protected setVillageFilter(value: string): void {
     this.villageFilter.set(value === '' ? null : Number(value));
-  }
-
-  protected formatHour(ms: number): string {
-    return new Date(ms).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   }
 }

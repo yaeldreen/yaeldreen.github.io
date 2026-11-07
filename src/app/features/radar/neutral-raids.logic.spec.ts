@@ -1,4 +1,4 @@
-import { newRaids, NeutralRaid, nextRefreshAt, raidedVillages, raidId, raidsPageUrl, RAIDS_MESSAGE, raidTime, readRaidsMessage, sortedRaids } from './neutral-raids.logic';
+import { newRaids, NeutralRaid, parseRaidsExport, raidedVillages, raidId, raidTime, sortedRaids } from './neutral-raids.logic';
 
 const raid = (village: number, at: string, attacker = 'Kibutsuji', attackerVillageId = 12): NeutralRaid => ({
   village,
@@ -9,31 +9,28 @@ const raid = (village: number, at: string, attacker = 'Kibutsuji', attackerVilla
   at,
 });
 
-describe('readRaidsMessage', () => {
-  it('lit l’historique de chaque village, date en millisecondes ou ISO', () => {
-    const raids = readRaidsMessage({
-      type: RAIDS_MESSAGE,
-      villages: [
-        {
-          id: -68,
-          name: 'Natsugawa',
-          history: [
-            { attacker: 'Kibutsuji', attackerVillageId: 12, mode: 'pillage', target: 'Natsugawa', createdAt: Date.parse('2026-11-07T13:04:00Z') },
-            { attacker: 'SENJU', attackerVillageId: 34, mode: 'combat', target: 'Natsugawa', createdAt: '2026-11-07T13:01:00Z' },
-          ],
-        },
+describe('parseRaidsExport', () => {
+  const event = { attacker: 'Boboch', attackerVillageId: 146, target: 'Fuyukawa', targetVillageId: -70, mode: 'pillage', createdAt: 1794060720000 };
+
+  it('lit l’historique collé, date en millisecondes ou ISO', () => {
+    const text = JSON.stringify([event, { ...event, attacker: 'SENJU', mode: 'combat', createdAt: '2026-11-07T13:01:00Z' }]);
+    expect(parseRaidsExport(text)).toEqual({
+      raids: [
+        { village: -70, villageName: 'Fuyukawa', attacker: 'Boboch', attackerVillageId: 146, mode: 'pillage', at: new Date(1794060720000).toISOString() },
+        { village: -70, villageName: 'Fuyukawa', attacker: 'SENJU', attackerVillageId: 146, mode: 'attaque', at: '2026-11-07T13:01:00.000Z' },
       ],
+      ignored: 0,
     });
-    expect(raids).toEqual([
-      { village: -68, villageName: 'Natsugawa', attacker: 'Kibutsuji', attackerVillageId: 12, mode: 'pillage', at: '2026-11-07T13:04:00.000Z' },
-      { village: -68, villageName: 'Natsugawa', attacker: 'SENJU', attackerVillageId: 34, mode: 'attaque', at: '2026-11-07T13:01:00.000Z' },
-    ]);
   });
 
-  it('ignore les lignes illisibles, refuse un autre message', () => {
-    const villages = [{ id: -1, name: 'A', history: [{ attacker: 'X' }, { attacker: 'Y', attackerVillageId: 1, createdAt: 'pas une date' }] }, { name: 'sans id', history: [] }];
-    expect(readRaidsMessage({ type: RAIDS_MESSAGE, villages })).toEqual([]);
-    expect(readRaidsMessage({ type: 'table-ronde:classement', villages })).toBeNull();
+  it('écarte les attaques sur un village de joueur', () => {
+    expect(parseRaidsExport(JSON.stringify([event, { ...event, targetVillageId: 80 }]))).toMatchObject({ ignored: 1, raids: [{ village: -70 }] });
+  });
+
+  it('explique ce qui ne va pas', () => {
+    expect(() => parseRaidsExport('[{')).toThrow('JSON valide');
+    expect(() => parseRaidsExport('{"a":1}')).toThrow('liste d');
+    expect(() => parseRaidsExport(JSON.stringify([event, { attacker: 'X' }]))).toThrow('Attaque n°2');
   });
 });
 
@@ -76,18 +73,5 @@ describe('tableau des attaques', () => {
 
   it('affiche la date et l’heure de Paris', () => {
     expect(raidTime('2026-11-07T13:04:00.000Z')).toBe('07/11/2026 14:04');
-  });
-});
-
-describe('actualisation', () => {
-  it('ouvre la page du premier village avec tous les villages en ancre', () => {
-    expect(raidsPageUrl([-68, -12])).toBe('https://worldofshinobi.com/joueur.html?id=-68#table-ronde-pillages=-68,-12');
-  });
-
-  it('n’est permise qu’une heure après la précédente', () => {
-    const last = Date.parse('2026-11-07T13:00:00Z');
-    expect(nextRefreshAt(null, last)).toBeNull();
-    expect(nextRefreshAt(last, last + 59 * 60_000)).toBe(last + 3_600_000);
-    expect(nextRefreshAt(last, last + 3_600_000)).toBeNull();
   });
 });

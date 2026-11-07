@@ -1,38 +1,36 @@
-import { compareSnapshots, PlayersSnapshot, RANKING_MESSAGE, readRankingMessage, sortEvolution, toggleSort } from './ranking-snapshot';
+import { compareSnapshots, placeRanking, PlayersSnapshot, snapshotFromRanking, sortEvolution, toggleSort } from './ranking-snapshot';
 
 const now = new Date(2026, 10, 7, 14, 32);
-const row = (id: number, kage: string, points: number, inhabitants: number, clan: string | null = 'Kaamelott') => ({
-  rank: 1,
-  id,
-  kage,
-  name: `${kage} city`,
-  clan: clan ? { id: 8, name: clan } : null,
-  points,
-  inhabitants,
-});
+describe('relevé du classement', () => {
+  const ranking = [
+    { gameId: 80, name: 'Gwent', kage: 'Karadoc', clan: 'Kaamelott', points: 9398, inhabitants: 442 },
+    { name: 'Loin', kage: 'Seul', clan: null, points: 10, inhabitants: 20 },
+  ];
 
-describe('readRankingMessage', () => {
-  it('lit les joueurs du classement, avec la date du relevé', () => {
-    const snapshot = readRankingMessage({ type: RANKING_MESSAGE, takenAt: now.toISOString(), players: [row(80, 'Serpent', 9069, 430), row(5, 'Seul', 10, 20, null)] }, new Date());
-    expect(snapshot).toEqual({
+  it('reprend chaque joueur collé, avec la date du collage', () => {
+    expect(snapshotFromRanking(ranking, now)).toEqual({
       month: '2026-11',
       takenAt: now.toISOString(),
       players: [
-        { i: 80, n: 'Serpent', v: 'Serpent city', c: 'Kaamelott', p: 9069, h: 430 },
-        { i: 5, n: 'Seul', v: 'Seul city', c: null, p: 10, h: 20 },
+        { i: 80, n: 'Karadoc', v: 'Gwent', c: 'Kaamelott', p: 9398, h: 442 },
+        { n: 'Seul', v: 'Loin', c: null, p: 10, h: 20 },
       ],
     });
   });
 
-  it('prend l’heure de réception si le script n’en donne pas', () => {
-    expect(readRankingMessage({ type: RANKING_MESSAGE, players: [row(1, 'A', 1, 1)] }, now)?.takenAt).toBe(now.toISOString());
+  it('commence un nouveau relevé sans relevé récent', () => {
+    expect(placeRanking(null, ranking, now).rotate).toBe(true);
+    const old = snapshotFromRanking(ranking, new Date(now.getTime() - 31 * 60_000));
+    expect(placeRanking(old, ranking, now)).toMatchObject({ rotate: true, snapshot: { takenAt: now.toISOString() } });
   });
 
-  it('refuse un autre message, une liste vide ou un joueur illisible', () => {
-    expect(readRankingMessage({ type: 'autre', players: [row(1, 'A', 1, 1)] }, now)).toBeNull();
-    expect(readRankingMessage({ type: RANKING_MESSAGE, players: [] }, now)).toBeNull();
-    expect(readRankingMessage({ type: RANKING_MESSAGE, players: [{ id: 1, points: 3 }] }, now)).toBeNull();
-    expect(readRankingMessage('texte', now)).toBeNull();
+  it('complète le relevé en cours avec une autre page collée peu après', () => {
+    const current = snapshotFromRanking(ranking, new Date(now.getTime() - 5 * 60_000));
+    const page2 = [{ gameId: 80, name: 'Gwent', kage: 'Karadoc', clan: 'Kaamelott', points: 9400, inhabitants: 443 }, { gameId: 7, name: 'Neuf', kage: 'Nouveau', clan: null, points: 1, inhabitants: 2 }];
+    const { snapshot, rotate } = placeRanking(current, page2, now);
+    expect(rotate).toBe(false);
+    expect(snapshot.takenAt).toBe(current.takenAt);
+    expect(snapshot.players.map((p) => [p.n, p.p])).toEqual([['Seul', 10], ['Karadoc', 9400], ['Nouveau', 1]]);
   });
 });
 

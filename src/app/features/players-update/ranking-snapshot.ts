@@ -1,3 +1,5 @@
+import { RankingEntry } from '../../core/game-data/map-villages';
+
 /** Points et habitants d'un joueur à une date (clés courtes : le document garde tous les joueurs). */
 export interface SnapshotPlayer {
   /** Identifiant du joueur dans le jeu (absent des anciens relevés) */ i?: number;
@@ -17,41 +19,38 @@ export interface PlayersSnapshot {
 
 export type SnapshotSlot = 'current' | 'previous';
 
-/** Message envoyé par le script du classement (public/classement-table-ronde.user.js), ou copié par lui. */
-export const RANKING_MESSAGE = 'table-ronde:classement';
-
-/** Origine du jeu : seule source acceptée pour un relevé. */
-export const GAME_ORIGIN = 'https://worldofshinobi.com';
-
-/** Page du classement des joueurs ; l'ancre demande au script de tout relever. */
-export const RANKING_PAGE_URL = `${GAME_ORIGIN}/classements.html?vue=joueurs#table-ronde`;
+/** Pages du classement collées à moins de 30 min d'écart : elles complètent le même relevé au lieu d'en commencer un nouveau. */
+export const SAME_SNAPSHOT_MS = 30 * 60_000;
 
 const monthKey = (date: Date): string => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
-const count = (value: unknown): number => Math.max(0, Math.floor(Number(value) || 0));
+const toPlayer = (entry: RankingEntry): SnapshotPlayer => ({
+  ...(entry.gameId !== undefined ? { i: entry.gameId } : {}),
+  n: entry.kage,
+  v: entry.name,
+  c: entry.clan,
+  p: entry.points,
+  h: entry.inhabitants,
+});
+
+/** Relevé du classement collé dans « Liste des joueurs (JSON) ». */
+export const snapshotFromRanking = (ranking: readonly RankingEntry[], now: Date): PlayersSnapshot => ({
+  month: monthKey(now),
+  takenAt: now.toISOString(),
+  players: ranking.map(toPlayer),
+});
 
 /**
- * Relevé à partir du message du script : `{ type, takenAt, players }`, chaque joueur tel que l'API du classement le donne
- * (`id`, `kage`, `name` = village, `clan` = `{ name }` ou null, `points`, `inhabitants`). `null` si le message n'a pas cette forme.
+ * Où ranger un nouveau collage du classement. Moins de 30 min après le relevé « maintenant », c'est une autre page du même
+ * classement : ses joueurs complètent ce relevé (et remplacent leurs anciennes valeurs). Sinon, c'est un nouveau relevé.
  */
-export function readRankingMessage(data: unknown, now: Date): PlayersSnapshot | null {
-  const message = data as { type?: unknown; takenAt?: unknown; players?: unknown } | null;
-  if (message?.type !== RANKING_MESSAGE || !Array.isArray(message.players) || !message.players.length) return null;
-  const players: SnapshotPlayer[] = [];
-  for (const row of message.players as Record<string, unknown>[]) {
-    const clan = row?.['clan'] as { name?: unknown } | null | undefined;
-    if (typeof row?.['kage'] !== 'string' || (clan != null && typeof clan.name !== 'string')) return null;
-    players.push({
-      ...(Number.isInteger(row['id']) ? { i: row['id'] as number } : {}),
-      n: row['kage'].trim(),
-      v: typeof row['name'] === 'string' ? row['name'].trim() : '',
-      c: clan ? (clan.name as string).trim() : null,
-      p: count(row['points']),
-      h: count(row['inhabitants']),
-    });
-  }
-  const takenAt = typeof message.takenAt === 'string' && !Number.isNaN(Date.parse(message.takenAt)) ? new Date(message.takenAt) : now;
-  return { month: monthKey(takenAt), takenAt: takenAt.toISOString(), players };
+export function placeRanking(current: PlayersSnapshot | null, ranking: readonly RankingEntry[], now: Date): { snapshot: PlayersSnapshot; rotate: boolean } {
+  if (!current || now.getTime() - Date.parse(current.takenAt) >= SAME_SNAPSHOT_MS) return { snapshot: snapshotFromRanking(ranking, now), rotate: true };
+  const incoming = ranking.map(toPlayer);
+  const ids = new Set(incoming.flatMap((p) => (p.i !== undefined ? [p.i] : [])));
+  const names = new Set(incoming.map((p) => p.n));
+  const kept = current.players.filter((p) => !(p.i !== undefined ? ids.has(p.i) : names.has(p.n)));
+  return { snapshot: { ...current, players: [...kept, ...incoming] }, rotate: false };
 }
 
 /** Date et heure d'un relevé : "07/11/2026 14:32". */

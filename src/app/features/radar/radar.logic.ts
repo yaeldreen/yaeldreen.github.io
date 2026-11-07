@@ -21,7 +21,7 @@ const MAP_MARGIN = 22;
 const MIN_EXTENT_X = 10;
 const MIN_EXTENT_Y = 5;
 
-const GAME_URL = 'https://worldofshinobi.com';
+export const GAME_URL = 'https://worldofshinobi.com';
 
 export interface GameLink {
   label: string;

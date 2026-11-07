@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { applyCarte, MapVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, RankingEntry } from '../../core/game-data/map-villages';
 import { Card } from '../../shared/ui/card';
 import { EnemiesStore, MapImportSummary } from '../enemies/enemies-store';
-import { compareSnapshots, EvolutionRow, EvolutionSort, GAME_ORIGIN, PlayersSnapshot, RANKING_PAGE_URL, readRankingMessage, snapshotLabel, sortEvolution, toggleSort } from './ranking-snapshot';
+import { compareSnapshots, EvolutionRow, EvolutionSort, placeRanking, snapshotLabel, sortEvolution, toggleSort } from './ranking-snapshot';
 
 /** Mise à jour des joueurs (classement), puis de la carte : villages neutres et coordonnées des joueurs (export compact). */
 @Component({
@@ -11,7 +11,6 @@ import { compareSnapshots, EvolutionRow, EvolutionSort, GAME_ORIGIN, PlayersSnap
   imports: [FormsModule, Card],
   templateUrl: './players-update-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(window:message)': 'onRankingMessage($event)' },
 })
 export class PlayersUpdatePage {
   protected readonly store = inject(EnemiesStore);
@@ -49,6 +48,7 @@ export class PlayersUpdatePage {
     try {
       this.importResult.set(await this.store.importMap(villages, { partial: !!ranking }));
       this.mapText.set('');
+      if (ranking) await this.saveSnapshot(ranking);
     } catch (e) {
       this.importError.set(`Import refusé : ${(e as Error).message}. Vérifiez que les règles Firestore sont publiées.`);
     } finally {
@@ -59,52 +59,23 @@ export class PlayersUpdatePage {
   // --- Relevé du classement (points et habitants) ---
 
   protected readonly snapshotLabel = snapshotLabel;
-  protected readonly refreshing = signal(false);
-  protected readonly refreshMessage = signal<string | null>(null);
-  protected readonly refreshError = signal<string | null>(null);
+  protected readonly snapshotMessage = signal<string | null>(null);
+  protected readonly snapshotError = signal<string | null>(null);
   protected readonly evolutionClan = signal('');
   protected readonly evolutionSort = signal<EvolutionSort>({ key: 'points', direction: 'desc' });
 
-  /** Ouvre le classement du jeu : le script de la page relève toutes les pages et renvoie les joueurs à cet onglet. */
-  protected refresh(): void {
-    this.refreshMessage.set(null);
-    this.refreshError.set(null);
-    if (!window.open(RANKING_PAGE_URL, '_blank')) {
-      this.refreshError.set("Le navigateur a bloqué l'ouverture du classement : autorisez les fenêtres pour cette appli.");
-      return;
-    }
-    this.refreshing.set(true);
-  }
-
-  protected onRankingMessage(event: MessageEvent): void {
-    if (event.origin !== GAME_ORIGIN) return;
-    const snapshot = readRankingMessage(event.data, new Date());
-    if (snapshot) void this.saveSnapshot(snapshot);
-  }
-
-  /** Secours quand le classement n'a pas pu revenir tout seul : le script l'a copié. */
-  protected async pasteSnapshot(): Promise<void> {
-    this.refreshError.set(null);
-    let snapshot: PlayersSnapshot | null = null;
+  /** Chaque collage du classement met à jour le tableau d'évolution (nouveau relevé, ou page de plus du relevé en cours). */
+  private async saveSnapshot(ranking: readonly RankingEntry[]): Promise<void> {
+    this.snapshotMessage.set(null);
+    this.snapshotError.set(null);
+    const { snapshot, rotate } = placeRanking(this.store.snapshots().current, ranking, new Date());
     try {
-      snapshot = readRankingMessage(JSON.parse(await navigator.clipboard.readText()), new Date());
+      if (rotate) await this.store.rotateSnapshot(snapshot);
+      else await this.store.replaceCurrentSnapshot(snapshot);
+      const count = snapshot.players.length.toLocaleString('fr-FR');
+      this.snapshotMessage.set(rotate ? `Nouveau relevé : ${count} joueurs, le ${snapshotLabel(snapshot)}.` : `Relevé du ${snapshotLabel(snapshot)} complété : ${count} joueurs.`);
     } catch {
-      // Presse-papiers refusé ou texte qui n'est pas du JSON : même message que pour un relevé illisible.
-    }
-    if (snapshot) await this.saveSnapshot(snapshot);
-    else this.refreshError.set('Le presse-papiers ne contient pas de relevé : touchez « Copier pour La Table Ronde » sur la page du classement.');
-  }
-
-  private async saveSnapshot(snapshot: PlayersSnapshot): Promise<void> {
-    this.refreshing.set(true);
-    try {
-      await this.store.rotateSnapshot(snapshot);
-      this.refreshMessage.set(`Relevé enregistré : ${snapshot.players.length.toLocaleString('fr-FR')} joueurs, le ${snapshotLabel(snapshot)}.`);
-      this.refreshError.set(null);
-    } catch {
-      this.refreshError.set('Relevé refusé par la base : vérifiez que les règles Firestore sont publiées.');
-    } finally {
-      this.refreshing.set(false);
+      this.snapshotError.set('Relevé refusé par la base : vérifiez que les règles Firestore sont publiées.');
     }
   }
 

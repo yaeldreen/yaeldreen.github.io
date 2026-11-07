@@ -110,40 +110,17 @@
 @let snaps = store.snapshots();
 <app-card class="overflow-hidden">
   <div class="px-4 sm:px-6 py-4 border-b border-stone-800 space-y-3">
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div class="min-w-0">
-        <h2 class="font-semibold text-stone-200">Évolution des joueurs</h2>
-        <p class="text-xs text-stone-400 mt-1">
-          « Actualiser » ouvre le classement du jeu : le
-          <a href="classement-table-ronde.user.js" target="_blank" rel="noopener" class="text-or-300 underline">script du classement</a>
-          (Tampermonkey, ou Userscripts sur iPhone) relève toutes les pages, puis le relevé remplace « maintenant » et l'ancien passe en « avant ». « Différence » = maintenant − avant.
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <button
-          type="button"
-          (click)="refresh()"
-          [disabled]="refreshing()"
-          class="bg-red-800 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {{ refreshing() ? 'Relevé en cours…' : 'Actualiser' }}
-        </button>
-        <button
-          type="button"
-          (click)="pasteSnapshot()"
-          class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3.5 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer"
-        >
-          Coller le relevé
-        </button>
-      </div>
+    <div>
+      <h2 class="font-semibold text-stone-200">Évolution des joueurs</h2>
+      <p class="text-xs text-stone-400 mt-1">
+        Chaque collage dans « Liste des joueurs (JSON) » enregistre un relevé : il devient « maintenant » et l'ancien passe en « avant ».
+        Les pages collées à moins de 30 min d'écart complètent le même relevé : collez-les toutes à la suite. « Différence » = maintenant − avant.
+      </p>
     </div>
-    @if (refreshing()) {
-      <p class="text-xs text-stone-400">En attente du classement : laissez l'onglet du jeu terminer son relevé. Si rien ne revient, utilisez « Coller le relevé ».</p>
-    }
-    @if (refreshMessage(); as m) {
+    @if (snapshotMessage(); as m) {
       <p class="text-xs text-emerald-300">{{ m }}</p>
     }
-    @if (refreshError(); as e) {
+    @if (snapshotError(); as e) {
       <p class="text-xs text-rose-300">{{ e }}</p>
     }
     @if (!snaps.current) {

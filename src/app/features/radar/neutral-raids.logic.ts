@@ -1,5 +1,3 @@
-import { GAME_ORIGIN } from '../players-update/ranking-snapshot';
-
 /** Attaque d'un village neutre, relevée dans son « Historique des attaques » du jeu. */
 export interface NeutralRaid {
   /** Identifiant du village neutre (négatif) */ village: number;
@@ -10,44 +8,45 @@ export interface NeutralRaid {
   /** Date ISO de l'impact */ at: string;
 }
 
-/** Message envoyé par le script des pillages (public/pillages-table-ronde.user.js), ou copié par lui. */
-export const RAIDS_MESSAGE = 'table-ronde:pillages';
-
-/** Une actualisation par heure au plus, pour tout le clan (contrôlé aussi par les règles Firestore). */
-export const REFRESH_INTERVAL_MS = 3_600_000;
-
-/** Page d'un village neutre ; l'ancre donne au script la liste des villages à relever. */
-export const raidsPageUrl = (villageIds: readonly number[]): string =>
-  `${GAME_ORIGIN}/joueur.html?id=${villageIds[0]}#table-ronde-pillages=${villageIds.join(',')}`;
-
-/** Identifiant du document : la même attaque relevée deux fois ne s'enregistre qu'une fois. */
-export const raidId = ({ village, at, attackerVillageId }: NeutralRaid): string => `${village}_${Date.parse(at)}_${attackerVillageId}`;
-
 /**
- * Attaques du message du script : `{ type, villages: [{ id, name, history }] }`, chaque attaque telle que l'API du jeu la donne
- * (`attacker`, `attackerVillageId`, `mode`, `createdAt`). Les lignes illisibles sont ignorées ; `null` si le message n'a pas cette forme.
+ * Lit l'« Historique des attaques » collé : une liste d'attaques telle que le jeu la donne
+ * (`attacker`, `attackerVillageId`, `target`, `targetVillageId`, `mode`, `createdAt`). Les attaques visant un village de joueur
+ * (identifiant positif) sont écartées et comptées dans `ignored`. Lève une erreur lisible si le texte n'a pas cette forme.
  */
-export function readRaidsMessage(data: unknown): NeutralRaid[] | null {
-  const message = data as { type?: unknown; villages?: unknown } | null;
-  if (message?.type !== RAIDS_MESSAGE || !Array.isArray(message.villages)) return null;
-  const raids: NeutralRaid[] = [];
-  for (const village of message.villages as { id?: unknown; name?: unknown; history?: unknown }[]) {
-    if (!Number.isInteger(village?.id) || !Array.isArray(village.history)) continue;
-    for (const event of village.history as Record<string, unknown>[]) {
-      const at = new Date(event?.['createdAt'] as string | number);
-      if (typeof event?.['attacker'] !== 'string' || !Number.isInteger(event['attackerVillageId']) || Number.isNaN(at.getTime())) continue;
-      raids.push({
-        village: village.id as number,
-        villageName: typeof village.name === 'string' ? village.name.trim() : '',
-        attacker: event['attacker'].trim(),
-        attackerVillageId: event['attackerVillageId'] as number,
-        mode: event['mode'] === 'pillage' ? 'pillage' : 'attaque',
-        at: at.toISOString(),
-      });
-    }
+export function parseRaidsExport(text: string): { raids: NeutralRaid[]; ignored: number } {
+  let raw: unknown;
+  try {
+    raw = JSON.parse(text);
+  } catch {
+    throw new Error("Le texte collé n'est pas du JSON valide (copie coupée ?).");
   }
-  return raids;
+  const list = Array.isArray(raw) ? raw : Array.isArray((raw as { history?: unknown })?.history) ? (raw as { history: unknown[] }).history : null;
+  if (!list) throw new Error("Collez une liste d'attaques (de « [ » à « ] »).");
+  const raids: NeutralRaid[] = [];
+  let ignored = 0;
+  list.forEach((event: Record<string, unknown>, i) => {
+    const at = new Date(event?.['createdAt'] as string | number);
+    if (typeof event?.['attacker'] !== 'string' || !Number.isInteger(event['attackerVillageId']) || !Number.isInteger(event['targetVillageId']) || Number.isNaN(at.getTime())) {
+      throw new Error(`Attaque n°${i + 1} illisible (attaquant, village ou date manquant).`);
+    }
+    if ((event['targetVillageId'] as number) >= 0) {
+      ignored++;
+      return;
+    }
+    raids.push({
+      village: event['targetVillageId'] as number,
+      villageName: typeof event['target'] === 'string' ? event['target'].trim() : '',
+      attacker: event['attacker'].trim(),
+      attackerVillageId: event['attackerVillageId'] as number,
+      mode: event['mode'] === 'pillage' ? 'pillage' : 'attaque',
+      at: at.toISOString(),
+    });
+  });
+  return { raids, ignored };
 }
+
+/** Identifiant du document : la même attaque collée deux fois ne s'enregistre qu'une fois. */
+export const raidId = ({ village, at, attackerVillageId }: NeutralRaid): string => `${village}_${Date.parse(at)}_${attackerVillageId}`;
 
 /** Attaques pas encore en base (et sans doublon dans le relevé lui-même). */
 export function newRaids(raids: readonly NeutralRaid[], known: ReadonlySet<string>): NeutralRaid[] {
@@ -76,7 +75,3 @@ const PARIS_DATE = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', 
 
 /** Date et heure d'impact, heure de Paris comme dans le jeu : "07/11/2026 14:04". */
 export const raidTime = (iso: string): string => PARIS_DATE.format(new Date(iso)).replace(',', '');
-
-/** Heure (ms) à partir de laquelle une nouvelle actualisation est permise ; `null` : tout de suite. */
-export const nextRefreshAt = (lastRefresh: number | null, now: number): number | null =>
-  lastRefresh !== null && now < lastRefresh + REFRESH_INTERVAL_MS ? lastRefresh + REFRESH_INTERVAL_MS : null;

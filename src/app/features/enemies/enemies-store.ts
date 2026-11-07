@@ -292,6 +292,12 @@ export class EnemiesStore {
     }
   }
 
+  /** Complète le relevé « current » (autre page du même classement), sans toucher à « previous ». */
+  async replaceCurrentSnapshot(snapshot: PlayersSnapshot): Promise<void> {
+    if (!this.db) throw new Error('Base partagée non configurée.');
+    await setDoc(doc(this.db, SNAPSHOTS, 'current'), snapshot);
+  }
+
   /** Nouveau relevé : le dernier devient « previous » (celui d'avant est écrasé), le nouveau devient « current ». */
   async rotateSnapshot(snapshot: PlayersSnapshot): Promise<void> {
     const db = this.db;
