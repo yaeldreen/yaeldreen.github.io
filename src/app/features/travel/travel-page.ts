@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { Card } from '../../shared/ui/card';
 import { DateTimeSecondsInput } from '../../shared/ui/datetime-seconds-input';
 import { Combobox, ComboboxOption } from '../../shared/ui/combobox';
@@ -25,6 +26,9 @@ import { findPlayer } from '../enemies/clans.data';
 const ME_KEY = 'travel.me';
 const CE_KEY = 'travel.ce';
 
+/** Date passée dans l'adresse, `null` si absente ou illisible. */
+const linkedDate = (iso: string | null): Date | null => (iso && !Number.isNaN(Date.parse(iso)) ? new Date(iso) : null);
+
 @Component({
   selector: 'app-travel-page',
   imports: [FormsModule, Card, NumberInput, SegmentedControl, Combobox, LevelInput, DateTimeSecondsInput],
@@ -42,13 +46,15 @@ export class TravelPage implements OnDestroy {
   protected readonly villageOptions = computed((): ComboboxOption[] => villageOptions(this.store.villages()));
   private readonly findVillage = (name: string) => findVillage(this.store.villages(), name);
 
-  protected readonly distanceMode = signal<DistanceMode>('manual');
+  /** Lien du radar : `?from=<village de départ>&to=<village cible>`, et `&at=<date ISO>` pour une attaque relevée. */
+  private readonly linked = inject(ActivatedRoute).snapshot.queryParamMap;
+  protected readonly distanceMode = signal<DistanceMode>(this.linked.has('to') ? 'coords' : 'manual');
   protected readonly manualDistance = signal<number | null>(5);
-  protected readonly departureTime = signal(toLocalIsoSeconds(new Date()));
+  protected readonly departureTime = signal(toLocalIsoSeconds(linkedDate(this.linked.get('at')) ?? new Date()));
 
   // Mode « Coordonnées » : deux villages choisis dans la carte.
-  private readonly originName = signal('');
-  private readonly targetName = signal('');
+  private readonly originName = signal(this.linked.get('from') ?? '');
+  private readonly targetName = signal(this.linked.get('to') ?? '');
   protected readonly villages = computed(() => [
     { n: 1, label: 'Village 1 (Départ / Source)', labelClass: 'text-red-300', name: this.originName, village: this.findVillage(this.originName()) },
     { n: 2, label: 'Village 2 (Cible / Arrivée)', labelClass: 'text-emerald-300', name: this.targetName, village: this.findVillage(this.targetName()) },

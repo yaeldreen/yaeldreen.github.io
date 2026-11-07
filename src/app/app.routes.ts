@@ -48,6 +48,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/enemies/enemies-page').then((m) => m.EnemiesPage),
   },
   {
+    path: 'joueur',
+    title: 'Fiche joueur',
+    loadComponent: () => import('./features/player/player-page').then((m) => m.PlayerPage),
+  },
+  {
     path: 'joueurs',
     title: 'MAJ joueurs',
     loadComponent: () => import('./features/players-update/players-update-page').then((m) => m.PlayersUpdatePage),

@@ -4,7 +4,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 @Component({
   selector: 'app-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'block bg-stone-900/80 border border-stone-800 rounded-2xl shadow-xl backdrop-blur-sm' },
+  host: { class: 'block card-frame bg-stone-900/85 border border-stone-800 border-t-or-600/50 rounded-2xl backdrop-blur-sm' },
   template: `<ng-content />`,
 })
 export class Card {}

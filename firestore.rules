@@ -39,7 +39,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'name', 'kage', 'x', 'y', 'clan', 'points', 'inhabitants', 'neutral',
           'gameId', 'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall',
-          'comment', 'commentBy', 'commentAt'
+          'createdAt', 'comment', 'commentBy', 'commentAt'
         ])
         && isName(data.name)
         && isName(data.kage)
@@ -58,6 +58,7 @@ service cloud.firestore {
         && isOptionalLevel(data, 'jouninCenter')
         && isOptionalLevel(data, 'hospital')
         && isOptionalLevel(data, 'wall')
+        && (!('createdAt' in data) || data.createdAt is string)
         && (!('comment' in data) || (data.comment is string && data.comment.size() <= 500));
     }
 
@@ -81,6 +82,17 @@ service cloud.firestore {
         && request.resource.data.keys().hasAll(resource.data.keys())
         && request.resource.data.diff(resource.data).affectedKeys().size() <= 3;
       allow create, delete: if false;
+    }
+
+    // Historique des modifications du temps et des ressources des bâtiments : ajout seulement, consultable depuis la console.
+    match /buildingHistory/{entry} {
+      allow create: if request.resource.data.keys().hasOnly(['building', 'level', 'before', 'after', 'at'])
+        && isName(request.resource.data.building)
+        && request.resource.data.level is int
+        && (request.resource.data.before == null || request.resource.data.before is map)
+        && request.resource.data.after is map
+        && request.resource.data.at == request.time;
+      allow read, update, delete: if false;
     }
 
     // Réglages des membres Discord (village, CE) : seul le bot y accède, avec le compte de service.
@@ -107,6 +119,28 @@ service cloud.firestore {
         && request.resource.data.direction is string && request.resource.data.direction.size() <= 20;
     }
 
+    // Attaques des villages neutres, relevées par le script des pillages : ajout seulement, une attaque garde son identifiant
+    // (village, heure, attaquant), donc la même attaque ne peut pas être enregistrée deux fois.
+    match /neutralRaids/{raid} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['village', 'villageName', 'attacker', 'attackerVillageId', 'mode', 'at'])
+        && request.resource.data.village is int && request.resource.data.village < 0
+        && request.resource.data.villageName is string && request.resource.data.villageName.size() <= 64
+        && isName(request.resource.data.attacker)
+        && request.resource.data.attackerVillageId is int
+        && request.resource.data.mode in ['pillage', 'attaque']
+        && request.resource.data.at is string && request.resource.data.at.size() <= 30;
+      allow update, delete: if false;
+    }
+
+    // Dernière actualisation des pillages : une par heure au plus pour tout le clan, à l'heure du serveur.
+    match /neutralRaidsRefresh/{doc} {
+      allow read: if true;
+      allow create: if doc == 'last' && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time;
+      allow update: if doc == 'last' && request.resource.data.keys().hasOnly(['at']) && request.resource.data.at == request.time
+        && request.time > resource.data.at + duration.value(1, 'h');
+    }
+
     // Relevés mensuels des points et habitants (« current » = mois en cours, « previous » = mois précédent).
     match /snapshots/{slot} {
       allow read: if true;
@@ -117,15 +151,10 @@ service cloud.firestore {
         && request.resource.data.players is list && request.resource.data.players.size() <= 5000;
     }
 
-    // Mot de passe d'accès (empreinte SHA-256). Créé une fois ; il ne se change que depuis la console Firebase.
-    function isHash(value) {
-      return value is string && value.matches('^[0-9a-f]{64}$');
-    }
-
+    // Mot de passe d'accès (empreinte SHA-256) : il ne se change que depuis la console Firebase.
     match /meta/access {
       allow read: if true;
-      allow create: if request.resource.data.keys().hasOnly(['hash']) && isHash(request.resource.data.hash);
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
   }
 }

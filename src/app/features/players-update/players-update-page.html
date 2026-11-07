@@ -15,45 +15,45 @@
   </app-card>
 }
 
-<app-card class="p-4 sm:p-6 space-y-4">
-  <div class="border-b border-stone-800 pb-3">
-    <h2 class="font-semibold text-stone-200 flex items-center">
-      Liste des joueurs (JSON)
-    </h2>
-    <p class="text-xs text-stone-400 mt-1">
+<!-- Les deux imports côte à côte : compacts, l'aide est repliée. -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 items-start">
+<app-card class="p-4 space-y-2.5">
+  <div class="flex flex-wrap items-baseline justify-between gap-x-3">
+    <h2 class="font-semibold text-stone-200">Liste des joueurs (JSON)</h2>
+    @if (store.villages().length) {
+      <span class="text-[11px] text-stone-500">Carte : {{ store.villages().length }} villages</span>
+    } @else {
+      <span class="text-[11px] text-amber-300">Carte vide pour l'instant</span>
+    }
+  </div>
+  <details class="text-[11px] text-stone-400">
+    <summary class="cursor-pointer text-stone-500 hover:text-stone-300">Aide</summary>
+    <p class="mt-1">
       Collez le classement du jeu (de « [ » à « ] »). Le nom du village, le clan, les points et les habitants des joueurs listés sont mis à jour,
       les nouveaux clans sont ajoutés et les autres joueurs ne bougent pas. Un joueur absent de la carte est ignoré : passez d'abord par
-      « MAJ joueurs carte ». Les armées et niveaux saisis dans « infos enemis » ne sont pas touchés. Pour Tsukuyomi, seuls le village et le kage sont gardés.
-      @if (store.villages().length) {
-        Carte actuelle : {{ store.villages().length }} villages.
-      } @else {
-        <span class="text-amber-300">Carte vide pour l'instant.</span>
-      }
+      « MAJ joueurs carte ». Les armées et niveaux saisis dans « infos enemis » ne sont pas touchés. Pour notre clan, seuls le village et le kage sont gardés.
     </p>
-  </div>
+  </details>
   <textarea
     [ngModel]="mapText()"
     (ngModelChange)="mapText.set($event)"
-    rows="6"
+    rows="2"
     placeholder='[ { "id": 70, "name": "Memen", "kage": "Maaminou", "points": 7695, "clan": { "id": 6, "name": "Shi no Kitzu" }, "rank": 11, "inhabitants": 429 } ]'
-    class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
+    class="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
   ></textarea>
   <button
     type="button"
     (click)="importMap()"
     [disabled]="!mapText().trim() || importing()"
-    class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+    class="w-full bg-red-800 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
   >
     {{ importing() ? 'Import en cours…' : 'Mettre à jour les joueurs' }}
   </button>
   @if (importError(); as e) {
     <p class="text-xs text-rose-300">{{ e }}</p>
   }
-  @if (snapshotMessage(); as m) {
-    <p class="text-xs text-cyan-300">{{ m }}</p>
-  }
   @if (importResult(); as r) {
-    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">
+    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2">
       Carte importée : {{ r.villages }} villages, {{ r.playersUpdated }} joueurs mis à jour, {{ r.playersAdded }} ajoutés
       @if (r.clansAdded.length) {
         , clans créés : {{ r.clansAdded.join(', ') }}
@@ -65,27 +65,31 @@
   }
 </app-card>
 
-<app-card class="p-4 sm:p-6 space-y-4">
-  <div class="border-b border-stone-800 pb-3">
+<app-card class="p-4 space-y-2.5">
+  <div class="flex flex-wrap items-baseline justify-between gap-x-3">
     <h2 class="font-semibold text-stone-200">MAJ joueurs carte</h2>
-    <p class="text-xs text-stone-400 mt-1">
+    <span class="text-[11px] text-stone-500">{{ neutralCount() }} villages neutres</span>
+  </div>
+  <details class="text-[11px] text-stone-400">
+    <summary class="cursor-pointer text-stone-500 hover:text-stone-300">Aide</summary>
+    <p class="mt-1">
       Collez la liste compacte de la carte. « 9: true » : les villages neutres sont intégrés entièrement et remplacent ceux de la carte.
       « 9: false » : les coordonnées, le clan, les points et les habitants du joueur sont mis à jour, et son village est ajouté s'il n'est pas encore sur la carte. Les armées et niveaux saisis sont conservés.
-      Un joueur absent de la liste est supprimé, avec son armée, et les villages en double sont retirés. Villages neutres actuels : {{ neutralCount() }}.
+      Un joueur absent de la liste est supprimé, avec son armée, et les villages en double sont retirés.
     </p>
-  </div>
+  </details>
   <textarea
     [ngModel]="carteText()"
     (ngModelChange)="carteText.set($event)"
-    rows="6"
+    rows="2"
     placeholder='[ [70, "Memen", "Maaminou", "feu", 8216, 10, 429, 7695, { "id": 6, "name": "Shi no Kitzu" }, false] ]'
-    class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-3 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
+    class="w-full bg-stone-950 border border-stone-700 rounded-lg px-3 py-2 text-stone-100 font-mono text-xs focus:outline-none focus:border-red-700"
   ></textarea>
   <button
     type="button"
     (click)="importCarte()"
     [disabled]="!carteText().trim() || carteImporting()"
-    class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+    class="w-full bg-red-800 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
   >
     {{ carteImporting() ? 'Import en cours…' : 'Mettre à jour la carte' }}
   </button>
@@ -93,7 +97,7 @@
     <p class="text-xs text-rose-300">{{ e }}</p>
   }
   @if (carteResult(); as r) {
-    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2.5">
+    <p class="text-xs text-emerald-300 bg-emerald-950/20 border border-emerald-700/30 rounded-lg p-2">
       Carte importée : {{ r.neutral }} villages neutres, {{ r.updated }} joueurs mis à jour, {{ r.added }} ajoutés
       @if (r.removed.length) {
         , supprimés : {{ r.removed.join(', ') }}
@@ -101,66 +105,115 @@
     </p>
   }
 </app-card>
+</div>
 
 @let snaps = store.snapshots();
 <app-card class="overflow-hidden">
-  <div class="px-6 py-4 border-b border-stone-800 space-y-3">
-    <div>
-      <h2 class="font-semibold text-stone-200">Évolution mensuelle</h2>
-      <p class="text-xs text-stone-400 mt-1">
-        Le 1er de chaque mois, le premier import de la liste des joueurs enregistre leurs points et habitants.
-        @if (snaps.current) {
-          Mois en cours : <span class="text-stone-200">{{ monthLabel(snaps.current.month) }}</span>
-          @if (snaps.previous) {
-            · mois précédent : <span class="text-stone-200">{{ monthLabel(snaps.previous.month) }}</span>.
-          } @else {
-            · pas encore de mois précédent : les évolutions apparaîtront après le prochain relevé.
-          }
-        } @else {
-          <span class="text-amber-300">Aucun relevé pour l'instant.</span>
-        }
-      </p>
-    </div>
-    @if (snaps.current) {
-      <div class="flex flex-wrap gap-2">
-        <select
-          [ngModel]="evolutionClan()"
-          (ngModelChange)="evolutionClan.set($event)"
-          class="bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700 cursor-pointer"
-        >
-          <option value="">Tous les clans</option>
-          @for (c of evolutionClans(); track c) {
-            <option [value]="c">{{ c }}</option>
-          }
-        </select>
-        <select
-          [ngModel]="evolutionSort()"
-          (ngModelChange)="evolutionSort.set($event)"
-          class="bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700 cursor-pointer"
-        >
-          <option value="points">Tri : progression des points</option>
-          <option value="inhabitants">Tri : progression des habitants</option>
-          <option value="name">Tri : nom</option>
-        </select>
+  <div class="px-4 sm:px-6 py-4 border-b border-stone-800 space-y-3">
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <div class="min-w-0">
+        <h2 class="font-semibold text-stone-200">Évolution des joueurs</h2>
+        <p class="text-xs text-stone-400 mt-1">
+          « Actualiser » ouvre le classement du jeu : le
+          <a href="classement-table-ronde.user.js" target="_blank" rel="noopener" class="text-or-300 underline">script du classement</a>
+          (Tampermonkey, ou Userscripts sur iPhone) relève toutes les pages, puis le relevé remplace « maintenant » et l'ancien passe en « avant ». « Différence » = maintenant − avant.
+        </p>
       </div>
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="refresh()"
+          [disabled]="refreshing()"
+          class="bg-red-800 hover:bg-red-700 text-white px-3.5 py-2 rounded-xl text-xs font-medium transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          {{ refreshing() ? 'Relevé en cours…' : 'Actualiser' }}
+        </button>
+        <button
+          type="button"
+          (click)="pasteSnapshot()"
+          class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3.5 py-2 rounded-xl text-xs font-medium transition border border-stone-700 cursor-pointer"
+        >
+          Coller le relevé
+        </button>
+      </div>
+    </div>
+    @if (refreshing()) {
+      <p class="text-xs text-stone-400">En attente du classement : laissez l'onglet du jeu terminer son relevé. Si rien ne revient, utilisez « Coller le relevé ».</p>
+    }
+    @if (refreshMessage(); as m) {
+      <p class="text-xs text-emerald-300">{{ m }}</p>
+    }
+    @if (refreshError(); as e) {
+      <p class="text-xs text-rose-300">{{ e }}</p>
+    }
+    @if (!snaps.current) {
+      <p class="text-xs text-amber-300">Aucun relevé pour l'instant.</p>
     }
   </div>
-  @if (snaps.current) {
-    <ul class="divide-y divide-stone-800/60 max-h-[70vh] overflow-y-auto text-xs">
-      @for (r of evolution(); track r.name) {
-        <li class="px-4 py-2.5">
-          <div class="flex flex-wrap items-baseline justify-between gap-x-3">
-            <span class="font-semibold text-stone-200 text-sm">{{ r.name }}</span>
-            <span class="text-stone-500">{{ r.clan ?? 'Sans clan' }}</span>
-          </div>
-          <p class="font-mono text-stone-300">
-            ⭐ {{ r.points.toLocaleString('fr-FR') }}
-            <span [class]="r.pointsDelta === null ? 'text-stone-500' : r.pointsDelta > 0 ? 'text-emerald-300' : r.pointsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">({{ signed(r.pointsDelta) }})</span>
-            · 👥 {{ r.inhabitants.toLocaleString('fr-FR') }}
-            <span [class]="r.inhabitantsDelta === null ? 'text-stone-500' : r.inhabitantsDelta > 0 ? 'text-emerald-300' : r.inhabitantsDelta < 0 ? 'text-rose-300' : 'text-stone-400'">({{ signed(r.inhabitantsDelta) }})</span>
-          </p>
-        </li>
-      }
-    </ul>
+  @if (snaps.current; as current) {
+    <div class="max-h-[70vh] overflow-auto">
+      <table class="w-full text-xs">
+        <thead class="sticky top-0 bg-stone-900 z-10 text-left">
+          <tr class="border-b border-stone-800">
+            <th scope="col" rowspan="2" class="sticky left-0 z-10 bg-stone-900 px-3 py-2 font-medium text-[11px] uppercase tracking-wider text-stone-400 align-bottom">Joueur</th>
+            <th scope="col" rowspan="2" class="px-3 py-2 font-medium text-[11px] uppercase tracking-wider text-stone-400 align-bottom">Village</th>
+            <th scope="col" rowspan="2" class="px-3 py-2 align-bottom">
+              <select
+                [ngModel]="evolutionClan()"
+                (ngModelChange)="evolutionClan.set($event)"
+                aria-label="Filtrer par clan"
+                class="bg-stone-950 border border-stone-700 rounded-lg px-2 py-1 text-stone-100 text-xs font-medium focus:outline-none focus:border-or-500 cursor-pointer"
+              >
+                <option value="">Clan : tous</option>
+                @for (c of evolutionClans(); track c) {
+                  <option [value]="c">{{ c }}</option>
+                }
+              </select>
+            </th>
+            <th scope="colgroup" colspan="2" class="px-3 pt-2 text-center border-l border-stone-800">
+              <span class="block text-[11px] uppercase tracking-wider text-stone-400">Avant</span>
+              <span class="block font-normal text-stone-500 whitespace-nowrap">{{ snaps.previous ? snapshotLabel(snaps.previous) : 'aucun relevé' }}</span>
+            </th>
+            <th scope="colgroup" colspan="2" class="px-3 pt-2 text-center border-l border-stone-800">
+              <span class="block text-[11px] uppercase tracking-wider text-or-300">Maintenant</span>
+              <span class="block font-normal text-stone-400 whitespace-nowrap">{{ snapshotLabel(current) }}</span>
+            </th>
+            <th scope="colgroup" colspan="2" class="px-3 pt-2 text-center border-l border-stone-800 align-top">
+              <span class="block text-[11px] uppercase tracking-wider text-stone-400">Différence</span>
+            </th>
+          </tr>
+          <tr class="border-b border-stone-800">
+            <th scope="col" class="px-3 py-2 font-medium text-[11px] uppercase tracking-wider text-stone-400 text-right border-l border-stone-800">Points</th>
+            <th scope="col" class="px-3 py-2 font-medium text-[11px] uppercase tracking-wider text-stone-400 text-right">Hab.</th>
+            <th scope="col" class="px-3 py-2 text-right border-l border-stone-800" [attr.aria-sort]="evolutionSort().key === 'points' ? (evolutionSort().direction === 'desc' ? 'descending' : 'ascending') : 'none'">
+              <button type="button" (click)="sortBy('points')" class="font-semibold text-xs cursor-pointer hover:text-or-200 whitespace-nowrap" [class]="evolutionSort().key === 'points' ? 'text-or-300' : 'text-stone-200'">Points {{ sortArrow('points') }}</button>
+            </th>
+            <th scope="col" class="px-3 py-2 text-right" [attr.aria-sort]="evolutionSort().key === 'inhabitants' ? (evolutionSort().direction === 'desc' ? 'descending' : 'ascending') : 'none'">
+              <button type="button" (click)="sortBy('inhabitants')" class="font-semibold text-xs cursor-pointer hover:text-or-200 whitespace-nowrap" [class]="evolutionSort().key === 'inhabitants' ? 'text-or-300' : 'text-stone-200'">Hab. {{ sortArrow('inhabitants') }}</button>
+            </th>
+            <th scope="col" class="px-3 py-2 font-medium text-[11px] uppercase tracking-wider text-stone-400 text-right border-l border-stone-800">Points</th>
+            <th scope="col" class="px-3 py-2 font-medium text-[11px] uppercase tracking-wider text-stone-400 text-right">Hab.</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-stone-800/60">
+          @for (r of evolution(); track r.name) {
+            <tr class="group hover:bg-stone-800/40">
+              <!-- Nom épinglé à gauche : il reste visible quand le tableau défile sur téléphone. -->
+              <td class="sticky left-0 bg-stone-900 group-hover:bg-stone-800 px-3 py-2 font-semibold text-stone-200 whitespace-nowrap">{{ r.name }}</td>
+              <td class="px-3 py-2 text-stone-300 whitespace-nowrap">{{ r.village ?? '—' }}</td>
+              <td class="px-3 py-2 text-stone-400 whitespace-nowrap">{{ r.clan ?? 'Sans clan' }}</td>
+              <td class="px-3 py-2 text-right font-mono text-stone-400 border-l border-stone-800">{{ r.previousPoints?.toLocaleString('fr-FR') ?? '—' }}</td>
+              <td class="px-3 py-2 text-right font-mono text-stone-400">{{ r.previousInhabitants?.toLocaleString('fr-FR') ?? '—' }}</td>
+              <td class="px-3 py-2 text-right font-mono text-stone-100 border-l border-stone-800">{{ r.points.toLocaleString('fr-FR') }}</td>
+              <td class="px-3 py-2 text-right font-mono text-stone-100">{{ r.inhabitants.toLocaleString('fr-FR') }}</td>
+              <td class="px-3 py-2 text-right font-mono border-l border-stone-800" [class]="deltaClass(r.pointsDelta)">{{ signed(r.pointsDelta) }}</td>
+              <td class="px-3 py-2 text-right font-mono" [class]="deltaClass(r.inhabitantsDelta)">{{ signed(r.inhabitantsDelta) }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="9" class="px-3 py-4 text-center text-stone-500">Aucun joueur pour ce clan.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
   }
 </app-card>

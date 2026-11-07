@@ -1,0 +1,230 @@
+<a routerLink="/ennemis" class="text-xs text-stone-400 hover:text-stone-200 self-start">← Infos ennemis</a>
+
+@if (sheet(); as s) {
+  <app-card class="p-4 sm:p-6 space-y-3">
+    <div class="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+      <div class="min-w-0 flex items-start gap-3 sm:gap-4">
+        @if (photo(); as url) {
+          <img
+            [src]="url"
+            [alt]="'Photo de profil de ' + s.player.name"
+            referrerpolicy="no-referrer"
+            loading="lazy"
+            (load)="onPhotoLoad($any($event.target), url)"
+            (error)="failedPhoto.set(url)"
+            class="w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-xl object-cover border border-stone-700 bg-stone-950"
+          />
+        }
+        <div class="min-w-0">
+        <h2 class="font-bold text-xl text-red-300 break-words">{{ s.player.name }}</h2>
+        <p class="text-sm text-stone-300 break-words">{{ s.player.village || 'Village inconnu' }} · {{ s.player.clan ?? noClan }}</p>
+        <p class="text-xs text-stone-400 mt-1">
+          @if (coordinates(); as c) {
+            📍 <span class="font-mono">{{ c.x }} / {{ c.y }}</span>
+          } @else {
+            📍 Pas sur la carte
+          }
+          @if (s.village?.gameId !== undefined) {
+            <span class="ml-2">ID <span class="font-mono">{{ s.village?.gameId }}</span></span>
+          }
+        </p>
+        </div>
+      </div>
+      <div class="flex flex-wrap gap-1">
+        @for (link of links(); track link.label) {
+          <a
+            [href]="link.url"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-2 py-1 rounded-md text-[11px] font-medium"
+            [class]="link.primary ? 'bg-red-800 hover:bg-red-700 text-white' : 'bg-stone-800 hover:bg-stone-700 text-stone-200'"
+          >
+            {{ link.label }}
+          </a>
+        }
+        <a routerLink="/combat" [queryParams]="{ defender: s.player.name }" class="px-2 py-1 rounded-md text-[11px] font-medium bg-stone-800 hover:bg-stone-700 text-stone-200">Simuler</a>
+        @if (coordinates(); as c) {
+          <a routerLink="/retour" [queryParams]="{ to: c.name }" class="px-2 py-1 rounded-md text-[11px] font-medium bg-stone-800 hover:bg-stone-700 text-stone-200">Retour</a>
+        }
+      </div>
+    </div>
+  </app-card>
+
+  <app-card class="p-4 sm:p-6 space-y-4">
+    <div class="border-b border-stone-800 pb-2 flex flex-wrap items-baseline justify-between gap-2">
+      <h3 class="font-semibold text-stone-200">Renseigné</h3>
+      @if (!form()) {
+        <button type="button" (click)="edit()" class="text-xs text-stone-300 hover:text-red-300 cursor-pointer">✏️ Modifier</button>
+      }
+    </div>
+
+    @if (store.error(); as error) {
+      <p class="text-xs text-rose-300">{{ error }}</p>
+    }
+
+    @if (form(); as f) {
+      <div class="grid grid-cols-2 items-end gap-3">
+        @for (field of countFields; track field.key) {
+          <div>
+            <label class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1">{{ field.label }}</label>
+            <app-number-input [compact]="true" [value]="f.stats[field.key]" (valueChange)="setStat(field.key, $event)" [min]="0" />
+          </div>
+        }
+      </div>
+      <p class="text-[11px] text-stone-500 -mt-2">Le prochain import de la carte remplacera les points et les habitants.</p>
+
+      <div>
+        <label for="sheet-created" class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">🗓️ Création du compte</label>
+        <input
+          id="sheet-created"
+          type="text"
+          inputmode="text"
+          autocomplete="off"
+          placeholder="1791380674853 ou 07/10/2026 15:44"
+          [value]="f.createdAt"
+          (input)="setCreatedAt($any($event.target).value)"
+          class="w-full bg-stone-950 border border-stone-700 rounded-lg px-2.5 py-1.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+        />
+        @if (!createdAtValid()) {
+          <p class="text-[11px] text-rose-300 mt-1">Date illisible : collez le timestamp du jeu ou écrivez JJ/MM/AAAA HH:MM.</p>
+        }
+      </div>
+
+      <div>
+        <h4 class="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">Niveaux</h4>
+        <div class="grid grid-cols-2 sm:grid-cols-3 items-end gap-2">
+          @for (field of levelFields; track field.key) {
+            <div>
+              <label class="block text-[11px] text-stone-400 mb-1 truncate" [title]="field.label">{{ field.short }}</label>
+              <app-level-input [value]="f.stats[field.key]" (valueChange)="setStat(field.key, $event)" [min]="0" [max]="field.max!" placeholder="?" />
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (armyEditable()) {
+        <div>
+          <div class="flex flex-wrap items-baseline justify-between gap-2 mb-1.5">
+            <h4 class="text-[11px] text-stone-400 uppercase tracking-wider">⚔️ Dernière armée connue</h4>
+            @if (s.record) {
+              <button type="button" (click)="removeArmy()" class="text-[11px] text-stone-500 hover:text-rose-400 cursor-pointer">Effacer l'armée</button>
+            }
+          </div>
+          <div class="grid grid-cols-3 gap-2">
+            @for (troop of troops; track troop.key) {
+              <div>
+                <label class="block text-[11px] text-stone-400 mb-1">{{ troop.label }}</label>
+                <app-number-input [compact]="true" [value]="f.troops[troop.key]" (valueChange)="setTroop(troop.key, $event)" [min]="0" />
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <div>
+        <label for="sheet-comment" class="block text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">💬 Commentaire</label>
+        <textarea
+          id="sheet-comment"
+          rows="3"
+          maxlength="500"
+          [value]="f.comment"
+          (input)="setComment($any($event.target).value)"
+          class="w-full bg-stone-950 border border-stone-700 rounded-lg px-2.5 py-1.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+        ></textarea>
+      </div>
+
+      <div class="flex gap-2">
+        <button type="button" (click)="save()" [disabled]="!canSave()" class="bg-red-800 hover:bg-red-700 text-white px-3.5 py-2 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">Enregistrer</button>
+        <button type="button" (click)="form.set(null)" class="bg-stone-800 hover:bg-stone-700 text-stone-300 px-3.5 py-2 rounded-lg text-xs font-medium cursor-pointer">Annuler</button>
+      </div>
+    } @else {
+
+      <dl class="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <dt class="text-[11px] text-stone-400 uppercase tracking-wider">⭐ Points</dt>
+          <dd class="font-mono font-bold text-stone-100">
+            {{ s.player.points != null ? formatNumber(s.player.points) : '?' }}
+            @if (s.evolution?.pointsDelta != null) {
+              <span class="text-xs font-normal" [class]="s.evolution!.pointsDelta! > 0 ? 'text-emerald-300' : s.evolution!.pointsDelta! < 0 ? 'text-rose-300' : 'text-stone-500'">({{ signed(s.evolution!.pointsDelta!) }})</span>
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="text-[11px] text-stone-400 uppercase tracking-wider">👥 Habitants</dt>
+          <dd class="font-mono font-bold text-stone-100">
+            {{ s.player.inhabitants != null ? formatNumber(s.player.inhabitants) : '?' }}
+            @if (s.evolution?.inhabitantsDelta != null) {
+              <span class="text-xs font-normal" [class]="s.evolution!.inhabitantsDelta! > 0 ? 'text-emerald-300' : s.evolution!.inhabitantsDelta! < 0 ? 'text-rose-300' : 'text-stone-500'">({{ signed(s.evolution!.inhabitantsDelta!) }})</span>
+            }
+          </dd>
+        </div>
+      </dl>
+
+      <div>
+        <h4 class="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">🗓️ Création du compte</h4>
+        @if (s.player.createdAt; as createdAt) {
+          <p class="text-sm text-stone-200">{{ formatDate(createdAt) }}</p>
+        } @else {
+          <p class="text-sm text-stone-500">Non renseignée.</p>
+        }
+      </div>
+
+      <div>
+        <h4 class="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">Niveaux</h4>
+        <dl class="grid grid-cols-3 gap-2">
+          @for (field of levelFields; track field.key) {
+            <div class="bg-stone-950/50 border border-stone-800 rounded-lg px-2.5 py-1.5">
+              <dt class="text-[11px] text-stone-400 truncate" [title]="field.label">{{ field.short }}</dt>
+              <dd class="font-mono font-bold text-sm" [class]="s.player[field.key] != null ? 'text-cyan-300' : 'text-stone-600'">{{ s.player[field.key] ?? '?' }}</dd>
+            </div>
+          }
+        </dl>
+      </div>
+
+      <div>
+        <h4 class="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">⚔️ Dernière armée connue</h4>
+        @if (s.record; as record) {
+          <dl class="grid grid-cols-3 gap-2">
+            @for (troop of troops; track troop.key) {
+              <div class="bg-stone-950/50 border border-stone-800 rounded-lg px-2.5 py-1.5">
+                <dt class="text-[11px] text-stone-400">{{ troop.label }}</dt>
+                <dd class="font-mono font-bold text-sm text-stone-100">{{ formatNumber(record.troops[troop.key]) }}</dd>
+              </div>
+            }
+          </dl>
+          <p class="text-[11px] text-stone-500 mt-1.5">
+            {{ formatDate(record.updatedAt) }}
+            @if (armyAge() === 0) {
+              · aujourd'hui
+            } @else {
+              · il y a {{ armyAge() }} j
+            }
+            @if (record.side) {
+              · {{ record.side }}
+            }
+          </p>
+        } @else {
+          <p class="text-sm text-stone-500">Aucun rapport.</p>
+        }
+      </div>
+
+      <div>
+        <h4 class="text-[11px] text-stone-400 uppercase tracking-wider mb-1.5">💬 Commentaire</h4>
+        @if (s.player.comment; as comment) {
+          <p class="text-sm text-stone-200 whitespace-pre-line break-words">{{ comment }}</p>
+          @if (s.player.commentAt; as at) {
+            <p class="text-[11px] text-stone-500 mt-1">{{ formatDate(at) }}</p>
+          }
+        } @else {
+          <p class="text-sm text-stone-500">Aucun commentaire.</p>
+        }
+      </div>
+    }
+  </app-card>
+} @else if (loading()) {
+  <p class="text-sm text-stone-400">Chargement…</p>
+} @else {
+  <app-card class="p-4 sm:p-6">
+    <p class="text-sm text-stone-300">Joueur introuvable : « {{ name() }} ».</p>
+  </app-card>
+}

@@ -1,4 +1,4 @@
-import { MapVillage } from '../../core/game-data/map-villages';
+import { MapVillage, VillageDoc } from '../../core/game-data/map-villages';
 import { NO_CLAN, OWN_CLAN } from '../enemies/clans.data';
 import { computeDistance } from '../travel/travel.logic';
 
@@ -6,7 +6,9 @@ export const NEUTRAL_GROUP = 'Villages neutres';
 const NEUTRAL_COLOR = '#3ce3b2';
 const OWN_COLOR = '#77afff';
 const NO_CLAN_COLOR = '#b7b0a5';
-const PALETTE = ['#f59e78', '#d4a5ff', '#ffb46c', '#f07a9d', '#9ecae7', '#b4cf76', '#e9c46a', '#c6a0e9', '#e48faf'];
+// Couleurs des clans choisies pour rester distinctes aussi pour un daltonien rouge-vert (simulation deutéranopie et protanopie).
+// Elles ne suffisent pas pour 9 clans : la forme du point distingue en plus les groupes particuliers (voir `groupShape`).
+const PALETTE = ['#f0e442', '#e69f00', '#56b4e9', '#cc79a7', '#ffffff', '#d55e00', '#9ad0ff', '#ffb000', '#dc267f'];
 
 /** Taille de la carte en unités du dessin (deux fois plus large que haute), et marge laissée au bord. */
 export const MAP_WIDTH = 600;
@@ -45,7 +47,7 @@ export const planHash = ({ genin, chuunin, jounin, mode }: AttackPlan): string =
  * Liens vers le jeu. Joueur : village, profil et attaque. Membre de notre clan : le jeu refuse de l'attaquer, le dernier
  * lien est donc un soutien. Village neutre : attaque seulement. Sans `plan`, l'attaque n'est ni préremplie ni envoyée par le script.
  */
-export function gameLinks({ gameId, neutral, clan }: MapVillage, plan: AttackPlan | null = null): GameLink[] {
+export function gameLinks({ gameId, neutral, clan }: Pick<VillageDoc, 'gameId' | 'neutral' | 'clan'>, plan: AttackPlan | null = null): GameLink[] {
   if (gameId === undefined) return [];
   const url = (page: string) => `${GAME_URL}/${page}.html?id=${encodeURIComponent(gameId)}`;
   const attack = { label: 'Attaque', url: url('attaque') + (plan ? planHash(plan) : ''), primary: true };
@@ -58,7 +60,13 @@ export interface RadarGroup {
   name: string;
   count: number;
   color: string;
+  shape: GroupShape;
 }
+
+/** Forme du point sur la carte : notre clan, les neutres et les sans clan se reconnaissent sans compter sur la couleur. */
+export type GroupShape = 'circle' | 'square' | 'triangle' | 'ring';
+export const groupShape = (name: string): GroupShape =>
+  name === NEUTRAL_GROUP ? 'square' : name === OWN_CLAN ? 'triangle' : name === NO_CLAN ? 'ring' : 'circle';
 
 export const groupOf = (village: MapVillage): string => (village.neutral ? NEUTRAL_GROUP : (village.clan ?? NO_CLAN));
 
@@ -72,7 +80,7 @@ export function radarGroups(villages: readonly MapVillage[]): RadarGroup[] {
     name === NEUTRAL_GROUP ? NEUTRAL_COLOR : name === OWN_CLAN ? OWN_COLOR : name === NO_CLAN ? NO_CLAN_COLOR : PALETTE[i % PALETTE.length];
   return [NEUTRAL_GROUP, OWN_CLAN, ...clans, NO_CLAN]
     .filter((name) => counts.has(name))
-    .map((name) => ({ name, count: counts.get(name) ?? 0, color: color(name, clans.indexOf(name)) }));
+    .map((name) => ({ name, count: counts.get(name) ?? 0, color: color(name, clans.indexOf(name)), shape: groupShape(name) }));
 }
 
 /** Échelle du dessin : les écarts en x et en y du village affiché le plus éloigné doivent tenir dans le cadre. */
@@ -107,7 +115,7 @@ export interface MapView {
 }
 
 const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 1.5;
+const ZOOM_MAX = 3;
 /** Grossissement réel du dessin à 100 % : la vue s'ouvre resserrée autour du village au centre. */
 const BASE_ZOOM = 2.1;
 

@@ -85,3 +85,20 @@ export function levelEntries<T extends { level: number }>(rows: readonly T[]): {
   const levels = new Set([...rows.map((r) => r.level), ...Array.from({ length: MAX_LEVEL }, (_, i) => i + 1)]);
   return [...levels].sort((a, b) => a - b).map((level) => ({ level, row: rows.find((r) => r.level === level) }));
 }
+
+/** Ce que l'historique suit sur un niveau : le temps de construction et les ressources. */
+const HISTORY_KEYS = ['buildTime', 'stone', 'wood', 'iron', 'food'] as const;
+
+export interface LevelHistoryEntry {
+  building: BuildingId;
+  level: number;
+  /** `null` pour un niveau ajouté. */ before: Record<string, string | number | null> | null;
+  after: Record<string, string | number | null>;
+}
+
+/** Entrée d'historique d'une modification, ou `null` si ni le temps ni les ressources ne changent. */
+export function levelHistoryEntry(building: BuildingId, before: LevelRow | undefined, after: LevelRow): LevelHistoryEntry | null {
+  const pick = (row: LevelRow) => Object.fromEntries(HISTORY_KEYS.map((key) => [key, row[key] ?? null]));
+  if (before && HISTORY_KEYS.every((key) => before[key] === after[key])) return null;
+  return { building, level: after.level, before: before ? pick(before) : null, after: pick(after) };
+}

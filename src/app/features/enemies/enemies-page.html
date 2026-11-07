@@ -150,6 +150,16 @@
                 }
               </div>
             }
+            <div class="col-span-2 sm:col-span-4">
+              <label class="block text-[11px] font-medium text-stone-400 uppercase tracking-wider mb-1">Commentaire</label>
+              <textarea
+                rows="2"
+                maxlength="500"
+                [ngModel]="draftComment()"
+                (ngModelChange)="setComment($event)"
+                class="w-full bg-stone-950 border border-stone-700 rounded-xl px-3 py-2 text-stone-100 text-xs focus:outline-none focus:border-red-700"
+              ></textarea>
+            </div>
             <p class="col-span-2 sm:col-span-4 text-[11px] text-stone-500">Seuls les champs remplis sont enregistrés : armée si des ninjas sont saisis, puis chaque info renseignée.</p>
           </div>
 
@@ -206,8 +216,8 @@
   @if (manageError(); as error) {
     <p class="text-xs text-amber-300">{{ error }}</p>
   }
-  @if (evolutionMonths(); as months) {
-    <p class="text-[11px] text-stone-500">Sous les points et habitants : évolution sur le mois ({{ months }}).</p>
+  @if (evolutionPeriod(); as period) {
+    <p class="text-[11px] text-stone-500">Sous les points et habitants : évolution entre les deux derniers relevés ({{ period }}).</p>
   }
 </app-card>
 
@@ -262,7 +272,7 @@
             [class.col-span-full]="transfer()?.player === row.player"
           >
             <div class="min-w-0">
-              <p class="font-bold text-red-300 text-sm truncate" [title]="row.player">{{ row.player }}</p>
+              <a routerLink="/joueur" [queryParams]="{ nom: row.player }" class="block font-bold text-red-300 hover:text-red-200 hover:underline text-sm truncate" [title]="row.player">{{ row.player }}</a>
               <p class="text-stone-400 truncate" [title]="row.village">{{ row.village }}</p>
             </div>
             <p class="text-stone-300">
@@ -272,9 +282,9 @@
                     {{ field.key === 'points' ? '⭐' : '👥' }}
                     <span class="font-mono" [class]="row.stats[field.key] !== null ? 'text-stone-100' : 'text-stone-600'">{{ row.stats[field.key] !== null ? formatNumber(row.stats[field.key]!) : '?' }}</span>
                     @if (monthDelta(row.player, field.key); as delta) {
-                      <span class="font-mono" [class]="delta > 0 ? 'text-emerald-300' : 'text-rose-300'" [title]="'Sur le mois : ' + evolutionMonths()">({{ signed(delta) }})</span>
+                      <span class="font-mono" [class]="delta > 0 ? 'text-emerald-300' : 'text-rose-300'" [title]="'Depuis le relevé précédent : ' + evolutionPeriod()">({{ signed(delta) }})</span>
                     } @else if (monthDelta(row.player, field.key) === 0) {
-                      <span class="font-mono text-stone-500" [title]="'Sur le mois : ' + evolutionMonths()">(±0)</span>
+                      <span class="font-mono text-stone-500" [title]="'Depuis le relevé précédent : ' + evolutionPeriod()">(±0)</span>
                     }
                   </span>
                 }
@@ -295,6 +305,14 @@
                 <span class="text-stone-600">Aucun rapport</span>
               }
             </p>
+            @if (row.comment; as comment) {
+              <p class="text-stone-300 whitespace-pre-line break-words">
+                💬 {{ comment }}
+                @if (row.commentAt; as at) {
+                  <span class="text-stone-500">· {{ formatDate(at) }}</span>
+                }
+              </p>
+            }
             <div class="flex flex-wrap gap-x-3 gap-y-1 pt-1 mt-auto">
               <button type="button" (click)="editArmy(row)" class="text-stone-300 hover:text-red-300 cursor-pointer">Modifier</button>
               @if (row.record) {

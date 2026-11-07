@@ -60,6 +60,23 @@ export interface BuildingGuide<T extends BuildingLevel = BuildingLevel> {
   rows: readonly T[];
 }
 
+/** Niveaux requis pour construire le niveau 1 d'un bâtiment (arbre des constructions du jeu). */
+export const PREREQUISITES: Partial<Record<BuildingId, Partial<Record<BuildingId, number>>>> = {
+  training: { hq: 3 },
+  academy: { hq: 3, training: 1 },
+  chunnin: { hq: 6, academy: 5 },
+  jounin: { hq: 12, chunnin: 5 },
+  watchtower: { hq: 15, jounin: 10, wall: 8 },
+  wall: { hq: 1 },
+  hospital: { academy: 1 },
+  resourceDepot: { hq: 1 },
+  foodDepot: { hq: 1 },
+  reserve: { hq: 1 },
+  raptor: { hq: 2 },
+  commerce: { hq: 5 },
+  highCouncil: { hq: 3 },
+};
+
 const levelColumn: Column<BuildingLevel> = {
   header: 'Niveau du Centre',
   cellClass: 'font-bold text-red-300',

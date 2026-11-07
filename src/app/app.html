@@ -1,14 +1,14 @@
 @switch (access.status()) {
   @case ('unlocked') {
-<div class="bg-stone-950 text-stone-100 min-h-screen font-sans antialiased selection:bg-red-800 selection:text-white flex flex-col justify-between">
-  <header class="border-b border-stone-800 bg-stone-900/60 backdrop-blur sticky top-0 z-50">
+<div class="great-hall text-stone-100 min-h-screen font-sans antialiased selection:bg-red-800 selection:text-white flex flex-col justify-between">
+  <header class="frise border-b border-or-600/50 bg-stone-900/80 backdrop-blur sticky top-0 z-50">
     <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
       <div class="flex items-center space-x-3 min-w-0">
-        <img src="Rinne_Sharingan.webp" alt="" class="w-10 h-10 rounded-xl shadow-lg shadow-red-700/30 shrink-0" />
+        <img src="emblem.svg" alt="" class="w-11 h-11 shrink-0" />
         <div class="min-w-0">
-          <h1 class="font-bold text-lg tracking-tight bg-gradient-to-r from-white to-stone-400 bg-clip-text text-transparent">Tsukuyomi HUB</h1>
+          <h1 class="font-bold text-xl leading-tight text-or-300">La Table Ronde</h1>
           @if (currentTab(); as tab) {
-            <p class="text-xs text-red-300 truncate">{{ tab.label }}</p>
+            <p class="text-xs text-stone-300 truncate">{{ tab.label }}</p>
           }
         </div>
       </div>
@@ -18,7 +18,7 @@
         (click)="menuOpen.set(!menuOpen())"
         [attr.aria-expanded]="menuOpen()"
         aria-label="Menu"
-        class="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl border border-stone-700/60 bg-stone-800/80 text-stone-200 text-xl hover:text-white hover:border-red-700 transition cursor-pointer"
+        class="w-11 h-11 shrink-0 flex items-center justify-center rounded-xl border border-stone-700/60 bg-stone-800/80 text-stone-200 text-xl hover:text-white hover:border-or-500 transition cursor-pointer"
       >
         {{ menuOpen() ? '✕' : '☰' }}
       </button>
@@ -26,7 +26,7 @@
 
     @if (menuOpen()) {
       <div class="fixed inset-0 h-screen bg-black/40" (click)="menuOpen.set(false)"></div>
-      <nav class="absolute right-0 left-0 sm:left-auto sm:right-4 top-full sm:mt-2 sm:w-72 bg-stone-900 border border-stone-800 sm:rounded-2xl shadow-2xl p-2 flex flex-col gap-1">
+      <nav class="absolute right-0 left-0 sm:left-auto sm:right-4 top-full sm:mt-2 sm:w-72 bg-stone-900 border border-or-600/50 sm:rounded-2xl shadow-2xl p-2 flex flex-col gap-1">
         @for (tab of tabs; track tab.path) {
           <a
             #rla="routerLinkActive"
@@ -39,6 +39,18 @@
             <span class="mr-2" aria-hidden="true">{{ tab.icon }}</span> {{ tab.label }}
           </a>
         }
+        @if (appInstall.available()) {
+          <button
+            type="button"
+            (click)="appInstall.install()"
+            class="mt-1 border-t border-stone-800 px-4 py-3 text-left text-sm font-medium text-or-300 hover:bg-stone-800 cursor-pointer flex items-center"
+          >
+            <span class="mr-2" aria-hidden="true">📲</span> Télécharger l'application
+          </button>
+          @if (appInstall.help(); as help) {
+            <p class="px-4 pb-3 text-xs text-stone-300">{{ help }}</p>
+          }
+        }
       </nav>
     }
   </header>
@@ -47,20 +59,21 @@
     <router-outlet />
   </main>
 
-  <footer class="border-t border-stone-800 py-4 text-center text-xs text-stone-500 bg-stone-900/40">
-    <p>Tsukuyomi HUB</p>
+  <footer class="border-t border-or-600/30 py-4 text-center text-xs text-stone-400 bg-stone-900/40">
+    <p>La Table Ronde · Clan Kaamelott · Royaume de Logres</p>
   </footer>
 </div>
   }
   @case ('checking') {
-    <div class="bg-stone-950 min-h-screen flex items-center justify-center text-sm text-stone-400">Chargement…</div>
+    <div class="great-hall min-h-screen flex items-center justify-center text-sm text-stone-400">Chargement…</div>
   }
   @default {
-    <div class="bg-stone-950 text-stone-100 min-h-screen font-sans antialiased flex items-center justify-center p-4">
-      <form (submit)="$event.preventDefault(); unlock()" class="w-full max-w-sm bg-stone-900 border border-stone-800 rounded-2xl shadow-2xl p-6 space-y-4">
-        <div class="flex items-center gap-3">
-          <img src="Rinne_Sharingan.webp" alt="" class="w-10 h-10 rounded-xl shadow-lg shadow-red-700/30" />
-          <h1 class="font-bold text-lg tracking-tight">Tsukuyomi HUB</h1>
+    <div class="great-hall text-stone-100 min-h-screen font-sans antialiased flex items-center justify-center p-4">
+      <form (submit)="$event.preventDefault(); unlock()" class="w-full max-w-sm bg-stone-900 border border-or-600/50 rounded-2xl shadow-2xl p-6 space-y-5">
+        <div class="text-center">
+          <img src="emblem.svg" alt="" class="w-24 h-24 mx-auto mb-3" />
+          <h1 class="font-bold text-3xl text-or-300">La Table Ronde</h1>
+          <p class="text-xs text-stone-400 mt-1">Clan Kaamelott</p>
         </div>
         <label class="block">
           <span class="block text-xs font-medium text-stone-400 uppercase tracking-wider mb-2">Mot de passe</span>
@@ -69,7 +82,7 @@
             autocomplete="current-password"
             [value]="password()"
             (input)="password.set($any($event.target).value)"
-            class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-red-700"
+            class="w-full bg-stone-950 border border-stone-700 rounded-xl px-4 py-2.5 text-stone-100 text-sm focus:outline-none focus:border-or-500"
           />
         </label>
         @if (access.error(); as e) {
@@ -80,7 +93,7 @@
           [disabled]="!password() || unlocking()"
           class="w-full bg-red-800 hover:bg-red-700 text-white py-2.5 rounded-xl text-sm font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Entrer
+          Prendre place
         </button>
       </form>
     </div>

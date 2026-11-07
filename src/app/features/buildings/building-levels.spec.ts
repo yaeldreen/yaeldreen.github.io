@@ -1,4 +1,4 @@
-import { EFFECT_FIELDS, levelEntries, levelForm, LevelRow, readLevelForm, upsertLevel } from './building-levels';
+import { EFFECT_FIELDS, levelEntries, levelForm, levelHistoryEntry, LevelRow, readLevelForm, upsertLevel } from './building-levels';
 
 const row: LevelRow = { level: 5, buildTime: '29 min', population: 2, stone: 1977, wood: 1830, iron: 1310, food: 910, troopRecovery: 14 };
 const hospital = EFFECT_FIELDS.hospital!;
@@ -41,5 +41,26 @@ describe('formulaire de niveau', () => {
     expect(readLevelForm(5, { ...form, buildTime: 'bientôt' }, hospital)).toMatchObject({ error: expect.stringContaining('illisible') });
     expect(readLevelForm(5, { ...form, numbers: { ...form.numbers, stone: 1.5 } }, hospital)).toMatchObject({ error: expect.stringContaining('entiers') });
     expect(readLevelForm(5, { ...form, numbers: { ...form.numbers, troopRecovery: null } }, hospital)).toMatchObject({ error: expect.stringContaining('Récupération') });
+  });
+});
+
+describe('levelHistoryEntry', () => {
+  const tracked = { buildTime: '29 min', stone: 1977, wood: 1830, iron: 1310, food: 910 };
+
+  it('note l’avant et l’après d’un temps ou d’une ressource modifiés, sans les autres champs', () => {
+    expect(levelHistoryEntry('hospital', row, { ...row, buildTime: '20 min', stone: 1 })).toEqual({
+      building: 'hospital',
+      level: 5,
+      before: tracked,
+      after: { ...tracked, buildTime: '20 min', stone: 1 },
+    });
+  });
+
+  it('note un niveau ajouté, sans avant', () => {
+    expect(levelHistoryEntry('commerce', undefined, row)).toEqual({ building: 'commerce', level: 5, before: null, after: tracked });
+  });
+
+  it('ne note rien si seuls les habitants ou les effets changent', () => {
+    expect(levelHistoryEntry('hospital', row, { ...row, population: 9, troopRecovery: 20 })).toBeNull();
   });
 });

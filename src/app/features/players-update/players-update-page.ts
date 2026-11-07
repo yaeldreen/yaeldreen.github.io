@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { applyCarte, MapVillage, mergeRanking, parseCompactExport, parseMapExport, parseRankingExport, RankingEntry } from '../../core/game-data/map-villages';
 import { Card } from '../../shared/ui/card';
 import { EnemiesStore, MapImportSummary } from '../enemies/enemies-store';
-import { buildSnapshot, compareSnapshots, EvolutionRow, isSnapshotDue, monthLabel } from './monthly-snapshot';
+import { compareSnapshots, EvolutionRow, EvolutionSort, GAME_ORIGIN, PlayersSnapshot, RANKING_PAGE_URL, readRankingMessage, snapshotLabel, sortEvolution, toggleSort } from './ranking-snapshot';
 
 /** Mise à jour des joueurs (classement), puis de la carte : villages neutres et coordonnées des joueurs (export compact). */
 @Component({
@@ -11,6 +11,7 @@ import { buildSnapshot, compareSnapshots, EvolutionRow, isSnapshotDue, monthLabe
   imports: [FormsModule, Card],
   templateUrl: './players-update-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '(window:message)': 'onRankingMessage($event)' },
 })
 export class PlayersUpdatePage {
   protected readonly store = inject(EnemiesStore);
@@ -48,8 +49,6 @@ export class PlayersUpdatePage {
     try {
       this.importResult.set(await this.store.importMap(villages, { partial: !!ranking }));
       this.mapText.set('');
-      // Le relevé mensuel doit couvrir tous les joueurs : le classement partiel ne le déclenche pas.
-      if (!ranking) await this.snapshotIfDue(villages);
     } catch (e) {
       this.importError.set(`Import refusé : ${(e as Error).message}. Vérifiez que les règles Firestore sont publiées.`);
     } finally {
@@ -57,23 +56,55 @@ export class PlayersUpdatePage {
     }
   }
 
-  // --- Relevé mensuel des points et habitants ---
+  // --- Relevé du classement (points et habitants) ---
 
-  protected readonly snapshotMessage = signal<string | null>(null);
-  protected readonly monthLabel = monthLabel;
+  protected readonly snapshotLabel = snapshotLabel;
+  protected readonly refreshing = signal(false);
+  protected readonly refreshMessage = signal<string | null>(null);
+  protected readonly refreshError = signal<string | null>(null);
   protected readonly evolutionClan = signal('');
-  protected readonly evolutionSort = signal<'points' | 'inhabitants' | 'name'>('points');
+  protected readonly evolutionSort = signal<EvolutionSort>({ key: 'points', direction: 'desc' });
 
-  /** Le 1er du mois, le premier import enregistre le relevé du mois (et décale l'ancien en « mois précédent »). */
-  private async snapshotIfDue(villages: readonly MapVillage[]): Promise<void> {
-    const now = new Date();
-    if (!isSnapshotDue(now, this.store.snapshots().current)) return;
+  /** Ouvre le classement du jeu : le script de la page relève toutes les pages et renvoie les joueurs à cet onglet. */
+  protected refresh(): void {
+    this.refreshMessage.set(null);
+    this.refreshError.set(null);
+    if (!window.open(RANKING_PAGE_URL, '_blank')) {
+      this.refreshError.set("Le navigateur a bloqué l'ouverture du classement : autorisez les fenêtres pour cette appli.");
+      return;
+    }
+    this.refreshing.set(true);
+  }
+
+  protected onRankingMessage(event: MessageEvent): void {
+    if (event.origin !== GAME_ORIGIN) return;
+    const snapshot = readRankingMessage(event.data, new Date());
+    if (snapshot) void this.saveSnapshot(snapshot);
+  }
+
+  /** Secours quand le classement n'a pas pu revenir tout seul : le script l'a copié. */
+  protected async pasteSnapshot(): Promise<void> {
+    this.refreshError.set(null);
+    let snapshot: PlayersSnapshot | null = null;
     try {
-      const snapshot = buildSnapshot(villages, now);
-      await this.store.rotateSnapshot(snapshot);
-      this.snapshotMessage.set(`Relevé du ${monthLabel(snapshot.month)} enregistré.`);
+      snapshot = readRankingMessage(JSON.parse(await navigator.clipboard.readText()), new Date());
     } catch {
-      this.snapshotMessage.set('Relevé mensuel refusé par la base : vérifiez que les règles Firestore sont publiées.');
+      // Presse-papiers refusé ou texte qui n'est pas du JSON : même message que pour un relevé illisible.
+    }
+    if (snapshot) await this.saveSnapshot(snapshot);
+    else this.refreshError.set('Le presse-papiers ne contient pas de relevé : touchez « Copier pour La Table Ronde » sur la page du classement.');
+  }
+
+  private async saveSnapshot(snapshot: PlayersSnapshot): Promise<void> {
+    this.refreshing.set(true);
+    try {
+      await this.store.rotateSnapshot(snapshot);
+      this.refreshMessage.set(`Relevé enregistré : ${snapshot.players.length.toLocaleString('fr-FR')} joueurs, le ${snapshotLabel(snapshot)}.`);
+      this.refreshError.set(null);
+    } catch {
+      this.refreshError.set('Relevé refusé par la base : vérifiez que les règles Firestore sont publiées.');
+    } finally {
+      this.refreshing.set(false);
     }
   }
 
@@ -85,14 +116,29 @@ export class PlayersUpdatePage {
     const { current, previous } = this.store.snapshots();
     if (!current) return [];
     const clan = this.evolutionClan();
-    const rows = compareSnapshots(previous, current).filter((r) => !clan || (r.clan ?? 'Sans clan') === clan);
-    const by = this.evolutionSort();
-    const delta = (r: EvolutionRow) => (by === 'points' ? r.pointsDelta : r.inhabitantsDelta) ?? -Infinity;
-    return by === 'name' ? rows.sort((a, b) => a.name.localeCompare(b.name, 'fr')) : rows.sort((a, b) => delta(b) - delta(a));
+    return sortEvolution(
+      compareSnapshots(previous, current).filter((r) => !clan || (r.clan ?? 'Sans clan') === clan),
+      this.evolutionSort(),
+    );
   });
 
+  protected sortBy(key: EvolutionSort['key']): void {
+    this.evolutionSort.update((sort) => toggleSort(sort, key));
+  }
+
+  /** Écart affiché : « — » pour un joueur absent du relevé d'avant. */
   protected signed(n: number | null): string {
-    return n === null ? 'nouveau' : `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toLocaleString('fr-FR')}`;
+    return n === null ? '—' : `${n > 0 ? '+' : n < 0 ? '−' : '±'}${Math.abs(n).toLocaleString('fr-FR')}`;
+  }
+
+  protected deltaClass(n: number | null): string {
+    return n === null || n === 0 ? 'text-stone-500' : n > 0 ? 'text-emerald-300' : 'text-rose-300';
+  }
+
+  /** Flèche de l'en-tête : sens du tri, ou ↕ pour une colonne triable qui ne l'est pas. */
+  protected sortArrow(key: EvolutionSort['key']): string {
+    const sort = this.evolutionSort();
+    return sort.key !== key ? '↕' : sort.direction === 'desc' ? '↓' : '↑';
   }
 
   // --- Carte (export compact à clés numérotées) ---
@@ -125,8 +171,6 @@ export class PlayersUpdatePage {
       const summary = await this.store.importCarte(carte.neutral, villages);
       this.carteResult.set({ neutral: carte.neutral.length, updated: summary.playersUpdated, added: summary.playersAdded, removed: summary.removed });
       this.carteText.set('');
-      // Cet export couvre tous les joueurs : c'est lui qui déclenche le relevé mensuel.
-      await this.snapshotIfDue(villages);
     } catch (e) {
       this.carteError.set(`Import refusé : ${(e as Error).message}. Vérifiez que les règles Firestore sont publiées.`);
     } finally {

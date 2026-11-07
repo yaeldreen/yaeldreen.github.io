@@ -1,0 +1,26 @@
+# Sauvegarde quotidienne de la base, gardée 90 jours : Actions → « Sauvegarde Firestore » → une exécution → Artifacts.
+name: Sauvegarde Firestore
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx --yes tsx scripts/backup-firestore.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sauvegarde-firestore
+          path: backups/
+          retention-days: 90
+          if-no-files-found: error

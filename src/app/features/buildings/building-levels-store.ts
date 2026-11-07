@@ -1,11 +1,13 @@
 import { Injectable, signal } from '@angular/core';
-import { doc, onSnapshot, runTransaction } from 'firebase/firestore';
+import { collection, doc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { firestoreDb, isFirebaseConfigured } from '../../core/firebase';
-import { LevelRow, upsertLevel } from './building-levels';
+import { levelHistoryEntry, LevelRow, upsertLevel } from './building-levels';
 import { BuildingLevel } from './buildings.data';
 import { BUILDING_GUIDES, BuildingId } from './buildings.guides';
 
 const BUILDINGS_DOC = ['gameData', 'buildings'] as const;
+/** Modifications du temps et des ressources : conservées en base, non affichées dans l'appli. */
+const HISTORY = 'buildingHistory';
 
 /**
  * Niveaux des bâtiments partagés via Firestore (`gameData/buildings`, le même document que le bot).
@@ -37,7 +39,7 @@ export class BuildingLevelsStore {
     );
   }
 
-  /** Ajoute ou corrige un niveau. Transaction : deux modifications en même temps ne s'écrasent pas. */
+  /** Ajoute ou corrige un niveau et note le changement. Transaction : deux modifications ne s'écrasent pas, et l'historique ne peut pas manquer. */
   async saveLevel(id: BuildingId, row: LevelRow): Promise<void> {
     if (!isFirebaseConfigured()) throw new Error('Base partagée non configurée.');
     const db = firestoreDb();
@@ -45,6 +47,8 @@ export class BuildingLevelsStore {
     await runTransaction(db, async (tx) => {
       const building = (await tx.get(ref)).data()?.[id] as { levels?: LevelRow[] } | undefined;
       if (!building) throw new Error('Bâtiment absent de la base.');
+      const entry = levelHistoryEntry(id, building.levels?.find((l) => l.level === row.level), row);
+      if (entry) tx.set(doc(collection(db, HISTORY)), { ...entry, at: serverTimestamp() });
       tx.update(ref, {
         [id]: { ...building, levels: upsertLevel(building.levels ?? [], row) },
         updatedAt: new Date().toISOString(),

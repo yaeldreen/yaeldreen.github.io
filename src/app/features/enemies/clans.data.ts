@@ -18,6 +18,10 @@ export interface Player extends Partial<Record<PlayerStatKey, number | null>> {
   name: string;
   village: string;
   /** `null` = sans clan */ clan: string | null;
+  /** Date ISO de création du compte */ createdAt?: string;
+  comment?: string;
+  commentBy?: string;
+  commentAt?: string;
 }
 
 const playerKeyOf = (name: string): string => name.trim().toLocaleLowerCase('fr');

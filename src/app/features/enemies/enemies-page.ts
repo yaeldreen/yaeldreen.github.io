@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { Card } from '../../shared/ui/card';
 import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
@@ -7,7 +8,7 @@ import { SegmentOption } from '../../shared/ui/segmented-control';
 import { formatNumber } from '../../shared/utils/format';
 import { findVillage } from '../../core/game-data/map-villages';
 import { findPlayer, groupByClan, NO_CLAN, OWN_CLAN, Player, PLAYER_STATS, PlayerMatch, PlayerStatKey } from './clans.data';
-import { compareSnapshots, EvolutionRow, monthLabel } from '../players-update/monthly-snapshot';
+import { compareSnapshots, EvolutionRow, snapshotLabel } from '../players-update/ranking-snapshot';
 import { EnemiesStore } from './enemies-store';
 import { EnemyRecord, playerKey, ReportSide, survivors, TroopCounts, TROOPS, TroopKey } from './enemies.model';
 import { readClipboardImage } from '../../shared/utils/clipboard';
@@ -25,6 +26,7 @@ interface Draft {
   killed: PartialCounts;
   /** Infos saisies à la main : seules les valeurs renseignées sont enregistrées. */
   stats: DraftStats;
+  /** Absent tant que le commentaire existant n'a pas été modifié. */ comment?: string;
 }
 
 const EMPTY_STATS = Object.fromEntries(PLAYER_STATS.map((f) => [f.key, null])) as DraftStats;
@@ -37,6 +39,8 @@ interface TableRow {
   clan: string | null | undefined;
   record: EnemyRecord | undefined;
   /** Infos saisies à la main (null = non renseigné). */ stats: DraftStats;
+  comment: string | undefined;
+  commentAt: string | undefined;
 }
 
 interface PlayerForm {
@@ -73,11 +77,13 @@ const toRow = (
   clan,
   record,
   stats: Object.fromEntries(PLAYER_STATS.map((f) => [f.key, player[f.key] ?? null])) as DraftStats,
+  comment: player.comment,
+  commentAt: player.commentAt,
 });
 
 @Component({
   selector: 'app-enemies-page',
-  imports: [Card, NumberInput, FormsModule, LevelInput],
+  imports: [Card, NumberInput, FormsModule, LevelInput, RouterLink],
   templateUrl: './enemies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(window:paste)': 'onPaste($event)' },
@@ -118,8 +124,16 @@ export class EnemiesPage implements OnDestroy {
 
   protected readonly canSave = computed(() => {
     const d = this.draft();
-    return !!d?.player.trim() && !this.isOwnClan() && (!!this.draftSurvivors() || Object.keys(this.draftStats()).length > 0);
+    return !!d?.player.trim() && !this.isOwnClan() && (!!this.draftSurvivors() || Object.keys(this.draftStats()).length > 0 || this.commentChanged());
   });
+
+  /** Texte affiché dans le champ : la saisie en cours, sinon le commentaire existant du joueur. */
+  protected readonly draftComment = computed(() => this.draft()?.comment ?? this.draftMatch()?.player.comment ?? '');
+  private readonly commentChanged = computed(() => this.draftComment().trim() !== (this.draftMatch()?.player.comment ?? ''));
+
+  protected setComment(comment: string): void {
+    this.draft.update((d) => d && { ...d, comment });
+  }
 
   protected readonly noClan = NO_CLAN;
   protected readonly unlisted = UNLISTED;
@@ -139,18 +153,18 @@ export class EnemiesPage implements OnDestroy {
 
   protected readonly clanFilter = signal(ALL);
 
-  /** Évolution des points et habitants depuis le mois précédent (relevés mensuels de MAJ joueurs), par joueur. */
+  /** Évolution des points et habitants entre les deux derniers relevés du classement (MAJ joueurs), par joueur. */
   private readonly evolution = computed(() => {
     const { current, previous } = this.store.snapshots();
     if (!current || !previous) return new Map<string, EvolutionRow>();
     return new Map(compareSnapshots(previous, current).map((r) => [playerKey(r.name), r]));
   });
-  protected readonly evolutionMonths = computed(() => {
+  protected readonly evolutionPeriod = computed(() => {
     const { current, previous } = this.store.snapshots();
-    return current && previous ? `${monthLabel(previous.month)} → ${monthLabel(current.month)}` : null;
+    return current && previous ? `${snapshotLabel(previous)} → ${snapshotLabel(current)}` : null;
   });
 
-  /** Écart du mois pour « points » ou « habitants » (null : pas de relevé, ou autre info). */
+  /** Écart entre les deux derniers relevés pour « points » ou « habitants » (null : pas de relevé, ou autre info). */
   protected monthDelta(player: string, key: StatKey): number | null {
     const row = this.evolution().get(playerKey(player));
     if (!row) return null;
@@ -264,9 +278,12 @@ export class EnemiesPage implements OnDestroy {
     if (match) {
       if (army) this.store.upsert({ player, ...army });
       if (Object.keys(stats).length) this.store.setPlayerStats(player, stats);
-    } else if (army || Object.keys(stats).length) {
+      if (this.commentChanged()) this.store.setPlayerComment(player, this.draftComment().trim());
+    } else if (army || Object.keys(stats).length || this.commentChanged()) {
       // Joueur absent des listes : il faut une fiche pour garder ses infos, rangée dans « Sans Clans ».
-      this.store.addPlayer({ name: player, village: d.village, clan: null, ...stats }, army ?? undefined);
+      const comment = this.draftComment().trim();
+      const notes = comment ? { comment, commentBy: 'appli', commentAt: new Date().toISOString() } : {};
+      this.store.addPlayer({ name: player, village: d.village, clan: null, ...stats, ...notes }, army ?? undefined);
     }
     this.cancel();
   }

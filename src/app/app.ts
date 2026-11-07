@@ -3,6 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AccessGate } from './core/access';
+import { AppInstall } from './core/app-install';
 
 interface NavTab {
   path: string;
@@ -19,21 +20,22 @@ interface NavTab {
 })
 export class App {
   protected readonly tabs: readonly NavTab[] = [
-    { path: '/retour', label: 'Retours', icon: '🗺️' },
+    { path: '/retour', label: 'Retours', icon: '🏇' },
     { path: '/pillage', label: 'Pillages', icon: '💰' },
-    { path: '/batiments', label: 'BuildGuide', icon: '🔨' },
-    { path: '/simulation', label: 'Simu constru', icon: '🏗️' },
+    { path: '/batiments', label: 'BuildGuide', icon: '🏰' },
+    { path: '/simulation', label: 'Simu constru', icon: '🔨' },
     { path: '/combat', label: 'Simu combat', icon: '⚔️' },
-    { path: '/raz', label: 'Simu raz', icon: '💥' },
-    { path: '/secondes', label: 'Calcul seconde', icon: '⏱️' },
-    { path: '/radar', label: 'Radar du jeu', icon: '📡' },
-    { path: '/ennemis', label: 'infos enemis', icon: '🕵️' },
-    { path: '/joueurs', label: 'MAJ joueurs', icon: '👥' },
+    { path: '/raz', label: 'Simu raz', icon: '🔥' },
+    { path: '/secondes', label: 'Calcul seconde', icon: '⏳' },
+    { path: '/radar', label: 'Radar du jeu', icon: '🔭' },
+    { path: '/ennemis', label: 'infos enemis', icon: '📜' },
+    { path: '/joueurs', label: 'MAJ joueurs', icon: '🛡️' },
   ];
 
   protected readonly menuOpen = signal(false);
 
   protected readonly access = inject(AccessGate);
+  protected readonly appInstall = inject(AppInstall);
 
   constructor() {
     // Dès l'ouverture : les niveaux de la base servent aux calculs de toutes les pages. Chargé à part pour ne pas alourdir le démarrage.

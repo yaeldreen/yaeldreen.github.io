@@ -1,5 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { findVillage, MapVillage, villageOptions } from '../../core/game-data/map-villages';
 import { Card } from '../../shared/ui/card';
 import { Combobox, ComboboxOption } from '../../shared/ui/combobox';
@@ -10,11 +11,15 @@ import { readStored, writeStored } from '../../shared/utils/storage';
 import { OWN_CLAN } from '../enemies/clans.data';
 import { EnemiesStore } from '../enemies/enemies-store';
 import { computeDistance } from '../travel/travel.logic';
-import { AttackMode, AttackPlan, DEFAULT_ATTACK_PLAN, GameLink, gameLinks, groupOf, MAP_HEIGHT, MAP_WIDTH, mapPoint, mapScale, MapView, NEUTRAL_GROUP, radarGroups, rankByDistance, realZoom, viewBox, zoomView } from './radar.logic';
+import { NeutralRaidsView } from './neutral-raids-view';
+import { AttackMode, AttackPlan, DEFAULT_ATTACK_PLAN, GameLink, gameLinks, groupOf, groupShape, MAP_HEIGHT, MAP_WIDTH, mapPoint, mapScale, MapView, NEUTRAL_GROUP, radarGroups, rankByDistance, realZoom, viewBox, zoomView } from './radar.logic';
 
 const ORIGIN_KEY = 'radar.origin';
 const HIDDEN_KEY = 'radar.hidden';
 const PLAN_KEY = 'radar.attackPlan';
+const TAB_KEY = 'radar.tab';
+
+type RadarTab = 'map' | 'neutral';
 /** Préremplissage et envoi par le script : désactivés sur le site, le code est gardé pour plus tard. Passer à true pour les réactiver. */
 const PREFILL_ENABLED = false;
 const RADII = [5, 10, 15, 20, 25, 30];
@@ -41,7 +46,7 @@ const savedPlan = (): AttackPlan => {
 /** Radar : la carte autour d'un village, les groupes affichés au choix, et les villages proches dans un rayon. */
 @Component({
   selector: 'app-radar-page',
-  imports: [Card, Combobox, NgTemplateOutlet, NumberInput, SegmentedControl],
+  imports: [Card, Combobox, NeutralRaidsView, NgTemplateOutlet, NumberInput, RouterLink, SegmentedControl],
   templateUrl: './radar-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -52,6 +57,19 @@ export class RadarPage {
   protected readonly mapWidth = MAP_WIDTH;
   protected readonly mapHeight = MAP_HEIGHT;
   protected readonly villageOptions = computed((): ComboboxOption[] => villageOptions(this.store.villages()));
+
+  // --- Onglets ---
+
+  protected readonly tabOptions: SegmentOption<RadarTab>[] = [
+    { id: 'map', label: 'Carte', icon: '🗺️' },
+    { id: 'neutral', label: 'Vue villages neutres', icon: '🏚️' },
+  ];
+  protected readonly tab = signal<RadarTab>(readStored(TAB_KEY) === 'neutral' ? 'neutral' : 'map');
+
+  protected setTab(tab: RadarTab): void {
+    this.tab.set(tab);
+    writeStored(TAB_KEY, tab);
+  }
 
   // --- Village au centre ---
 
@@ -136,6 +154,7 @@ export class RadarPage {
       village,
       ...mapPoint(village, origin, this.scale()),
       color: this.colors().get(groupOf(village)) ?? '#7d93a6',
+      shape: groupShape(groupOf(village)),
       neutral: village.neutral,
     }));
   });
@@ -221,6 +240,15 @@ export class RadarPage {
 
   protected groupName(village: MapVillage): string {
     return groupOf(village);
+  }
+
+  protected groupShapeOf(village: MapVillage) {
+    return groupShape(groupOf(village));
+  }
+
+  /** Triangle de notre clan, centré sur le village. */
+  protected trianglePoints(x: number, y: number, size: number): string {
+    return `${x},${y - size} ${x + size * 0.9},${y + size * 0.65} ${x - size * 0.9},${y + size * 0.65}`;
   }
 
   protected groupColor(village: MapVillage): string {

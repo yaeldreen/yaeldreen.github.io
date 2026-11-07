@@ -1,7 +1,7 @@
 import { RESOURCES, ResourceKey } from '../../core/game-data/resources';
 import { formatNumber } from '../../shared/utils/format';
 import { BuildingLevel, FOOD_DEPOT_LEVELS, RESOURCE_DEPOT_LEVELS, StorageLevel } from '../buildings/buildings.data';
-import { BUILDING_GUIDES, BuildingGuide, BuildingId } from '../buildings/buildings.guides';
+import { BUILDING_GUIDES, BuildingGuide, BuildingId, PREREQUISITES } from '../buildings/buildings.guides';
 
 type StorageId = 'resourceDepot' | 'foodDepot';
 
@@ -51,6 +51,32 @@ export interface SimulationInput {
   targetLevel: number;
   resourceDepotLevel: number;
   foodDepotLevel: number;
+  /** Niveaux actuels des bâtiments utiles aux prérequis ; absent = niveau 0. */ levels?: Partial<Record<BuildingId, number>>;
+}
+
+export interface PrerequisiteField {
+  buildingId: BuildingId;
+  label: string;
+  /** Niveau demandé par le prérequis (le plus élevé s'il y en a plusieurs). */ required: number;
+}
+
+/**
+ * Bâtiments dont il faut connaître le niveau : les prérequis du bâtiment visé s'il est au niveau 0, puis ceux
+ * de chaque prérequis encore au niveau 0. Les dépôts ont déjà leurs propres champs.
+ */
+export function prerequisiteFields(input: SimulationInput): PrerequisiteField[] {
+  const levelOf = (id: BuildingId): number => (id === input.buildingId ? input.currentLevel : (input.levels?.[id] ?? 0));
+  const fields = new Map<BuildingId, PrerequisiteField>();
+  const visit = (id: BuildingId): void => {
+    if (levelOf(id) > 0) return;
+    for (const [dependency, required] of Object.entries(PREREQUISITES[id] ?? {}) as [BuildingId, number][]) {
+      const known = fields.get(dependency);
+      fields.set(dependency, { buildingId: dependency, label: guideOf(dependency).label, required: Math.max(required, known?.required ?? 0) });
+      visit(dependency);
+    }
+  };
+  visit(input.buildingId);
+  return [...fields.values()].filter((f) => f.buildingId !== 'resourceDepot' && f.buildingId !== 'foodDepot');
 }
 
 export interface PlanStep {
@@ -60,6 +86,7 @@ export interface PlanStep {
   row: BuildingLevel;
   seconds: number;
   /** true = amélioration de dépôt imposée par la capacité */ isStorage: boolean;
+  /** true = construction imposée par les prérequis d'un bâtiment */ isPrerequisite: boolean;
   explanation: string;
 }
 
@@ -78,9 +105,13 @@ export interface SimulationPlan {
  * (pierre/bois/fer → Dépôt de ressources, nourriture → Dépôt de nourriture) ; sinon le dépôt
  * est amélioré d'abord, lui-même sous la même contrainte. Les constructions sont enchaînées
  * une par une, le temps total est donc la somme des temps.
+ * Le niveau 1 d'un bâtiment demande ses prérequis, construits d'abord, avec leurs propres prérequis et dépôts.
+ * Le Quartier général et les dépôts ne sont pas soumis à la capacité pour leur niveau 1 : ils se demandent l'un l'autre,
+ * et la capacité d'un village sans dépôt n'est pas connue.
  */
 export function simulateUpgrades(input: SimulationInput): SimulationPlan {
   const levels = new Map<BuildingId, number>([
+    ...(Object.entries(input.levels ?? {}) as [BuildingId, number][]),
     ['resourceDepot', input.resourceDepotLevel],
     ['foodDepot', input.foodDepotLevel],
     [input.buildingId, input.currentLevel],
@@ -90,9 +121,11 @@ export function simulateUpgrades(input: SimulationInput): SimulationPlan {
   const capacityOf = (storage: Storage): number =>
     storage.rows.find((r) => r.level === levels.get(storage.id))?.capacity ?? 0;
 
-  const build = (id: BuildingId, explain: (row: BuildingLevel, label: string) => string, isStorage: boolean): void => {
+  type StepKind = 'target' | 'storage' | 'prerequisite';
+
+  const build = (id: BuildingId, explain: (row: BuildingLevel, label: string) => string, kind: StepKind): void => {
     const guide = guideOf(id);
-    const next = levels.get(id)! + 1;
+    const next = (levels.get(id) ?? 0) + 1;
     const row = guide.rows.find((r) => r.level === next);
     if (!row) {
       const maxLevel = guide.rows[guide.rows.length - 1].level;
@@ -103,9 +136,28 @@ export function simulateUpgrades(input: SimulationInput): SimulationPlan {
       );
     }
 
-    ensureCapacity(row, `${guide.label} niv. ${next}`);
-    steps.push({ buildingId: id, label: guide.label, level: next, row, seconds: parseDuration(row.buildTime), isStorage, explanation: explain(row, guide.label) });
+    if (next === 1) ensurePrerequisites(id, guide.label);
+    const freeOfCapacity = next === 1 && (id === 'hq' || STORAGES.some((s) => s.id === id));
+    if (!freeOfCapacity) ensureCapacity(row, `${guide.label} niv. ${next}`);
+    steps.push({
+      buildingId: id,
+      label: guide.label,
+      level: next,
+      row,
+      seconds: parseDuration(row.buildTime),
+      isStorage: kind === 'storage',
+      isPrerequisite: kind === 'prerequisite',
+      explanation: explain(row, guide.label),
+    });
     levels.set(id, next);
+  };
+
+  const ensurePrerequisites = (id: BuildingId, forLabel: string): void => {
+    for (const [dependency, required] of Object.entries(PREREQUISITES[id] ?? {}) as [BuildingId, number][]) {
+      while ((levels.get(dependency) ?? 0) < required) {
+        build(dependency, (row, label) => `Prérequis de ${forLabel} : ${label} niveau ${required} (passage au niveau ${row.level}).`, 'prerequisite');
+      }
+    }
   };
 
   const ensureCapacity = (row: BuildingLevel, forWhat: string): void => {
@@ -118,7 +170,7 @@ export function simulateUpgrades(input: SimulationInput): SimulationPlan {
             (depotRow, label) =>
               `${forWhat} demande ${formatNumber(row[res])} de ${RESOURCE_LABELS[res]}, mais le ${label} ne stocke que ` +
               `${formatNumber(before)}. Passage au niveau ${depotRow.level} → capacité ${formatNumber((depotRow as StorageLevel).capacity)}.`,
-            true,
+            'storage',
           );
         }
       }
@@ -127,11 +179,11 @@ export function simulateUpgrades(input: SimulationInput): SimulationPlan {
 
   let blocker: string | undefined;
   try {
-    while (levels.get(input.buildingId)! < input.targetLevel) {
+    while ((levels.get(input.buildingId) ?? 0) < input.targetLevel) {
       build(
         input.buildingId,
         (row, label) => `Objectif : ${label} au niveau ${row.level}. Les dépôts peuvent contenir chaque coût de ce niveau.`,
-        false,
+        'target',
       );
     }
   } catch (e) {

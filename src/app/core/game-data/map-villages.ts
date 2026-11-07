@@ -16,12 +16,14 @@ export interface VillageNotes {
   jouninCenter?: number | null;
   hospital?: number | null;
   wall?: number | null;
+  /** Date ISO de création du compte, relevée à la main sur le jeu. */
+  createdAt?: string;
   comment?: string;
   commentBy?: string;
   commentAt?: string;
 }
 
-const NOTE_KEYS: readonly (keyof VillageNotes)[] = ['gameId', 'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall', 'comment', 'commentBy', 'commentAt'];
+const NOTE_KEYS: readonly (keyof VillageNotes)[] = ['gameId', 'army', 'ce', 'academy', 'chunninCenter', 'jouninCenter', 'hospital', 'wall', 'createdAt', 'comment', 'commentBy', 'commentAt'];
 
 export const notesOf = (village: VillageNotes | undefined): VillageNotes =>
   Object.fromEntries(NOTE_KEYS.flatMap((k) => (village?.[k] !== undefined ? [[k, village[k]]] : [])));

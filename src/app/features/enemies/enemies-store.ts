@@ -12,7 +12,7 @@ import {
 } from 'firebase/firestore';
 import { firestoreDb, isFirebaseConfigured } from '../../core/firebase';
 import { hasCoordinates, MapVillage, notesOf, playersMissingFromCarte, VillageArmy, VillageDoc } from '../../core/game-data/map-villages';
-import { MonthlySnapshot, SnapshotSlot } from '../players-update/monthly-snapshot';
+import { PlayersSnapshot, SnapshotSlot } from '../players-update/ranking-snapshot';
 import { joinPlayers, OWN_CLAN, Player, PlayerStatKey, SEED_CLANS, SEED_PLAYERS } from './clans.data';
 import { EnemyRecord, playerKey } from './enemies.model';
 
@@ -75,8 +75,8 @@ export class EnemiesStore {
   readonly records = computed(() => armyRecords(this.villageRecords()));
   /** Liste initiale tant que la base n'a pas répondu (ou sans configuration). */
   readonly players = computed((): readonly Player[] => (this.villageRecords().length ? joinPlayers(this.villageRecords()) : SEED_PLAYERS));
-  /** Relevés mensuels des points et habitants : mois en cours et mois précédent. */
-  readonly snapshots = signal<Record<SnapshotSlot, MonthlySnapshot | null>>({ current: null, previous: null });
+  /** Relevés du classement (points et habitants) : le dernier et celui d'avant. */
+  readonly snapshots = signal<Record<SnapshotSlot, PlayersSnapshot | null>>({ current: null, previous: null });
   readonly status = signal<StoreStatus>(isFirebaseConfigured() ? 'loading' : 'unconfigured');
   readonly error = signal<string | null>(null);
 
@@ -97,7 +97,7 @@ export class EnemiesStore {
     onSnapshot(
       collection(db, SNAPSHOTS),
       (snapshot) => {
-        const byId = Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data() as MonthlySnapshot]));
+        const byId = Object.fromEntries(snapshot.docs.map((d) => [d.id, d.data() as PlayersSnapshot]));
         this.snapshots.set({ current: byId['current'] ?? null, previous: byId['previous'] ?? null });
       },
       readError,
@@ -176,6 +176,19 @@ export class EnemiesStore {
       ...(points != null ? { points } : {}),
       ...(inhabitants != null ? { inhabitants } : {}),
     });
+  }
+
+  /** Un commentaire vide efface le commentaire existant. */
+  setPlayerComment(player: string, comment: string): void {
+    const changes = comment
+      ? { comment, commentBy: 'appli', commentAt: new Date().toISOString() }
+      : { comment: deleteField(), commentBy: deleteField(), commentAt: deleteField() };
+    this.updateVillage(`Commentaire sur ${player}`, player, changes);
+  }
+
+  /** Une date vide efface celle qui existe. */
+  setPlayerCreatedAt(player: string, date: string): void {
+    this.updateVillage(`Date de création de ${player}`, player, { createdAt: date || deleteField() });
   }
 
   /** Supprime le joueur et son village, armée comprise. */
@@ -279,11 +292,8 @@ export class EnemiesStore {
     }
   }
 
-  /**
-   * Nouveau relevé du mois : l'ancien « mois en cours » devient « mois précédent »
-   * (le précédent d'avant est écrasé), le nouveau relevé devient « mois en cours ».
-   */
-  async rotateSnapshot(snapshot: MonthlySnapshot): Promise<void> {
+  /** Nouveau relevé : le dernier devient « previous » (celui d'avant est écrasé), le nouveau devient « current ». */
+  async rotateSnapshot(snapshot: PlayersSnapshot): Promise<void> {
     const db = this.db;
     if (!db) throw new Error('Base partagée non configurée.');
     const batch = writeBatch(db);

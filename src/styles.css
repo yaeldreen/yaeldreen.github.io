@@ -2,6 +2,85 @@
 
 @import 'tailwindcss';
 
+/*
+ * La Table Ronde : la grande salle d'un château breton, à la lueur des torches.
+ * Les pages emploient les classes `stone` et `red` de Tailwind : ces deux échelles sont redéfinies ici
+ * (bois sombre à parchemin, rouge des bannières) ; `or` est réservé au cadre de l'appli.
+ * Le rouge reste le sens « attaquant » et l'alerte ; `emerald`, `amber` et `rose` gardent leur sens.
+ */
+@theme {
+  --color-stone-50: #fbf4e4;
+  --color-stone-100: #f3e6c8;
+  --color-stone-200: #e3d2ad;
+  --color-stone-300: #d0bd96;
+  --color-stone-400: #b5a17e;
+  --color-stone-500: #998566;
+  --color-stone-600: #6b5a42;
+  --color-stone-700: #4c3c2a;
+  --color-stone-800: #34281b;
+  --color-stone-900: #251b12;
+  --color-stone-950: #170f09;
+
+  --color-red-200: #f6c9bd;
+  --color-red-300: #f0a593;
+  --color-red-400: #e8806b;
+  --color-red-500: #d9533f;
+  --color-red-600: #b93a2d;
+  --color-red-700: #a32c26;
+  --color-red-800: #8a1f20;
+  --color-red-900: #6b1719;
+  --color-red-950: #3f0e12;
+
+  --color-or-200: #f3e0a6;
+  --color-or-300: #e7c874;
+  --color-or-400: #d4ac4b;
+  --color-or-500: #b88f32;
+  --color-or-600: #8f6d24;
+
+  /* Onciale celtique : la Bretagne de la légende. Une seule graisse, jamais grossie artificiellement. */
+  --font-display: 'Uncial Antiqua', Georgia, 'Times New Roman', serif;
+}
+
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-synthesis-weight: none;
+    letter-spacing: 0.01em;
+  }
+}
+
+/* Lueur des torches en haut de la salle, bords dans l'ombre, et un grain de bois à peine visible. */
+.great-hall {
+  background-color: var(--color-stone-950);
+  background-image:
+    radial-gradient(ellipse 85% 380px at 50% -40px, rgb(232 140 48 / 0.2), transparent 70%),
+    radial-gradient(ellipse at center, transparent 55%, rgb(0 0 0 / 0.35) 100%),
+    repeating-linear-gradient(90deg, rgb(255 220 170 / 0.012) 0 2px, transparent 2px 9px);
+}
+
+/* Frise tressée dorée sous l'en-tête. */
+.frise::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 8px;
+  background: url('data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="24" height="8" viewBox="0 0 24 8"%3E%3Cg fill="none" stroke="%23b88f32" stroke-width="1.4"%3E%3Cpath d="M0 4C6 -1 6 -1 12 4S18 9 24 4"/%3E%3Cpath d="M0 4C6 9 6 9 12 4S18 -1 24 4" stroke-opacity=".55"/%3E%3C/g%3E%3C/svg%3E') repeat-x;
+  pointer-events: none;
+}
+
+/* Encart de cuir : liseré doré intérieur et lumière chaude venant du haut. */
+.card-frame {
+  background-image: linear-gradient(180deg, rgb(255 225 170 / 0.04), transparent 45%);
+  box-shadow:
+    inset 0 0 0 1px rgb(212 172 75 / 0.09),
+    0 12px 30px rgb(0 0 0 / 0.45);
+}
+
 /* Espace entre les blocs de chaque page : le composant de page est le parent direct des blocs. */
 main > :not(router-outlet) {
   display: flex;

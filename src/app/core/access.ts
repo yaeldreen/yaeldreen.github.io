@@ -6,13 +6,12 @@ export type AccessStatus = 'checking' | 'locked' | 'unlocked';
 
 const ACCESS_DOC = ['meta', 'access'] as const;
 const STORED_KEY = 'access.hash';
-/** Empreinte du premier mot de passe, posée dans la base si elle n'y est pas encore. */
-const FIRST_PASSWORD_HASH = 'a8929c75be21efb27824a7f8e656130a1d323c336f4f85b9f22e68fec0261dd8';
+const UNAVAILABLE = 'Vérification impossible : connexion à la base indisponible. Réessayez.';
 
 /** Firebase n'est chargé qu'à la demande : l'écran du mot de passe s'affiche sans attendre ce gros module. */
 async function accessDoc() {
-  const [{ doc, getDoc, setDoc }, { firestoreDb }] = await Promise.all([import('firebase/firestore'), import('./firebase')]);
-  return { ref: doc(firestoreDb(), ...ACCESS_DOC), getDoc, setDoc };
+  const [{ doc, getDoc }, { firestoreDb }] = await Promise.all([import('firebase/firestore'), import('./firebase')]);
+  return { ref: doc(firestoreDb(), ...ACCESS_DOC), getDoc };
 }
 
 /** SHA-256 (hexadécimal) du mot de passe : la base ne garde que cette empreinte, jamais le mot de passe. */
@@ -36,20 +35,22 @@ export class AccessGate {
     if (this.status() === 'checking') void this.load();
   }
 
+  /** Sans mot de passe lisible dans la base, l'accès reste fermé : aucun mot de passe de secours n'est écrit dans le code. */
   private async load(): Promise<void> {
     try {
-      const { ref, getDoc, setDoc } = await accessDoc();
+      const { ref, getDoc } = await accessDoc();
       const snapshot = await getDoc(ref);
-      this.expected = snapshot.exists() ? (snapshot.data() as { hash: string }).hash : FIRST_PASSWORD_HASH;
-      if (!snapshot.exists()) await setDoc(ref, { hash: FIRST_PASSWORD_HASH }).catch(() => undefined);
+      this.expected = snapshot.exists() ? (snapshot.data() as { hash: string }).hash : null;
     } catch {
-      // Hors ligne sans copie locale : on retombe sur le premier mot de passe.
-      this.expected = FIRST_PASSWORD_HASH;
+      this.expected = null;
     }
-    this.status.set(readStored(STORED_KEY) === this.expected ? 'unlocked' : 'locked');
+    this.error.set(this.expected ? null : UNAVAILABLE);
+    this.status.set(this.expected && readStored(STORED_KEY) === this.expected ? 'unlocked' : 'locked');
   }
 
   async unlock(password: string): Promise<boolean> {
+    if (!this.expected) await this.load();
+    if (!this.expected) return false;
     const hash = await passwordHash(password);
     if (hash !== this.expected) {
       this.error.set('Mot de passe incorrect.');

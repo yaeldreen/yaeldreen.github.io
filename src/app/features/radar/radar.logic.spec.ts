@@ -16,6 +16,8 @@ describe('radarGroups', () => {
   it('range neutres, notre clan, les autres clans puis les sans clan, avec leur nombre', () => {
     const groups = radarGroups([village('A', 0, 0), village('B', 0, 0, 'Palace'), village('C', 0, 0, 'Tsukuyomi'), village('D', 0, 0, null, true), village('E', 0, 0, 'Akatsuki')]);
     expect(groups.map((g) => [g.name, g.count])).toEqual([[NEUTRAL_GROUP, 1], ['Tsukuyomi', 1], ['Akatsuki', 1], ['Palace', 1], ['Sans Clans', 1]]);
+    // La forme distingue les groupes sans compter sur la couleur.
+    expect(groups.map((g) => g.shape)).toEqual(['square', 'triangle', 'circle', 'circle', 'ring']);
   });
 
   it('donne une couleur différente aux premiers clans, et ne garde que les groupes présents', () => {
@@ -51,9 +53,9 @@ describe('dessin de la carte', () => {
     expect(y + height / 2).toBeCloseTo(MAP_HEIGHT / 2);
   });
 
-  it('borne le zoom de 50 à 150 %, et recentre au minimum', () => {
+  it('borne le zoom de 50 à 300 %, et recentre au minimum', () => {
     expect(zoomView({ zoom: 1, panX: 40, panY: 40 }, 0.1)).toEqual({ zoom: 0.5, panX: 0, panY: 0 });
-    expect(zoomView({ zoom: 1, panX: 0, panY: 0 }, 50).zoom).toBe(1.5);
+    expect(zoomView({ zoom: 1, panX: 0, panY: 0 }, 50).zoom).toBe(3);
   });
 
   it('garde fixe le point visé en zoomant', () => {

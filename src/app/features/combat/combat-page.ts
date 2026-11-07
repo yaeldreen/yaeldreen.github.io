@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, HostListener, inject, signal } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Card } from '../../shared/ui/card';
 import { LevelInput } from '../../shared/ui/level-input';
 import { NumberInput } from '../../shared/ui/number-input';
 import { SegmentedControl, SegmentOption } from '../../shared/ui/segmented-control';
 import { formatDuration, formatNumber } from '../../shared/utils/format';
 import { readStored, writeStored } from '../../shared/utils/storage';
+import { EnemiesStore } from '../enemies/enemies-store';
 import { TroopCounts, TROOPS, TroopKey } from '../enemies/enemies.model';
 import { ArmyCard, PlayerPick } from './army-card';
-import { clamp, emptySide, LEVEL_FIELDS, LEVEL_MAX, toArmy } from './army-form';
+import { clamp, emptySide, LEVEL_FIELDS, LEVEL_MAX, prefillFromPlayer, toArmy } from './army-form';
 import { encodeHistory, HistoryEntry, HistorySide, loadHistory, pushHistory, saveHistory, SideForm } from './combat-history';
 import {
   ATTACKER_LOSS_FACTOR,
@@ -172,6 +174,15 @@ export class CombatPage {
   });
 
   constructor() {
+    // Lien du radar (`?defender=<joueur>`) : le camp se remplit dès que la base a répondu.
+    const store = inject(EnemiesStore);
+    let linkedDefender = inject(ActivatedRoute).snapshot.queryParamMap.get('defender');
+    effect(() => {
+      if (!linkedDefender || !store.villageRecords().length) return;
+      const name = linkedDefender;
+      linkedDefender = null;
+      this.selectPlayer('defender', { name, prefill: prefillFromPlayer(store.players(), store.records(), this.defender(), name) });
+    });
     inject(DestroyRef).onDestroy(() => clearTimeout(this.saveTimer));
   }
 
