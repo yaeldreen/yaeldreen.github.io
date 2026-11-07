@@ -22,7 +22,8 @@ const TAB_KEY = 'radar.tab';
 type RadarTab = 'map' | 'neutral';
 /** Préremplissage et envoi par le script : désactivés sur le site, le code est gardé pour plus tard. Passer à true pour les réactiver. */
 const PREFILL_ENABLED = false;
-const RADII = [5, 10, 15, 20, 25, 30];
+// Jusqu'à 60 km : la carte du jeu ne dépasse pas 58,5 km entre ses deux villages les plus éloignés (novembre 2026).
+const RADII = [5, 10, 15, 20, 25, 30, 40, 50, 60];
 const HOME_VIEW: MapView = { zoom: 1, panX: 0, panY: 0 };
 /** Un doigt qui bouge moins que ça (en pixels) tape un village au lieu de déplacer la carte. */
 const DRAG_THRESHOLD = 5;
