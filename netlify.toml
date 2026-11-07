@@ -1,0 +1,4 @@
+# Déploiement Netlify : construire l'appli Angular, puis publier le dossier produit (et non la racine du dépôt).
+[build]
+  command = "npm run build"
+  publish = "dist/tsukuyomi-hub/browser"
