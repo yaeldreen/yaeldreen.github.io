@@ -4,7 +4,10 @@ import { computeDistance } from '../travel/travel.logic';
 
 export const NEUTRAL_GROUP = 'Villages neutres';
 const NEUTRAL_COLOR = '#3ce3b2';
-const OWN_COLOR = '#77afff';
+/** Couleur de notre clan sur la carte (triangles), reprise par le bouton « Soutien ». */
+export const OWN_COLOR = '#77afff';
+/** Bouton « Attaque » d'un village neutre. */
+const NEUTRAL_ATTACK_COLOR = '#f3e08a';
 const NO_CLAN_COLOR = '#b7b0a5';
 // Couleurs des clans choisies pour rester distinctes aussi pour un daltonien rouge-vert (simulation deutéranopie et protanopie).
 // Elles ne suffisent pas pour 9 clans : la forme du point distingue en plus les groupes particuliers (voir `groupShape`).
@@ -24,6 +27,7 @@ export interface GameLink {
   label: string;
   url: string;
   /** Le lien principal, mis en avant. */ primary: boolean;
+  /** Couleur propre du bouton (texte sombre) : soutien aux couleurs de notre clan, attaque d'un neutre en jaune pâle. */ color?: string;
 }
 
 export type AttackMode = 'pillage' | 'combat';
@@ -51,8 +55,8 @@ export function gameLinks({ gameId, neutral, clan }: Pick<VillageDoc, 'gameId' |
   if (gameId === undefined) return [];
   const url = (page: string) => `${GAME_URL}/${page}.html?id=${encodeURIComponent(gameId)}`;
   const attack = { label: 'Attaque', url: url('attaque') + (plan ? planHash(plan) : ''), primary: true };
-  if (neutral) return [attack];
-  const last = clan === OWN_CLAN ? { label: 'Soutien', url: `${url('attaque')}&mode=support`, primary: true } : attack;
+  if (neutral) return [{ ...attack, color: NEUTRAL_ATTACK_COLOR }];
+  const last = clan === OWN_CLAN ? { label: 'Soutien', url: `${url('attaque')}&mode=support`, primary: true, color: OWN_COLOR } : attack;
   return [{ label: 'Village', url: url('joueur'), primary: false }, { label: 'Profil', url: url('profil'), primary: false }, last];
 }
 

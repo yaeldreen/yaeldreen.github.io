@@ -1,4 +1,5 @@
 import { MapVillage } from '../../core/game-data/map-villages';
+import { OWN_CLAN } from '../enemies/clans.data';
 import { gameLinks, planHash, MAP_HEIGHT, MAP_WIDTH, mapPoint, mapScale, NEUTRAL_GROUP, radarGroups, rankByDistance, realZoom, viewBox, zoomView } from './radar.logic';
 
 const village = (name: string, x: number, y: number, clan: string | null = null, neutral = false): MapVillage => ({
@@ -10,6 +11,14 @@ const village = (name: string, x: number, y: number, clan: string | null = null,
   points: 0,
   inhabitants: 0,
   neutral,
+});
+
+describe('couleur des boutons du radar', () => {
+  it('soutien en bleu de notre clan, attaque d’un neutre en jaune pâle, attaque d’un ennemi sans couleur propre', () => {
+    expect(gameLinks({ gameId: 80, neutral: false, clan: OWN_CLAN }).at(-1)).toMatchObject({ label: 'Soutien', color: '#77afff' });
+    expect(gameLinks({ gameId: -68, neutral: true, clan: null })).toMatchObject([{ label: 'Attaque', color: '#f3e08a' }]);
+    expect(gameLinks({ gameId: 70, neutral: false, clan: 'Akatsuki' }).at(-1)?.color).toBeUndefined();
+  });
 });
 
 describe('radarGroups', () => {

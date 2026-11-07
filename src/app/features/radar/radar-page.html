@@ -8,7 +8,8 @@
             target="_blank"
             rel="noopener noreferrer"
             class="px-1.5 py-1 rounded-md text-[10px] font-medium"
-            [class]="link.primary ? 'bg-red-800 hover:bg-red-700 text-white' : 'bg-stone-800 hover:bg-stone-700 text-stone-200'"
+            [class]="link.color ? 'text-stone-950 hover:brightness-110' : link.primary ? 'bg-red-800 hover:bg-red-700 text-white' : 'bg-stone-800 hover:bg-stone-700 text-stone-200'"
+            [style.background]="link.color ?? null"
           >
             {{ link.label }}
           </a>
